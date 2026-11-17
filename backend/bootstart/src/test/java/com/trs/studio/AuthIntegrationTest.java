@@ -22,6 +22,7 @@ class AuthIntegrationTest {
   void loginAndLogout() throws Exception {
     var client = HttpClient.newBuilder().cookieHandler(new java.net.CookieManager()).build();
     assertEquals(401, send(client, "GET", "/api/auth/me", null).statusCode());
+    assertEquals(401, send(client, "GET", "/api/worlds", null).statusCode());
     assertEquals(
         401,
         send(client, "POST", "/api/auth/login", "{\"username\":\"admin\",\"password\":\"wrong\"}")
@@ -31,6 +32,7 @@ class AuthIntegrationTest {
         send(client, "POST", "/api/auth/login", "{\"username\":\"admin\",\"password\":\"123456\"}")
             .statusCode());
     assertTrue(send(client, "GET", "/api/auth/me", null).body().contains("admin"));
+    assertEquals(200, send(client, "GET", "/api/worlds", null).statusCode());
     assertEquals(204, send(client, "POST", "/api/auth/logout", "{}").statusCode());
     assertEquals(401, send(client, "GET", "/api/auth/me", null).statusCode());
   }

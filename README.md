@@ -1,24 +1,32 @@
 # Graph Agent Simulation Studio
 
-基于图结构的推演平台初始化工程。当前范围为账号密码登录、中英文切换、空白主页及注销；尚未实现图编辑和推演业务。
+通用 AI 智能体事件推演工作台。根据 [V1.1 需求](docs/REQUIREMENTS_V1.1.md) 实现世界图、Agent 推演、动态展示、回放、分支比较和银行扩展。按用户要求，当前使用明确标识的模拟模型完成后续功能验证；**模拟通过不等于真实 LLM P3 验收**。能力与限制见 [验收记录](docs/ACCEPTANCE.md)。
 
-## 目录
-- backend：JDK 21 / Spring Boot 4.1.2 / Maven，bootstart、common、app 三模块
-- frontend：Svelte 5 / Vite / TypeScript / Tailwind CSS 4，pnpm
-- docs：代码规范
-- docker：前后端同一镜像与 Compose 部署
+## 已提供的功能
+
+- 用户名密码登录、中英文切换、注销，初始账号 `admin / 123456`。
+- Vue 3 / TypeScript / Tailwind / Pinia / Vue Router 基础工作台。
+- OpenAI 兼容模型配置：Base URL、模型名、加密 API Key 或环境变量引用、Temperature、Token/超时/并发限制、真实 SDK 连接测试。
+- 世界 JSON 导入、泄密示例、Cytoscape 静态图；SQLite 递归多跳、局部图、最短路径、度数/介数/桥接候选分析。
+- 场景与 Agent 目标、模型、权限、可见范围配置，运行状态隔离。
+- AgentScope Java 2.0.5 ReAct、七种只读图工具、结构化行动提案、领域校验、真实模拟状态提交、持久化观察/决策/工具/裁定/状态变化记录。
+- 暂停、恢复、单步、停止 REST，幂等单步，延迟事件注入，状态版本快照查询。
+- 信息领域模拟关闭同步、撤销共享、审核和基于启用关系的假设传播；模拟结果不会回写事实模板。
+
+已提供 SSE 动态图谱、Agent 活动、对象状态、事件时间线、只读历史播放（暂停/前后/拖动/1x/2x/4x）、检查点 Fork、模拟干预、结构化结果比较与 ECharts 指标、银行资金守恒示例。
 
 ## 本地开发
-需要 JDK 21、Maven 3.9.11、Node 24、pnpm 11.25.0。
+
+需要 JDK 21、Maven 3.9+、Node 24、pnpm 11.25.0。
 
 ```sh
 cd backend
-mvn test
-mvn -pl bootstart -am package
+mvn clean verify
 java -jar bootstart/target/bootstart-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 ```
 
 另一个终端：
+
 ```sh
 cd frontend
 pnpm install --frozen-lockfile
@@ -27,31 +35,49 @@ pnpm build
 pnpm dev
 ```
 
-Vite 默认端口 5173，将 /api 转发至后端 8080。开发数据库在后端启动工作目录的 studio-dev.db。Flyway 创建表，JPA 验证结构。初始账号 admin / 123456；数据库仅保存 BCrypt 哈希。会话保存在服务端内存，重启后需重新登录。
+Vite 默认 5173，`/api` 转发到 8080。开发数据库为启动目录的 `studio-dev.db`；Flyway 自动迁移，JPA 校验账号表，业务图和运行记录使用 JDBC。SQLite 配置 WAL、外键和 busy timeout。会话在进程内，重启后需要登录；运行状态仍在数据库中，重启后运行恢复为暂停。
 
-若云环境主目录不可写，Maven 增加 `-Dmaven.repo.local=/workspace/cache/m2`，pnpm 安装使用 `XDG_DATA_HOME=/workspace/cache pnpm install --store-dir /workspace/cache/pnpm --frozen-lockfile`。
+当前云环境工具：`JAVA_HOME=/workspace/jdk-21.0.9+10`、Maven `/workspace/apache-maven-3.9.11/bin/mvn`；Maven 参数 `-s /workspace/maven-settings.xml -Dmaven.repo.local=/workspace/cache/m2`，`MAVEN_OPTS=-Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts`。pnpm 安装如遇不可写主目录，使用 `XDG_DATA_HOME=/workspace/cache pnpm install --store-dir /workspace/cache/pnpm --frozen-lockfile`。
 
-## REST
-| 方法 | 路径 | 行为 |
-| --- | --- | --- |
-| POST | /api/auth/login | JSON username/password；成功 200、错误 401，设置会话 Cookie |
-| GET | /api/auth/me | 返回 username；未登录 401 |
-| POST | /api/auth/logout | 注销并返回 204 |
+## 无需密钥体验完整流程
+
+1. 登录后点击“创建泄密演示”，进入“推演与回放”。点击“计算单步”或“继续计算”，查看数据库驱动的图谱、Agent工具/行动/裁定与状态变化。
+2. 使用时间线播放、拖动或跳转事件。历史回放只读快照，不调用模型、不再次执行 Action。
+3. 在任意历史位置输入分支名称并 Fork。切换执行 Agent，提交合法模拟干预，选择父运行查看实体/关系差异和指标。
+4. 点击“创建银行演示”，计算单步；账户 A 从1000万元变为500万元、B 从200万元变为700万元。后续单步不会重复处理同一个初始转账请求。
+5. 在模型页也可单独点击“使用模拟模型”。模拟行为按最新观察和反馈选择行动，界面和事件明确标记 MOCK，不会访问外部 LLM 或真实银行。
+
+启动应用后可运行：`python scripts/smoke_mock.py`。开发默认密码123456；生产脚本从 STUDIO_ADMIN_PASSWORD 读取登录密码。
+
+## 配置真实模型并验证
+
+1. 登录，进入“模型配置”。填入 Base URL（通常以 `/v1` 结尾）、模型名及 API Key，或填写服务端 API Key 环境变量名；本地免密 Qwen/vLLM 可留空。
+2. 保存后密钥输入清空，后端安全列表不回传密钥。点击“测试连接”验证真实 AgentScope SDK 工具/结构化输出兼容性。
+3. 导入示例，选择世界和模型创建场景；也可在可选 JSON 中配置自定义 Agent。泄密和银行示例使用对应默认角色与初始事件。
+4. 使用 [REST API](docs/API.md) 单步或恢复运行。真实模型验收可用以下命令（密钥仍保留在后端配置中）：
+
+```sh
+# 安全设置 STUDIO_ADMIN_PASSWORD 后执行；开发默认密码为 123456。
+python scripts/verify_p3.py --model-id '<模型页面显示的 ID>'
+```
+
+该脚本调用真实 Java Runtime，不生成预设决策。结果不满足要求就返回失败；模型不一定会提出非法行动，不能用假事件补足拒绝条件。真实 LLM 成本、模型域名出站权限由实际配置决定。
+
+API Key 以 AES-256-GCM 加密保存，开发主密钥位于启动目录的 `data/model.key`（权限 0600），可用 `studio.model-key-file` 覆盖。**数据库备份必须同时备份主密钥文件**；丢失后无法解密已有配置。生产路径 `/data/model.key` 与数据库一起持久化。生产初始密码变量仅首次建账号时使用，修改变量不会更新已有账号。
 
 ## Docker
+
 ```sh
 export STUDIO_ADMIN_PASSWORD='replace-with-a-strong-password'
 docker compose -f docker/compose.yml up --build -d
 ```
 
-镜像内 Spring Boot 同时提供静态前端和 REST 服务，SQLite 数据持久化至 /data。生产需配置 HTTPS 反向代理；仅在本地 HTTP 测试时设置 STUDIO_COOKIE_SECURE=false。prod 必须提供初始管理员密码；此变量仅首次建账号使用。不要将真实凭证写入仓库。镜像导出：`docker save graph-agent-simulation-studio:local -o /tmp/studio.tar`。
+Dockerfile 将前后端构建进同一个镜像，Spring Boot 提供静态页面和 REST，数据持久化 `/data`。本地开发保持前后端独立运行。生产通过 HTTPS 反向代理访问；只有本地 HTTP 调试时设置 `STUDIO_COOKIE_SECURE=false`。
 
-## 开发约定
-遵循 AGENTS.md、DESIGN.md 与 docs/CODING_STANDARDS.md；不得在 main 上生成代码。功能分支测试通过后先合并 main，再按授权推送。
+镜像导出：`docker save graph-agent-simulation-studio:local -o /tmp/studio.tar`。本次已导出 `docker/studio-current-image.tar`，可以 `docker load -i docker/studio-current-image.tar` 后使用 `docker compose -f docker/compose.yml up --no-build -d`。该运行镜像使用已验证的本地产物组装，容器功能检查通过；标准多阶段依赖下载流程未重新验证。旧的 `docker/studio-image.tar` 是初始化版本，已保留且不包含本次功能。两个镜像文件均被 Git 忽略。
 
-当前初始认证尚无账号管理、密码修改、登录限流或多实例会话存储；对公网部署前需按产品需求补充。
+## 工程与验证
 
-## 本次验证记录
-后端 Maven verify 通过（1 项 REST 集成测试，包含完整认证流程）；前端 2 项测试、类型检查与生产构建通过。prod 运行容器通过首页、JS 静态资源、SQLite 登录、会话查询和注销检查。Compose 配置校验通过。
+`backend/{bootstart,app,common}` 保留原三模块。规范见 [AGENTS.md](AGENTS.md)、[代码规范](docs/CODING_STANDARDS.md)、[架构](docs/ARCHITECTURE.md)、[API](docs/API.md)。不得在 main 生成代码；推送时先合并 main。
 
-当前云环境的多阶段镜像构建在容器内 npm 下载处受阻；本次运行镜像使用本机已验证的前端和后端产物组装，并未宣称完整多阶段构建通过。已导出 `docker/studio-image.tar`（已忽略，不应提交到 Git），可用 `docker load -i docker/studio-image.tar` 导入，然后使用 Compose 的 `up -d --no-build`。其他环境应按上面的标准 Dockerfile 重新构建。
+自动化验证：后端 16 项（认证、SQLite/图、状态/隔离/幂等/反馈、事件注入、SDK、分支回放、银行约束与单连接回归），前端 6 项（认证、语言、模型配置、模拟模式、回放隔离与事件去重）。本地协议桩和 Mock Agent 的通过不等于真实 LLM 验收。

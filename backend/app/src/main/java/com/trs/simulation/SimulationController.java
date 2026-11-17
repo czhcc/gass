@@ -1,0 +1,266 @@
+package com.trs.simulation;
+
+import com.trs.simulation.SimulationTypes.*;
+import java.util.*;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
+
+/** Thin authenticated REST boundary; all mutations delegate to domain services. @author agent */
+@RestController
+@RequestMapping("/api")
+public class SimulationController {
+  private final WorldService worlds;
+  private final RunService runs;
+  private final ModelService models;
+  private final AgentScopeDecisionProvider sdk;
+
+  /** Injects application services. @author agent */
+  public SimulationController(
+      WorldService worlds, RunService runs, ModelService models, AgentScopeDecisionProvider sdk) {
+    this.worlds = worlds;
+    this.runs = runs;
+    this.models = models;
+    this.sdk = sdk;
+  }
+
+  /** Lists registered domain action schemas. @author agent */
+  @GetMapping("/domains/information/actions")
+  public List<Map<String, Object>> actions() {
+    return new InformationEnvironment().actions();
+  }
+
+  /** Returns domain evaluation with explicit fact/inference/simulation labels. @author agent */
+  @GetMapping("/runs/{id}/evaluation")
+  public Map<String, Object> evaluate(@PathVariable String id) {
+    return runs.evaluate(id);
+  }
+
+  /** Lists reusable worlds. @author agent */
+  @GetMapping("/worlds")
+  public List<World> worlds() {
+    return worlds.list();
+  }
+
+  /** Creates a validated world. @author agent */
+  @PostMapping("/worlds")
+  public World create(@RequestBody World world) {
+    return worlds.create(world);
+  }
+
+  /** Imports the document-leak example facts. @author agent */
+  @PostMapping("/examples/information-leak")
+  public World example() {
+    return worlds.create(Examples.informationLeak());
+  }
+
+  /** Gets the world template. @author agent */
+  @GetMapping({"/worlds/{id}", "/worlds/{id}/graph"})
+  public World world(@PathVariable String id) {
+    return worlds.get(id);
+  }
+
+  /** Returns bounded directed multi-hop reachability. @author agent */
+  @GetMapping("/worlds/{id}/expand")
+  public List<String> expand(
+      @PathVariable String id,
+      @RequestParam String entityId,
+      @RequestParam(defaultValue = "2") int depth,
+      @RequestParam(required = false) String relationType) {
+    return worlds.expand(id, entityId, depth, relationType);
+  }
+
+  /** Returns an enabled shortest path. @author agent */
+  @GetMapping("/worlds/{id}/path")
+  public List<String> path(
+      @PathVariable String id, @RequestParam String from, @RequestParam String to) {
+    return worlds.path(id, from, to);
+  }
+
+  /** Returns betweenness centrality. @author agent */
+  @GetMapping("/worlds/{id}/centrality")
+  public Map<String, Double> centrality(@PathVariable String id) {
+    return worlds.centrality(id);
+  }
+
+  /**
+   * Queries entity types and a bounded local subgraph including incoming/outgoing edges. @author
+   * agent
+   */
+  @GetMapping("/worlds/{id}/entities")
+  public List<Entity> entities(
+      @PathVariable String id, @RequestParam(required = false) String type) {
+    return worlds.get(id).entities().stream()
+        .filter(e -> type == null || e.type().equals(type))
+        .toList();
+  }
+
+  /** Returns one visible template entity. @author agent */
+  @GetMapping("/worlds/{id}/entities/{entityId}")
+  public Entity entity(@PathVariable String id, @PathVariable String entityId) {
+    return worlds.get(id).entities().stream()
+        .filter(e -> e.id().equals(entityId))
+        .findFirst()
+        .orElseThrow(NoSuchElementException::new);
+  }
+
+  /** Queries inbound or outbound relationships with optional type filtering. @author agent */
+  @GetMapping("/worlds/{id}/relations")
+  public List<Relation> relations(
+      @PathVariable String id,
+      @RequestParam String entityId,
+      @RequestParam(defaultValue = "out") String direction,
+      @RequestParam(required = false) String type) {
+    if (!List.of("in", "out", "both").contains(direction))
+      throw new IllegalArgumentException("Invalid direction");
+    return worlds.get(id).relations().stream()
+        .filter(e -> type == null || e.relationType().equals(type))
+        .filter(
+            e ->
+                (!direction.equals("in") && e.sourceId().equals(entityId))
+                    || (!direction.equals("out") && e.targetId().equals(entityId)))
+        .toList();
+  }
+
+  /** Returns degree, betweenness and bridge candidates. @author agent */
+  @GetMapping("/worlds/{id}/metrics")
+  public Map<String, Object> metrics(@PathVariable String id) {
+    var w = worlds.get(id);
+    return GraphQueries.metrics(w.entities(), w.relations());
+  }
+
+  /** Returns a cycle-safe local property subgraph. @author agent */
+  @GetMapping("/worlds/{id}/subgraph")
+  public Map<String, Object> subgraph(
+      @PathVariable String id,
+      @RequestParam String entityId,
+      @RequestParam(defaultValue = "2") int depth) {
+    var w = worlds.get(id);
+    var ids = worlds.expand(id, entityId, depth, null);
+    return Map.of(
+        "entities",
+        w.entities().stream().filter(e -> ids.contains(e.id())).toList(),
+        "relations",
+        w.relations().stream()
+            .filter(e -> ids.contains(e.sourceId()) && ids.contains(e.targetId()))
+            .toList());
+  }
+
+  /** Lists scenarios. @author agent */
+  @GetMapping("/scenarios")
+  public List<Scenario> scenarios() {
+    return worlds.scenarios();
+  }
+
+  /** Creates a scenario. @author agent */
+  @PostMapping("/scenarios")
+  public Scenario scenario(@RequestBody Scenario s) {
+    return worlds.scenario(s);
+  }
+
+  /** Gets a scenario. @author agent */
+  @GetMapping("/scenarios/{id}")
+  public Scenario scenario(@PathVariable String id) {
+    return worlds.scenario(id);
+  }
+
+  /** Updates an editable scenario; existing runs retain frozen configuration. @author agent */
+  @PutMapping("/scenarios/{id}")
+  public Scenario update(@PathVariable String id, @RequestBody Scenario s) {
+    return worlds.scenario(
+        new Scenario(id, s.name(), s.worldId(), s.agents(), s.maxSteps(), s.maxEvents()));
+  }
+
+  /** Creates a paused run for inspection or single-step. @author agent */
+  @PostMapping("/scenarios/{id}/runs")
+  public Run run(@PathVariable String id) {
+    return runs.create(id);
+  }
+
+  /** Lists runs. @author agent */
+  @GetMapping("/runs")
+  public List<Run> runs() {
+    return runs.list();
+  }
+
+  /** Gets lifecycle metadata. @author agent */
+  @GetMapping("/runs/{id}")
+  public Run runInfo(@PathVariable String id) {
+    return runs.get(id);
+  }
+
+  /** Gets the current state or an exact committed version. @author agent */
+  @GetMapping({"/runs/{id}/state", "/runs/{id}/graph"})
+  public State state(@PathVariable String id, @RequestParam(required = false) Long version) {
+    return version == null ? runs.state(id) : runs.replay(id, version);
+  }
+
+  /** Returns durable event history. @author agent */
+  @GetMapping("/runs/{id}/events")
+  public List<Event> events(@PathVariable String id, @RequestParam(defaultValue = "0") long after) {
+    return runs.events(id, after);
+  }
+
+  /** Schedules a bounded event input, with a client idempotency key. @author agent */
+  @PostMapping("/runs/{id}/inject")
+  public ResponseEntity<Void> inject(
+      @PathVariable String id,
+      @RequestHeader("Idempotency-Key") String key,
+      @RequestBody ScheduledInput event) {
+    runs.inject(id, key, event);
+    return ResponseEntity.noContent().build();
+  }
+
+  /** Advances one idempotent round. @author agent */
+  @PostMapping("/runs/{id}/step")
+  public State step(@PathVariable String id, @RequestHeader("Idempotency-Key") String key) {
+    return runs.step(id, key);
+  }
+
+  /** Pauses automatic advancement. @author agent */
+  @PostMapping("/runs/{id}/pause")
+  public Run pause(@PathVariable String id) {
+    return runs.pause(id);
+  }
+
+  /** Resumes bounded automatic advancement. @author agent */
+  @PostMapping("/runs/{id}/resume")
+  public Run resume(@PathVariable String id) {
+    return runs.resume(id);
+  }
+
+  /** Stops a run permanently. @author agent */
+  @PostMapping("/runs/{id}/stop")
+  public Run stop(@PathVariable String id) {
+    return runs.stop(id);
+  }
+
+  /** Lists redacted model settings. @author agent */
+  @GetMapping("/models")
+  public List<ModelService.View> models() {
+    return models.list();
+  }
+
+  /** Creates model settings; the API key is encrypted at rest. @author agent */
+  @PostMapping("/models")
+  public ModelService.View model(@RequestBody ModelService.Input input) {
+    return models.save(input);
+  }
+
+  /** Tests the actual configured AgentScope model. @author agent */
+  @PostMapping("/models/{id}/test")
+  public ResponseEntity<Map<String, Object>> test(@PathVariable String id) {
+    try {
+      sdk.test(id);
+      return ResponseEntity.ok(Map.of("ok", true));
+    } catch (Exception e) {
+      return ResponseEntity.status(502)
+          .body(
+              Map.of(
+                  "ok",
+                  false,
+                  "message",
+                  "Model connection/structured output failed. Check endpoint, credentials and model"
+                      + " compatibility."));
+    }
+  }
+}

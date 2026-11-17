@@ -1,27 +1,65 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { fireEvent, render, screen, cleanup, waitFor } from '@testing-library/svelte';
-import App from './App.svelte';
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
-describe('studio', () => {
- it('switches language, logs in and logs out', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce({ok:false}).mockResolvedValueOnce({ok:true}).mockResolvedValueOnce({ok:true}));
-  render(App);
-  await waitFor(() => expect(screen.queryByText('加载中…')).toBeNull());
-  await fireEvent.click(screen.getByText('English'));
-  await fireEvent.input(screen.getByLabelText('Username'), {target:{value:'admin'}});
-  await fireEvent.input(screen.getByLabelText('Password'), {target:{value:'123456'}});
-  await fireEvent.click(screen.getByRole('button',{name:'Sign in'}));
-  await waitFor(() => expect(screen.getByText('Sign out')).toBeTruthy());
-  await fireEvent.click(screen.getByText('Sign out'));
-  await waitFor(() => expect(screen.getByRole('button',{name:'Sign in'})).toBeTruthy());
- });
- it('shows invalid credentials', async () => {
-  vi.stubGlobal('fetch',vi.fn().mockResolvedValue({ok:false,status:401}));
-  render(App);
-  await waitFor(() => expect(screen.queryByText('加载中…')).toBeNull());
-  await fireEvent.input(screen.getByLabelText('用户名'), {target:{value:'admin'}});
-  await fireEvent.input(screen.getByLabelText('密码'), {target:{value:'bad'}});
-  await fireEvent.click(screen.getByRole('button',{name:'登录'}));
-  await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('用户名或密码错误'));
- });
+import { describe, it, expect, vi, afterEach } from "vitest";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+} from "@testing-library/vue";
+import App from "./App.vue";
+import { createPinia } from "pinia";
+import { createRouter, createMemoryHistory } from "vue-router";
+function setup() {
+  return render(App, {
+    global: {
+      plugins: [
+        createPinia(),
+        createRouter({
+          history: createMemoryHistory(),
+          routes: [{ path: "/:tab?", component: { render: () => null } }],
+        }),
+      ],
+    },
+  });
+}
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
+describe("studio authentication", () => {
+  it("switches language and preserves login/logout", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async (url: string) => ({
+        ok: url != "/api/auth/me",
+        status: url === "/api/auth/me" ? 401 : 200,
+        json: async () => [],
+      })),
+    );
+    setup();
+    await screen.findByLabelText("用户名");
+    await fireEvent.click(screen.getByText("English"));
+    await fireEvent.update(screen.getByLabelText("Username"), "admin");
+    await fireEvent.update(screen.getByLabelText("Password"), "123456");
+    await fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await screen.findByRole("button", { name: "Sign out" });
+    await fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    await screen.findByRole("button", { name: "Sign in" });
+  });
+  it("shows credential failures", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 401 }),
+    );
+    setup();
+    await screen.findByLabelText("用户名");
+    await fireEvent.update(screen.getByLabelText("用户名"), "admin");
+    await fireEvent.update(screen.getByLabelText("密码"), "bad");
+    await fireEvent.click(screen.getByRole("button", { name: "登录" }));
+    await waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toContain(
+        "用户名或密码错误",
+      ),
+    );
+  });
 });
