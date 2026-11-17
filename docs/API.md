@@ -19,6 +19,7 @@
 | GET | /api/runs/{id}/events?after=0 | 递增 sequence 的持久化事件，最多2000条 |
 | GET | /api/runs/{id}/state 或 /graph | 当前状态；可选 version 获取确切已提交版本 |
 | GET / POST | /api/models | 安全配置列表 / 新增配置 |
+| PUT | /api/models/{id} | 原位编辑已保存模型，保留模型 ID |
 | POST | /api/models/{id}/test | 用实际 SDK 测试结构化响应，不修改世界 |
 
 模型配置请求示例（不要把真实密钥写入示例文件）：
@@ -70,3 +71,5 @@ Fork 请求：`{"sequence":12,"label":"限制传播方案"}`。子分支拥有�
 银行 TRANSFER 参数：`{"sourceId":"account_a","amount":"5000000.00","currency":"CNY"}`，targetId 为 account_b。初始账户 A=1000000000分、B=200000000分；成功后 A=500000000分、B=700000000分，合计不变。非正数、三位小数、越权或不足余额均拒绝。
 
 模拟模型输出在 Agent 事件中标记 MOCK。它可以验证完整功能闭环，但不能证明真实 LLM 自主性。
+
+模型编辑：API Key 留空且密钥来源未变时保留已保存的密钥；填写新 API Key 会加密替换；填写不同的 API Key 环境变量名时改用该变量。响应仍只返回安全 View，不返回明文或密文。修改的运行参数在后续模型调用中生效。

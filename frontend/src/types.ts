@@ -26,7 +26,11 @@ export interface Model {
   modelName: string;
   baseUrl: string;
   keyConfigured: boolean;
-  apiKeyEnv: string;
+  apiKeyEnv: string | null;
+  temperature: number;
+  maxTokens: number;
+  timeoutSeconds: number;
+  concurrency: number;
 }
 export interface Scenario {
   id: string;

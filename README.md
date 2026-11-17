@@ -52,7 +52,7 @@ Vite 默认 5173，`/api` 转发到 8080。开发数据库为启动目录的 `st
 ## 配置真实模型并验证
 
 1. 登录，进入“模型配置”。填入 Base URL（通常以 `/v1` 结尾）、模型名及 API Key，或填写服务端 API Key 环境变量名；本地免密 Qwen/vLLM 可留空。
-2. 保存后密钥输入清空，后端安全列表不回传密钥。点击“测试连接”验证真实 AgentScope SDK 工具/结构化输出兼容性。
+2. 保存后会在“模拟模型”下方的“已保存的模型”列表显示并高亮对应条目，每条均有“测试连接”和“编辑”。编辑保持模型 ID，API Key 留空保留原密钥；保存后密钥输入清空，后端不回传密钥。测试结果显示在对应模型卡片中。
 3. 导入示例，选择世界和模型创建场景；也可在可选 JSON 中配置自定义 Agent。泄密和银行示例使用对应默认角色与初始事件。
 4. 使用 [REST API](docs/API.md) 单步或恢复运行。真实模型验收可用以下命令（密钥仍保留在后端配置中）：
 
@@ -74,10 +74,10 @@ docker compose -f docker/compose.yml up --build -d
 
 Dockerfile 将前后端构建进同一个镜像，Spring Boot 提供静态页面和 REST，数据持久化 `/data`。本地开发保持前后端独立运行。生产通过 HTTPS 反向代理访问；只有本地 HTTP 调试时设置 `STUDIO_COOKIE_SECURE=false`。
 
-镜像导出：`docker save graph-agent-simulation-studio:local -o /tmp/studio.tar`。本次已导出 `docker/studio-current-image.tar`，可以 `docker load -i docker/studio-current-image.tar` 后使用 `docker compose -f docker/compose.yml up --no-build -d`。该运行镜像使用已验证的本地产物组装，容器功能检查通过；标准多阶段依赖下载流程未重新验证。旧的 `docker/studio-image.tar` 是初始化版本，已保留且不包含本次功能。两个镜像文件均被 Git 忽略。
+镜像导出：`docker save graph-agent-simulation-studio:local -o /tmp/studio.tar`。此前模拟推演版本已导出 `docker/studio-current-image.tar`，可以 `docker load -i docker/studio-current-image.tar` 后使用 `docker compose -f docker/compose.yml up --no-build -d`。该运行镜像使用已验证的本地产物组装，容器功能检查通过；标准多阶段依赖下载流程未重新验证。旧的 `docker/studio-image.tar` 是初始化版本，已保留且不包含本次功能。两个镜像文件均被 Git 忽略；本次模型列表与编辑改进未重新导出镜像，部署时请按当前源码重新构建。
 
 ## 工程与验证
 
 `backend/{bootstart,app,common}` 保留原三模块。规范见 [AGENTS.md](AGENTS.md)、[代码规范](docs/CODING_STANDARDS.md)、[架构](docs/ARCHITECTURE.md)、[API](docs/API.md)。不得在 main 生成代码；推送时先合并 main。
 
-自动化验证：后端 16 项（认证、SQLite/图、状态/隔离/幂等/反馈、事件注入、SDK、分支回放、银行约束与单连接回归），前端 6 项（认证、语言、模型配置、模拟模式、回放隔离与事件去重）。本地协议桩和 Mock Agent 的通过不等于真实 LLM 验收。
+自动化验证：后端 17 项（认证、SQLite/图、状态/隔离/幂等/反馈、事件注入、SDK、分支回放、银行约束与单连接回归），前端 9 项（认证、语言、模型配置、模拟模式、回放隔离与事件去重）。本地协议桩和 Mock Agent 的通过不等于真实 LLM 验收。

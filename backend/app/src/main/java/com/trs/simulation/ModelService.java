@@ -71,8 +71,20 @@ public class ModelService {
 
   /** Saves a validated model, encrypting an optional key. @author agent */
   public synchronized View save(Input i) {
-    if (i.name() == null || i.name().isBlank() || i.modelName() == null || i.modelName().isBlank())
-      throw new IllegalArgumentException("Model name required");
+    return persist(UUID.randomUUID().toString(), i, null);
+  }
+
+  /** Updates an existing model without changing references or revealing its key. @author agent */
+  public synchronized View update(String id, Input i) {
+    return persist(id, i, get(id));
+  }
+
+  private View persist(String id, Input i, Config existing) {
+    if (i == null
+        || i.name() == null
+        || i.name().isBlank()
+        || i.modelName() == null
+        || i.modelName().isBlank()) throw new IllegalArgumentException("Model name required");
     URI uri;
     try {
       uri = URI.create(i.baseUrl());
@@ -99,10 +111,16 @@ public class ModelService {
         && !i.apiKeyEnv().isBlank()
         && !i.apiKeyEnv().matches("[A-Z_][A-Z0-9_]*"))
       throw new IllegalArgumentException("Invalid credential variable name");
-    String cipher = i.apiKey() != null && !i.apiKey().isBlank() ? encrypt(i.apiKey()) : null;
+    String cipher;
+    if (i.apiKey() != null && !i.apiKey().isBlank()) cipher = encrypt(i.apiKey());
+    else if (i.apiKeyEnv() != null
+        && !i.apiKeyEnv().isBlank()
+        && (existing == null || !Objects.equals(i.apiKeyEnv(), existing.apiKeyEnv())))
+      cipher = null;
+    else cipher = existing == null ? null : existing.keyCipher();
     var c =
         new Config(
-            UUID.randomUUID().toString(),
+            id,
             i.name(),
             i.baseUrl().replaceAll("/+$", ""),
             i.modelName(),
@@ -112,7 +130,8 @@ public class ModelService {
             i.maxTokens(),
             i.timeoutSeconds(),
             i.concurrency());
-    db.update("INSERT INTO model_config VALUES (?,?)", c.id(), Json.write(c));
+    if (existing == null) db.update("INSERT INTO model_config VALUES (?,?)", c.id(), Json.write(c));
+    else db.update("UPDATE model_config SET config_json=? WHERE id=?", Json.write(c), c.id());
     return view(c);
   }
 
