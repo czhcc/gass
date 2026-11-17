@@ -246,6 +246,15 @@ public class SimulationController {
     return models.save(input);
   }
 
+  /**
+   * Updates model settings in place; a blank API key retains the saved credential. @author agent
+   */
+  @PutMapping("/models/{id}")
+  public ModelService.View updateModel(
+      @PathVariable String id, @RequestBody ModelService.Input input) {
+    return models.update(id, input);
+  }
+
   /** Tests the actual configured AgentScope model. @author agent */
   @PostMapping("/models/{id}/test")
   public ResponseEntity<Map<String, Object>> test(@PathVariable String id) {

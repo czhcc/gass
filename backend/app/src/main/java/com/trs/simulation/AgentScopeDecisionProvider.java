@@ -29,7 +29,9 @@ public class AgentScopeDecisionProvider implements DecisionProvider {
     if (Json.write(observation).length() > 32000)
       throw new IllegalArgumentException("Observation exceeds model input budget");
     var config = models.get(definition.modelId());
-    var limit = limits.computeIfAbsent(config.id(), k -> new Semaphore(config.concurrency()));
+    var limit =
+        limits.computeIfAbsent(
+            config.id() + ":" + config.concurrency(), k -> new Semaphore(config.concurrency()));
     boolean acquired = false;
     try {
       acquired = limit.tryAcquire(config.timeoutSeconds(), TimeUnit.SECONDS);
