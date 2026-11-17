@@ -2,6 +2,7 @@ spring:
   datasource:
     url: ${STUDIO_DATABASE_URL:jdbc:sqlite:/data/studio.db}
 studio:
+  model-key-file: /data/model.key
   admin-password: ${STUDIO_ADMIN_PASSWORD}
 server:
   servlet:

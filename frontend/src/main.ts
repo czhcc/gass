@@ -1,4 +1,6 @@
-import { mount } from 'svelte';
-import App from './App.svelte';
-import './style.css';
-mount(App,{target:document.getElementById('app')!});
+import { createApp } from "vue";
+import { createPinia } from "pinia";
+import App from "./App.vue";
+import { router } from "./router";
+import "./style.css";
+createApp(App).use(createPinia()).use(router).mount("#app");
