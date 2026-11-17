@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: ${STUDIO_DATABASE_URL:jdbc:sqlite:/data/studio.db}
+studio:
+  admin-password: ${STUDIO_ADMIN_PASSWORD}
+server:
+  servlet:
+    session:
+      cookie:
+        secure: ${STUDIO_COOKIE_SECURE:true}
+logging:
+  level:
+    com.trs: INFO

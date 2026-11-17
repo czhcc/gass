@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    url: jdbc:sqlite:./studio-dev.db
+logging:
+  level:
+    com.trs: DEBUG
