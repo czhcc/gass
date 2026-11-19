@@ -78,8 +78,8 @@ Entry 包含 id、domainCode、ownerType、revision（同编码修订号）、st
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | POST | /api/models/mock | 创建/复用无需密钥的 mock://local 模型 |
-| POST | /api/examples/information/demo | 请求体 `{"worldId":"已有泄密世界ID"}`；复用所选世界，创建模拟模型、四角色场景和暂停运行，注入初始事件，不新增世界 |
-| POST | /api/examples/bank/demo | 请求体 `{"worldId":"已有银行世界ID"}`；复用所选世界，创建银行/风险 Agent 和暂停运行，注入不超过源账户余额及500万元的初始请求，不新增世界 |
+| POST | /api/examples/information/demo | 请求体 `{"worldId":"已有泄密世界ID","maxSteps":8}`；maxSteps 必填，范围 1～20 轮；复用所选世界，创建模拟模型、四角色场景和暂停运行，注入初始事件，不新增世界 |
+| POST | /api/examples/bank/demo | 请求体 `{"worldId":"已有银行世界ID","maxSteps":8}`；maxSteps 必填，范围 1～20 轮；复用所选世界，创建银行/风险 Agent 和暂停运行，注入不超过源账户余额及500万元的初始请求，不新增世界 |
 
 世界目录启动时补齐 `demo-information` 与 `demo-bank` 两份初始世界。新建、复制和导入的世界仅支持 `information`、`bank` 两类。导入复用 `POST /api/worlds`，由服务端校验完整图结构；编辑不得更换世界类型或移除仍被场景 Agent 引用的对象。
 

@@ -30,9 +30,39 @@ class ScenarioDeletionIntegrationTest {
   @Autowired WorldService worlds;
 
   @Test
+  void demoRoundLimitsAreRequiredValidatedPersistedAndEnforcedForBothDomains() throws Exception {
+    var client = HttpClient.newBuilder().cookieHandler(new CookieManager()).build();
+    assertEquals(200, send(client, "POST", "/api/auth/login", Map.of("username", "admin", "password", "123456")).statusCode());
+    for (var template : java.util.List.of(Examples.informationLeak(), Examples.bankTransfer())) {
+      var world = worlds.create(template);
+      String endpoint = "/api/examples/" + world.domainCode() + "/demo";
+      int scenarioCount = worlds.scenarios().size(), runCount = runs.list().size();
+      assertEquals(400, send(client, "POST", endpoint, Map.of("worldId", world.id())).statusCode());
+      for (int invalid : new int[] {-1, 0, 21})
+        assertEquals(400, send(client, "POST", endpoint, Map.of("worldId", world.id(), "maxSteps", invalid)).statusCode());
+      assertEquals(scenarioCount, worlds.scenarios().size());
+      assertEquals(runCount, runs.list().size());
+      for (int limit : new int[] {1, 13, 20}) {
+        var response = send(client, "POST", endpoint, Map.of("worldId", world.id(), "maxSteps", limit));
+        assertEquals(200, response.statusCode(), response.body());
+        var run = Json.read(response.body(), Run.class);
+        assertEquals(limit, run.maxSteps());
+        assertEquals(limit, worlds.scenario(run.scenarioId()).maxSteps());
+        assertEquals(limit, runs.get(run.id()).maxSteps());
+        if (limit == 1) {
+          runs.step(run.id(), "only-round");
+          assertEquals("BUDGET_EXHAUSTED", runs.get(run.id()).status());
+          assertEquals("MAX_STEPS", runs.get(run.id()).terminationReason());
+          assertEquals(1, runs.get(run.id()).step());
+        }
+      }
+    }
+  }
+
+  @Test
   void deletesOnlySelectedScenarioAndPreservesRunnableHistory() throws Exception {
-    var run = demos.create("information", worlds.create(Examples.informationLeak()).id());
-    var other = demos.create("bank", worlds.create(Examples.bankTransfer()).id());
+    var run = demos.create("information", worlds.create(Examples.informationLeak()).id(), 8);
+    var other = demos.create("bank", worlds.create(Examples.bankTransfer()).id(), 8);
     var client = HttpClient.newBuilder().cookieHandler(new CookieManager()).build();
     String path = "/api/scenarios/" + run.scenarioId();
     assertEquals(401, send(client, "DELETE", path, null).statusCode());
@@ -71,12 +101,12 @@ class ScenarioDeletionIntegrationTest {
     int scenarioCount = worlds.scenarios().size();
     int runCount = runs.list().size();
     assertEquals(400, send(client, "POST", endpoint, Map.of()).statusCode());
-    assertEquals(404, send(client, "POST", endpoint, Map.of("worldId", "missing")).statusCode());
-    assertEquals(400, send(client, "POST", endpoint, Map.of("worldId", bank.id())).statusCode());
+    assertEquals(404, send(client, "POST", endpoint, Map.of("worldId", "missing", "maxSteps", 8)).statusCode());
+    assertEquals(400, send(client, "POST", endpoint, Map.of("worldId", bank.id(), "maxSteps", 8)).statusCode());
     assertEquals(scenarioCount, worlds.scenarios().size());
     assertEquals(runCount, runs.list().size());
     for (int n = 0; n < 2; n++) {
-      var response = send(client, "POST", endpoint, Map.of("worldId", leak.id()));
+      var response = send(client, "POST", endpoint, Map.of("worldId", leak.id(), "maxSteps", 8));
       assertEquals(200, response.statusCode(), response.body());
       var run = Json.read(response.body(), com.trs.simulation.SimulationTypes.Run.class);
       assertEquals(leak.id(), worlds.scenario(run.scenarioId()).worldId());
@@ -84,7 +114,7 @@ class ScenarioDeletionIntegrationTest {
       assertEquals(leak.entities(), runs.state(run.id()).entities());
       assertEquals("PAUSED", run.status());
     }
-    var bankResponse = send(client, "POST", "/api/examples/bank/demo", Map.of("worldId", bank.id()));
+    var bankResponse = send(client, "POST", "/api/examples/bank/demo", Map.of("worldId", bank.id(), "maxSteps", 8));
     assertEquals(200, bankResponse.statusCode());
     var bankRun = Json.read(bankResponse.body(), com.trs.simulation.SimulationTypes.Run.class);
     assertEquals(bank.id(), worlds.scenario(bankRun.scenarioId()).worldId());
@@ -101,7 +131,7 @@ class ScenarioDeletionIntegrationTest {
           template.relations().stream().map(r -> new Relation(r.id(), "custom_" + r.sourceId(),
               "custom_" + r.targetId(), r.relationType(), r.properties(), r.enabled(), r.evidence(), r.source())).toList(),
           1));
-      var run = demos.create(custom.domainCode(), custom.id());
+      var run = demos.create(custom.domainCode(), custom.id(), 8);
       var scheduled = runs.events(run.id(), 0).stream()
           .filter(e -> e.eventType().equals("SIMULATION_EVENT_SCHEDULED")).findFirst().orElseThrow();
       var input = Json.read(Json.write(scheduled.payload().get("input")), ScheduledInput.class);

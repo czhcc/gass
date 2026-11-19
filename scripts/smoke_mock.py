@@ -30,7 +30,7 @@ def main():
     assert model['baseUrl'] == 'mock://local'
     leak_world = request('/examples/information-leak', 'POST', {})
     world_count = len(request('/worlds'))
-    leak = request('/examples/information/demo', 'POST', {'worldId': leak_world['id']})
+    leak = request('/examples/information/demo', 'POST', {'worldId': leak_world['id'], 'maxSteps': 8})
     assert len(request('/worlds')) == world_count
     for n in range(5):
         request('/runs/' + leak['id'] + '/step', 'POST', {}, f'smoke-{n}')
@@ -65,7 +65,7 @@ def main():
 
     bank_world = request('/examples/bank-transfer', 'POST', {})
     world_count = len(request('/worlds'))
-    bank = request('/examples/bank/demo', 'POST', {'worldId': bank_world['id']})
+    bank = request('/examples/bank/demo', 'POST', {'worldId': bank_world['id'], 'maxSteps': 8})
     assert len(request('/worlds')) == world_count
     request('/runs/' + bank['id'] + '/step', 'POST', {}, 'bank-one')
     metrics = request('/runs/' + bank['id'] + '/evaluation')
