@@ -107,7 +107,7 @@ async function logout() {
     <p v-if="loading" class="mt-24 text-center" role="status">
       {{ text[lang].loading }}
     </p>
-    <section v-else-if="!authenticated" class="panel mx-auto mt-24 max-w-sm">
+    <section v-else-if="!authenticated" class="panel mx-auto mt-24 w-[calc(100%-2rem)] max-w-md">
       <p class="text-xs tracking-widest text-blue-600">GASS</p>
       <h2 class="mt-2 text-2xl font-semibold">{{ text[lang].login }}</h2>
       <p class="mb-8 mt-2 text-sm text-slate-500">{{ text[lang].subtitle }}</p>

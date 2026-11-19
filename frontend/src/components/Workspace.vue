@@ -5,7 +5,7 @@ import type { Lang, Scenario } from "../types";
 import Models from "./Models.vue";
 import Worlds from "./Worlds.vue";
 import { defineAsyncComponent } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useWorkspaceStore } from "../stores/workspace";
 const RunStudio = defineAsyncComponent(() => import("./RunStudio.vue"));
@@ -286,22 +286,26 @@ async function demo(domain: string) {
 }
 </script>
 <template>
-  <div class="mx-auto max-w-7xl p-5" :inert="confirmingDeletion !== null ? true : undefined">
-    <nav class="mb-6 flex flex-wrap gap-3 border-b border-slate-200 pb-4">
-      <button
-        v-for="item in ['worlds', 'models', 'scenarios', 'studio']"
+  <div class="workspace-layout" :inert="confirmingDeletion !== null ? true : undefined">
+    <aside class="workspace-sidebar">
+    <nav class="grid gap-2" :aria-label="lang === 'zh' ? '工作台导航' : 'Workspace navigation'">
+      <RouterLink
+        v-for="item in ['worlds', 'models', 'scenarios', 'studio', 'demos'] as const"
         :key="item"
-        :class="tab === item ? 'primary' : 'secondary'"
-        @click="
-          router.push('/' + item);
-          load();
-        "
+        :to="'/' + item"
+        :aria-current="tab === item ? 'page' : undefined"
+        class="workspace-menu-item"
+        :class="{ 'workspace-menu-active': tab === item }"
+        @click="load"
       >
-        {{ t[item as "worlds" | "models" | "scenarios" | "studio"] }}
-      </button>
+        {{ item === 'demos' ? t.demoWorld : t[item] }}
+      </RouterLink>
     </nav>
+    </aside>
+    <div class="workspace-content">
     <p class="mb-5 text-sm text-slate-500">{{ t.note }}</p>
-    <section class="panel mb-5 space-y-3">
+    <section v-if="tab === 'demos'" class="panel mb-5 space-y-3">
+      <h2 class="text-xl font-semibold">{{ t.demoWorld }}</h2>
       <label>
         {{ t.demoWorld }}
         <select v-model="demoWorldId" :disabled="busy">
@@ -328,7 +332,7 @@ async function demo(domain: string) {
       :initial-id="route.query.run ? String(route.query.run) : undefined"
     /><Models v-else-if="tab === 'models'" :lang="lang" />
     <Worlds v-else-if="tab === 'worlds'" :lang="lang" />
-    <section v-else class="grid gap-5 lg:grid-cols-2">
+    <section v-else-if="tab === 'scenarios'" class="grid gap-5 lg:grid-cols-2">
       <form class="panel grid gap-4" @submit.prevent="createScenario">
         <h2 class="text-xl font-semibold">{{ t.scenario }}</h2>
         <label>{{ t.name }}<input v-model="scenarioForm.name" required /></label
@@ -377,6 +381,7 @@ async function demo(domain: string) {
         </p>
       </div>
     </section>
+    </div>
   </div>
   <Teleport to="body">
     <div
