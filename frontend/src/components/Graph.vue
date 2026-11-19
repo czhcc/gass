@@ -4,7 +4,7 @@ import cytoscape from "cytoscape";
 import type { Entity, Lang, World } from "../types";
 const props = withDefaults(
   defineProps<{
-    world: World;
+    world: Pick<World, "id" | "name" | "domainCode" | "entities" | "relations">;
     lang?: Lang;
     highlightId?: string;
     baselineIds?: string[];

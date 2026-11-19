@@ -1,39 +1,53 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, nextTick, watch } from "vue";
 import { api } from "../api";
-import type { Lang, World, Model, Scenario } from "../types";
+import type { Lang, Scenario } from "../types";
 import Models from "./Models.vue";
+import Worlds from "./Worlds.vue";
 import { defineAsyncComponent } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useWorkspaceStore } from "../stores/workspace";
 const RunStudio = defineAsyncComponent(() => import("./RunStudio.vue"));
-const Graph = defineAsyncComponent(() => import("./Graph.vue"));
 const route = useRoute(),
   router = useRouter();
 const workspace = useWorkspaceStore();
 const { worlds, models, scenarios } = storeToRefs(workspace);
 const props = defineProps<{ lang: Lang }>();
 const tab = computed(() => String(route.params.tab || "worlds"));
-const selected = ref<World>();
 const error = ref(""),
-  busy = ref(false),
-  worldInput = ref("");
+  busy = ref(false);
 const scenarioForm = ref({ name: "", worldId: "", modelId: "" });
+const demoWorldId = ref("");
+const demoWorld = computed(() => worlds.value.find((world) => world.id === demoWorldId.value));
+watch(() => worlds.value.map(world => world.id), ids => {
+  if (!ids.includes(demoWorldId.value)) demoWorldId.value = "";
+  if (!ids.includes(scenarioForm.value.worldId)) scenarioForm.value.worldId = "";
+});
 const createdRun = ref(""),
   agentsJson = ref("");
+const confirmingDeletion = ref<string | null>(null),
+  scenarioMessage = ref(""),
+  deletionError = ref("");
+const deleteDialog = ref<HTMLDivElement>(),
+  cancelDeletionButton = ref<HTMLButtonElement>(),
+  scenarioList = ref<HTMLDivElement>();
+let deletionTrigger: HTMLElement | null = null;
 const t = computed(() =>
   props.lang === "zh"
     ? {
         studio: "推演与回放",
         bankDemo: "创建银行演示",
         leakDemo: "创建泄密演示",
-        bankImport: "导入银行示例",
+        demoWorld: "演示世界",
+        selectWorld: "请选择已有世界",
+        demoHelp: "演示使用所选世界和模拟模型创建场景及运行，不会新增世界。",
+        noDemoWorld: "请先在“世界与图谱”中导入或创建世界，再选择世界创建演示。",
+        leakDomain: "泄密",
+        bankDomain: "银行",
         worlds: "世界与图谱",
         models: "模型配置",
         scenarios: "场景配置",
-        import: "导入泄密示例",
-        upload: "导入世界 JSON",
         note: "推演生成模拟状态，不代表真实世界事实。可选择无需密钥的模拟模型，或配置真实模型。",
         scenario: "创建场景",
         name: "场景名称",
@@ -41,8 +55,11 @@ const t = computed(() =>
         model: "模型",
         create: "创建双 Agent 场景",
         run: "创建暂停运行",
-        empty: "暂无数据",
-        json: "世界定义 JSON",
+        delete: "删除",
+        confirmDelete: "确认删除",
+        cancel: "取消",
+        deleteNotice: "确认删除此场景？已有运行记录和推演结果将保留。",
+        deleted: "场景已删除",
         saved: "已创建运行；可使用 REST 单步验收",
         agentsJson: "自定义 Agent JSON（可选）",
         agents:
@@ -52,12 +69,15 @@ const t = computed(() =>
         studio: "Simulation & replay",
         bankDemo: "Create bank demo",
         leakDemo: "Create leak demo",
-        bankImport: "Import bank example",
+        demoWorld: "Demo world",
+        selectWorld: "Select an existing world",
+        demoHelp: "Demos create a scenario and run using the selected world and mock model, without adding a world.",
+        noDemoWorld: "Import or create a world in Worlds & graph, then select it to create a demo.",
+        leakDomain: "Information leak",
+        bankDomain: "Bank",
         worlds: "Worlds & graph",
         models: "Models",
         scenarios: "Scenarios",
-        import: "Import leak example",
-        upload: "Import world JSON",
         note: "Simulation is not real-world fact. Use the credential-free mock model or configure a real model.",
         scenario: "Create scenario",
         name: "Scenario name",
@@ -65,8 +85,11 @@ const t = computed(() =>
         model: "Model",
         create: "Create two-agent scenario",
         run: "Create paused run",
-        empty: "No data",
-        json: "World definition JSON",
+        delete: "Delete",
+        confirmDelete: "Confirm deletion",
+        cancel: "Cancel",
+        deleteNotice: "Delete this scenario? Existing runs and simulation results will be retained.",
+        deleted: "Scenario deleted",
         saved: "Run created; use REST for single-step acceptance",
         agentsJson: "Custom Agent JSON (optional)",
         agents:
@@ -81,21 +104,6 @@ async function load() {
   }
 }
 onMounted(load);
-async function importWorld(example: boolean, domain = "information-leak") {
-  busy.value = true;
-  error.value = "";
-  try {
-    const w = example
-      ? await api<World>("/examples/" + domain, "POST")
-      : await api<World>("/worlds", "POST", JSON.parse(worldInput.value));
-    worlds.value.push(w);
-    selected.value = w;
-  } catch (e) {
-    error.value = String(e);
-  } finally {
-    busy.value = false;
-  }
-}
 async function createScenario() {
   busy.value = true;
   error.value = "";
@@ -163,6 +171,55 @@ async function createScenario() {
     busy.value = false;
   }
 }
+async function openDeletion(id: string, event: MouseEvent) {
+  deletionTrigger = event.currentTarget as HTMLElement;
+  confirmingDeletion.value = id;
+  scenarioMessage.value = "";
+  deletionError.value = "";
+  await nextTick();
+  cancelDeletionButton.value?.focus();
+}
+async function cancelDeletion() {
+  if (busy.value) return;
+  confirmingDeletion.value = null;
+  deletionError.value = "";
+  await nextTick();
+  deletionTrigger?.focus();
+}
+function deletionKeydown(event: KeyboardEvent) {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    void cancelDeletion();
+  } else if (event.key === "Tab") {
+    const buttons = Array.from(
+      deleteDialog.value?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? [],
+    );
+    const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    event.preventDefault();
+    if (buttons.length) {
+      buttons[(index + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length]?.focus();
+    }
+  }
+}
+async function deleteScenario(id: string) {
+  if (busy.value) return;
+  busy.value = true;
+  error.value = "";
+  deletionError.value = "";
+  scenarioMessage.value = "";
+  try {
+    await api<void>("/scenarios/" + id, "DELETE");
+    scenarios.value = scenarios.value.filter((scenario) => scenario.id !== id);
+    confirmingDeletion.value = null;
+    scenarioMessage.value = t.value.deleted;
+    await nextTick();
+    scenarioList.value?.focus();
+  } catch (e) {
+    deletionError.value = String(e);
+  } finally {
+    busy.value = false;
+  }
+}
 async function run(id: string) {
   busy.value = true;
   try {
@@ -210,13 +267,14 @@ async function run(id: string) {
   }
 }
 async function demo(domain: string) {
+  if (busy.value || !demoWorld.value || demoWorld.value.domainCode !== domain) return;
   busy.value = true;
   error.value = "";
   try {
     const run = await api<{ id: string }>(
       "/examples/" + domain + "/demo",
       "POST",
-      {},
+      { worldId: demoWorldId.value },
     );
     await workspace.reload();
     await router.push("/studio?run=" + run.id);
@@ -228,7 +286,7 @@ async function demo(domain: string) {
 }
 </script>
 <template>
-  <div class="mx-auto max-w-7xl p-5">
+  <div class="mx-auto max-w-7xl p-5" :inert="confirmingDeletion !== null ? true : undefined">
     <nav class="mb-6 flex flex-wrap gap-3 border-b border-slate-200 pb-4">
       <button
         v-for="item in ['worlds', 'models', 'scenarios', 'studio']"
@@ -243,13 +301,25 @@ async function demo(domain: string) {
       </button>
     </nav>
     <p class="mb-5 text-sm text-slate-500">{{ t.note }}</p>
-    <div class="mb-5 flex flex-wrap gap-3">
-      <button class="secondary" :disabled="busy" @click="demo('information')">
+    <section class="panel mb-5 space-y-3">
+      <label>
+        {{ t.demoWorld }}
+        <select v-model="demoWorldId" :disabled="busy">
+          <option disabled value="">{{ t.selectWorld }}</option>
+          <option v-for="world in worlds" :key="world.id" :value="world.id">
+            {{ world.name }} · {{ world.domainCode === 'bank' ? t.bankDomain : t.leakDomain }} · {{ world.id.slice(0, 8) }}
+          </option>
+        </select>
+      </label>
+      <p class="text-sm text-slate-500">{{ worlds.length ? t.demoHelp : t.noDemoWorld }}</p>
+      <div class="flex flex-wrap gap-3">
+      <button class="secondary" :disabled="busy || demoWorld?.domainCode !== 'information'" @click="demo('information')">
         {{ t.leakDemo }}</button
-      ><button class="secondary" :disabled="busy" @click="demo('bank')">
+      ><button class="secondary" :disabled="busy || demoWorld?.domainCode !== 'bank'" @click="demo('bank')">
         {{ t.bankDemo }}
       </button>
-    </div>
+      </div>
+    </section>
     <p v-if="error" role="alert">{{ error }}</p>
     <RunStudio
       v-if="tab === 'studio'"
@@ -257,52 +327,7 @@ async function demo(domain: string) {
       :lang="lang"
       :initial-id="route.query.run ? String(route.query.run) : undefined"
     /><Models v-else-if="tab === 'models'" :lang="lang" />
-    <section
-      v-else-if="tab === 'worlds'"
-      class="grid gap-5 lg:grid-cols-[300px_1fr]"
-    >
-      <aside class="panel">
-        <button
-          class="primary w-full"
-          :disabled="busy"
-          @click="importWorld(true)"
-        >
-          {{ t.import }}</button
-        ><button
-          class="secondary mt-3 w-full"
-          :disabled="busy"
-          @click="importWorld(true, 'bank-transfer')"
-        >
-          {{ t.bankImport }}
-        </button>
-        <ul class="my-5 space-y-2">
-          <li v-for="world in worlds" :key="world.id">
-            <button class="text-left text-blue-700" @click="selected = world">
-              {{ world.name }}
-            </button>
-          </li>
-        </ul>
-        <form class="grid gap-3" @submit.prevent="importWorld(false)">
-          <label
-            >{{ t.json
-            }}<textarea v-model="worldInput" rows="8" required /></label
-          ><button class="secondary" :disabled="busy">{{ t.upload }}</button>
-        </form>
-      </aside>
-      <article class="panel">
-        <template v-if="selected"
-          ><h2 class="font-semibold">{{ selected.name }}</h2>
-          <Graph :world="selected" />
-          <details>
-            <summary>{{ t.json }}</summary>
-            <pre class="max-h-72 overflow-auto text-xs">{{
-              JSON.stringify(selected, null, 2)
-            }}</pre>
-          </details></template
-        >
-        <p v-else>{{ t.empty }}</p>
-      </article>
-    </section>
+    <Worlds v-else-if="tab === 'worlds'" :lang="lang" />
     <section v-else class="grid gap-5 lg:grid-cols-2">
       <form class="panel grid gap-4" @submit.prevent="createScenario">
         <h2 class="text-xl font-semibold">{{ t.scenario }}</h2>
@@ -311,7 +336,7 @@ async function demo(domain: string) {
           >{{ t.world
           }}<select v-model="scenarioForm.worldId" required>
             <option v-for="world in worlds" :key="world.id" :value="world.id">
-              {{ world.name }}
+              {{ world.name }} · {{ world.id.slice(0, 8) }}
             </option>
           </select></label
         ><label
@@ -327,7 +352,7 @@ async function demo(domain: string) {
           >{{ t.agentsJson }}<textarea v-model="agentsJson" rows="5" /></label
         ><button class="primary" :disabled="busy">{{ t.create }}</button>
       </form>
-      <div class="space-y-4">
+      <div ref="scenarioList" class="space-y-4" tabindex="-1">
         <article v-for="scenario in scenarios" :key="scenario.id" class="panel">
           <h3 class="font-semibold">{{ scenario.name }}</h3>
           <button
@@ -337,11 +362,64 @@ async function demo(domain: string) {
           >
             {{ t.run }}
           </button>
+          <button
+            class="secondary mt-3 ml-2 text-red-700"
+            type="button"
+            :disabled="busy"
+            @click="openDeletion(scenario.id, $event)"
+          >
+            {{ t.delete }}
+          </button>
         </article>
+        <p v-if="scenarioMessage" role="status">{{ scenarioMessage }}</p>
         <p v-if="createdRun" role="status" class="break-all">
           {{ t.saved }}: {{ createdRun }}
         </p>
       </div>
     </section>
   </div>
+  <Teleport to="body">
+    <div
+      v-if="confirmingDeletion !== null"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-5"
+      @click.self="cancelDeletion"
+    >
+      <div
+        ref="deleteDialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="scenario-delete-title"
+        aria-describedby="scenario-delete-description"
+        class="panel w-full max-w-md"
+        @keydown="deletionKeydown"
+      >
+        <h2 id="scenario-delete-title" class="text-lg font-semibold">
+          {{ t.confirmDelete }}
+        </h2>
+        <p id="scenario-delete-description" class="mt-3 text-sm text-slate-600">
+          {{ t.deleteNotice }}
+        </p>
+        <p v-if="deletionError" role="alert">{{ deletionError }}</p>
+        <div class="mt-6 flex justify-end gap-3">
+          <button
+            class="secondary text-red-700"
+            type="button"
+            :disabled="busy"
+            @click="deleteScenario(confirmingDeletion)"
+          >
+            {{ t.confirmDelete }}
+          </button>
+          <button
+            ref="cancelDeletionButton"
+            class="secondary"
+            type="button"
+            :disabled="busy"
+            @click="cancelDeletion"
+          >
+            {{ t.cancel }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>

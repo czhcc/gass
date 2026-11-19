@@ -45,6 +45,18 @@ public class ApiConfiguration implements WebMvcConfigurer {
   /** Maps domain errors without leaking database/provider internals. @author agent */
   @RestControllerAdvice
   public static class Errors {
+    /** Reports safe run deletion conflicts. @author czhcc-trsdsj\codexsandboxoffline */
+    @ExceptionHandler(RunService.DeletionConflict.class)
+    public ResponseEntity<Map<String, String>> runDeletionConflict(RunService.DeletionConflict e) {
+      return ResponseEntity.status(409).body(Map.of("message", e.getMessage(), "code", e.code()));
+    }
+
+    /** Reports safe, actionable world maintenance conflicts. @author czhcc-trsdsj\codexsandboxoffline */
+    @ExceptionHandler(WorldService.Conflict.class)
+    public ResponseEntity<Map<String, String>> worldConflict(WorldService.Conflict e) {
+      return ResponseEntity.status(409).body(Map.of("message", e.getMessage(), "code", e.code()));
+    }
+
     /** Reports bad input. @author agent */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> invalid(IllegalArgumentException e) {

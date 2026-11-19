@@ -36,6 +36,11 @@ describe("model configuration", () => {
     );
     await fireEvent.update(screen.getByLabelText("Model name"), "qwen");
     await fireEvent.update(screen.getByLabelText("API Key"), "test-secret");
+    const tokens = screen.getByLabelText("Max output tokens") as HTMLInputElement;
+    await fireEvent.update(tokens, "8193");
+    expect(tokens.validity.rangeOverflow).toBe(true);
+    await fireEvent.update(tokens, "8192");
+    expect(tokens.checkValidity()).toBe(true);
     await fireEvent.click(screen.getByRole("button", { name: "Save model" }));
     await waitFor(() =>
       expect((screen.getByLabelText("API Key") as HTMLInputElement).value).toBe(
@@ -49,6 +54,7 @@ describe("model configuration", () => {
     expect(JSON.parse(fetcher.mock.calls[1][1].body).apiKey).toBe(
       "test-secret",
     );
+    expect(JSON.parse(fetcher.mock.calls[1][1].body).maxTokens).toBe(8192);
     expect(document.body.textContent).not.toContain("test-secret");
   });
 });
@@ -93,7 +99,7 @@ describe("saved models", () => {
     concurrency: 2,
   };
   it("shows saved models below mock controls and edits in place without exposing a secret", async () => {
-    const updated = { ...saved, name: "Renamed provider" };
+    const updated = { ...saved, name: "Renamed provider", maxTokens: 8192 };
     const fetcher = vi
       .fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [saved] })
@@ -119,11 +125,13 @@ describe("saved models", () => {
       "Leave API Key blank to retain the saved key. Enter an environment variable to switch credential sources.",
     );
     await fireEvent.update(screen.getByLabelText("Name"), updated.name);
+    await fireEvent.update(screen.getByLabelText("Max output tokens"), "8192");
     await fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     await screen.findByRole("article", { name: updated.name });
     expect(fetcher.mock.calls[1][0]).toBe("/api/models/existing");
     expect(fetcher.mock.calls[1][1].method).toBe("PUT");
     expect(JSON.parse(fetcher.mock.calls[1][1].body).apiKey).toBe("");
+    expect(JSON.parse(fetcher.mock.calls[1][1].body).maxTokens).toBe(8192);
     expect(screen.getAllByRole("article")).toHaveLength(1);
   });
   it("does not lose a newly saved model when the initial list request completes late", async () => {

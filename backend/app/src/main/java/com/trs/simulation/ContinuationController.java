@@ -36,10 +36,13 @@ public class ContinuationController {
     this.streams = streams;
   }
 
-  /** Creates a goal-driven simulated demo, not a precomputed timeline. @author agent */
+  /** Explicit existing world selection for a demo. @author czhcc-trsdsj\codexsandboxoffline */
+  public record DemoInput(String worldId) {}
+
+  /** Creates a simulated demo from the selected world. @author czhcc-trsdsj\codexsandboxoffline */
   @PostMapping("/examples/{domain}/demo")
-  public Run demo(@PathVariable String domain) {
-    return demos.create(domain);
+  public Run demo(@PathVariable String domain, @RequestBody DemoInput input) {
+    return demos.create(domain, input == null ? null : input.worldId());
   }
 
   /** Creates an explicitly simulated SDK model without credentials. @author agent */
@@ -51,7 +54,7 @@ public class ContinuationController {
   /** Imports financial example input, without performing any real transfer. @author agent */
   @PostMapping("/examples/bank-transfer")
   public World bank() {
-    return worlds.create(Examples.bankTransfer());
+    return worlds.example("bank");
   }
 
   /** Lists plugin parameter schemas. @author agent */

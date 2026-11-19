@@ -28,7 +28,10 @@ def main():
     request('/auth/login', 'POST', {'username': 'admin', 'password': os.environ.get('STUDIO_ADMIN_PASSWORD', '123456')})
     model = request('/models/mock', 'POST', {})
     assert model['baseUrl'] == 'mock://local'
-    leak = request('/examples/information/demo', 'POST', {})
+    leak_world = request('/examples/information-leak', 'POST', {})
+    world_count = len(request('/worlds'))
+    leak = request('/examples/information/demo', 'POST', {'worldId': leak_world['id']})
+    assert len(request('/worlds')) == world_count
     for n in range(5):
         request('/runs/' + leak['id'] + '/step', 'POST', {}, f'smoke-{n}')
     events = request('/runs/' + leak['id'] + '/events')
@@ -60,7 +63,10 @@ def main():
     diff = request('/runs/compare?left=' + leak['id'] + '&right=' + child['id'])
     assert diff['entityDifferences'] or diff['relationDifferences']
 
-    bank = request('/examples/bank/demo', 'POST', {})
+    bank_world = request('/examples/bank-transfer', 'POST', {})
+    world_count = len(request('/worlds'))
+    bank = request('/examples/bank/demo', 'POST', {'worldId': bank_world['id']})
+    assert len(request('/worlds')) == world_count
     request('/runs/' + bank['id'] + '/step', 'POST', {}, 'bank-one')
     metrics = request('/runs/' + bank['id'] + '/evaluation')
     assert metrics['balancesMinor'] == {'account_a': 500000000, 'account_b': 700000000}

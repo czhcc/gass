@@ -9,9 +9,24 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/** Transactional world template and bounded property-graph queries. @author agent */
+/** Transactional world maintenance and bounded property-graph queries. @author czhcc-trsdsj\codexsandboxoffline */
 @Service
 public class WorldService {
+  /** Safe world maintenance conflicts exposed as stable client codes. @author czhcc-trsdsj\codexsandboxoffline */
+  public static final class Conflict extends IllegalStateException {
+    private final String code;
+
+    /** Creates an explicitly safe world conflict. @author czhcc-trsdsj\codexsandboxoffline */
+    public Conflict(String code, String message) {
+      super(message);
+      this.code = code;
+    }
+
+    /** Returns the stable maintenance error code. @author czhcc-trsdsj\codexsandboxoffline */
+    public String code() {
+      return code;
+    }
+  }
   private final JdbcTemplate db;
   private final TransactionTemplate tx;
   private final Map<String, DomainEnvironment> domains = new HashMap<>();
@@ -43,11 +58,57 @@ public class WorldService {
   }
 
   /**
-   * Validates graph structure then atomically stores the template and graph index. @author agent
+   * Validates graph structure then atomically stores the template and graph index.
+   * @author czhcc-trsdsj\codexsandboxoffline
    */
   public synchronized World create(World input) {
+    return persist(input, UUID.randomUUID().toString(), 1, false);
+  }
+
+  /** Returns the single maintained initial world for a demo domain. @author czhcc-trsdsj\codexsandboxoffline */
+  public synchronized World example(String domain) {
+    var template = switch (domain) {
+      case "information" -> Examples.informationLeak();
+      case "bank" -> Examples.bankTransfer();
+      default -> throw new IllegalArgumentException("Unsupported demo domain");
+    };
+    String id = "demo-" + domain;
+    return list().stream().filter(w -> w.id().equals(id)).findFirst()
+        .orElseGet(() -> persist(template, id, 1, false));
+  }
+
+  /** Updates a versioned world and its graph indexes without changing existing runs. @author czhcc-trsdsj\codexsandboxoffline */
+  public synchronized World update(String id, World input) {
+    var previous = get(id);
+    require(input != null, "World required");
+    require(Objects.equals(previous.domainCode(), input.domainCode()), "World domain cannot be changed");
+    if (previous.version() != input.version()) throw new Conflict("WORLD_STALE", "World changed; reload before saving");
+    return persist(input, id, previous.version() + 1, true);
+  }
+
+  /** Copies a world as a separately maintained template. @author czhcc-trsdsj\codexsandboxoffline */
+  public synchronized World copy(String id, String name) {
+    var w = get(id);
+    return create(new World(null, name, w.domainCode(), w.entityTypes(), w.relationTypes(), w.entities(), w.relations(), 1));
+  }
+
+  /** Deletes an unreferenced custom world; initial demo worlds remain available. @author czhcc-trsdsj\codexsandboxoffline */
+  public synchronized void delete(String id) {
+    get(id);
+    if (Set.of("demo-information", "demo-bank").contains(id))
+      throw new Conflict("WORLD_INITIAL_PROTECTED", "Initial demo worlds cannot be deleted");
+    if (scenarios().stream().anyMatch(s -> s.worldId().equals(id)))
+      throw new Conflict("WORLD_IN_USE", "World is used by a scenario; delete or change that scenario first");
+    tx.executeWithoutResult(status -> {
+      db.update("DELETE FROM world_relation WHERE world_id=?", id);
+      db.update("DELETE FROM world_entity WHERE world_id=?", id);
+      db.update("DELETE FROM world_definition WHERE id=?", id);
+    });
+  }
+
+  private World persist(World input, String id, int version, boolean updating) {
     require(
-        input != null && input.name() != null && !input.name().isBlank(), "World name required");
+        input != null && input.name() != null && !input.name().isBlank() && input.name().length() <= 200, "World name required (maximum 200 characters)");
     require(
         input.entities() != null
             && input.entities().size() <= 200
@@ -61,10 +122,10 @@ public class WorldService {
     var edges = new HashSet<String>();
     for (var e : input.entities()) {
       require(
-          e.id() != null && e.id().matches("[A-Za-z0-9_-]{1,100}") && ids.add(e.id()),
+          e != null && e.id() != null && e.id().matches("[A-Za-z0-9_-]{1,100}") && ids.add(e.id()),
           "Invalid or duplicate entity id");
       require(
-          input.entityTypes().contains(e.type())
+          e.type() != null && input.entityTypes().contains(e.type())
               && e.properties() != null
               && e.name() != null
               && e.name().length() <= 200,
@@ -72,31 +133,46 @@ public class WorldService {
     }
     for (var e : input.relations()) {
       require(
-          e.id() != null
+          e != null && e.id() != null
+              && e.id().matches("[A-Za-z0-9_-]{1,100}")
               && edges.add(e.id())
               && ids.contains(e.sourceId())
               && ids.contains(e.targetId()),
           "Invalid edge endpoints or duplicate id");
       require(
-          input.relationTypes().contains(e.relationType())
+          e.relationType() != null && input.relationTypes().contains(e.relationType())
+              && e.properties() != null && e.evidence() != null
               && List.of("FACT", "INFERRED", "HYPOTHESIS", "SIMULATED").contains(e.evidence()),
           "Invalid edge type or evidence");
     }
     domains.get(input.domainCode()).validate(input);
+    if (updating) {
+      for (var scenario : scenarios()) {
+        if (scenario.worldId().equals(id) && scenario.agents().stream()
+            .anyMatch(agent -> !ids.containsAll(agent.visibleEntityIds())))
+          throw new IllegalArgumentException("World update removes entities visible to an existing scenario");
+      }
+    }
     var w =
         new World(
-            UUID.randomUUID().toString(),
+            id,
             input.name(),
             input.domainCode(),
             input.entityTypes(),
             input.relationTypes(),
             input.entities(),
             input.relations(),
-            1);
+            version);
     require(Json.write(w).length() < 1_000_000, "World too large");
     tx.executeWithoutResult(
         status -> {
-          db.update("INSERT INTO world_definition VALUES (?,?)", w.id(), Json.write(w));
+          if (updating) {
+            db.update("DELETE FROM world_relation WHERE world_id=?", id);
+            db.update("DELETE FROM world_entity WHERE world_id=?", id);
+            db.update("UPDATE world_definition SET definition_json=? WHERE id=?", Json.write(w), id);
+          } else {
+            db.update("INSERT INTO world_definition VALUES (?,?)", w.id(), Json.write(w));
+          }
           for (var e : w.entities())
             db.update(
                 "INSERT INTO world_entity VALUES (?,?,?,?)",
@@ -174,6 +250,16 @@ public class WorldService {
         .stream()
         .findFirst()
         .orElseThrow(() -> new NoSuchElementException("Scenario not found"));
+  }
+
+  /**
+   * Deletes an editable scenario; existing runs keep their frozen configuration and history.
+   * @author czhcc-trsdsj\codexsandboxoffline
+   */
+  public synchronized void deleteScenario(String id) {
+    if (db.update("DELETE FROM scenario WHERE id=?", id) == 0) {
+      throw new NoSuchElementException("Scenario not found");
+    }
   }
 
   /** Validates scenario budgets, visibility and registered action permissions. @author agent */

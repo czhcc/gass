@@ -121,13 +121,13 @@ public class HistoryService {
                     snapshot.entities(),
                     snapshot.relations());
             db.update(
-                "INSERT INTO simulation_run (id,scenario_json,status,step,state_json,created_at)"
-                    + " VALUES (?,?,'PAUSED',?,?,?)",
+                "INSERT INTO simulation_run (id,scenario_json,status,step,state_json,created_at,world_json)"
+                    + " VALUES (?,?,'PAUSED',?,?,?,(SELECT world_json FROM simulation_run WHERE id=?))",
                 child,
                 Json.write(scenario),
                 snapshot.simulationTime(),
                 Json.write(state),
-                System.currentTimeMillis());
+                System.currentTimeMillis(), parent);
             db.update(
                 "UPDATE simulation_run SET base_time=?,step=0 WHERE id=?",
                 snapshot.simulationTime(),

@@ -361,7 +361,7 @@ async function useMock() {
                 v-model.number="form.maxTokens"
                 type="number"
                 min="64"
-                max="1024" /></label
+                max="8192" /></label
             ><label
               >{{ t.timeout
               }}<input

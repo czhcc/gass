@@ -71,12 +71,12 @@ public class RunService {
     tx.executeWithoutResult(
         t -> {
           db.update(
-              "INSERT INTO simulation_run (id,scenario_json,status,step,state_json,created_at)"
-                  + " VALUES (?,?, 'PAUSED',0,?,?)",
+              "INSERT INTO simulation_run (id,scenario_json,status,step,state_json,created_at,world_json)"
+                  + " VALUES (?,?, 'PAUSED',0,?,?,?)",
               id,
               Json.write(scenario),
               Json.write(state),
-              System.currentTimeMillis());
+              System.currentTimeMillis(), Json.write(world));
           db.update("INSERT INTO simulation_snapshot VALUES (?,?,?)", id, 0, Json.write(state));
           append(id, "RUN_STARTED", 0, null, Map.of("mode", "EVENT_DRIVEN", "status", "PAUSED"));
         });
@@ -100,9 +100,46 @@ public class RunService {
                 r.getLong("version")));
   }
 
+  /** Safe deletion conflict with a stable client code. @author czhcc-trsdsj\codexsandboxoffline */
+  public static final class DeletionConflict extends IllegalStateException {
+    private final String code;
+
+    /** Creates a safe lifecycle conflict. @author czhcc-trsdsj\codexsandboxoffline */
+    public DeletionConflict(String code, String message) {
+      super(message);
+      this.code = code;
+    }
+
+    /** Returns the client error code. @author czhcc-trsdsj\codexsandboxoffline */
+    public String code() { return code; }
+  }
+
+  /**
+   * Deletes an inactive leaf run and its owned history atomically, preserving templates and siblings.
+   * Shares the runtime lock with stepping and forking to prevent writes during deletion.
+   * @author czhcc-trsdsj\codexsandboxoffline
+   */
+  public synchronized void delete(String id) {
+    var run = get(id);
+    if (run.status().equals("RUNNING"))
+      throw new DeletionConflict("RUN_ACTIVE", "Pause or stop this run before deleting it.");
+    tx.executeWithoutResult(t -> {
+      if (db.queryForObject("SELECT COUNT(*) FROM simulation_branch WHERE parent_run_id=?",
+          Integer.class, id) > 0)
+        throw new DeletionConflict("RUN_HAS_BRANCHES", "Delete child branches first.");
+      db.update("DELETE FROM simulation_branch WHERE run_id=?", id);
+      db.update("DELETE FROM simulation_scheduled_event WHERE run_id=?", id);
+      db.update("DELETE FROM simulation_command WHERE run_id=?", id);
+      db.update("DELETE FROM simulation_snapshot WHERE run_id=?", id);
+      db.update("DELETE FROM simulation_event WHERE run_id=?", id);
+      db.update("DELETE FROM simulation_run WHERE id=?", id);
+    });
+    active.remove(id);
+  }
+
   /** Evaluates current domain metrics through its plugin. @author agent */
   public Map<String, Object> evaluate(String id) {
-    var domain = worlds.get(scenario(id).worldId()).domainCode();
+    var domain = frozenWorld(id).domainCode();
     return domains.get(domain).evaluate(state(id));
   }
 
@@ -278,7 +315,7 @@ public class RunService {
                 event.get("event_id"));
           }
         });
-    var world = worlds.get(scenario.worldId());
+    var world = frozenWorld(id);
     var plugin = domains.get(world.domainCode());
     if (plugin == null) throw new IllegalStateException("Domain plugin unavailable");
     for (var agent : scenario.agents()) {
@@ -417,7 +454,7 @@ public class RunService {
             .filter(a -> a.id().equals(agentId))
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Agent not found"));
-    var plugin = domains.get(worlds.get(scenario.worldId()).domainCode());
+    var plugin = domains.get(frozenWorld(id).domainCode());
     var outcome = plugin.execute(agent, decision, current);
     tx.executeWithoutResult(
         t -> {
@@ -502,6 +539,7 @@ public class RunService {
             try {
               while (true) {
                 synchronized (RunService.this) {
+                  if (!workerToken.equals(active.get(id))) break;
                   if (!get(id).status().equals("RUNNING")) {
                     active.remove(id, workerToken);
                     break;
@@ -567,6 +605,10 @@ public class RunService {
   private int eventCount(String id) {
     return db.queryForObject(
         "SELECT COUNT(*) FROM simulation_event WHERE run_id=?", Integer.class, id);
+  }
+
+  private World frozenWorld(String id) {
+    return Json.read(one("SELECT world_json FROM simulation_run WHERE id=?", id), World.class);
   }
 
   private Scenario scenario(String id) {

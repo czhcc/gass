@@ -5,15 +5,22 @@
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | GET / POST | /api/worlds | 列表 / 创建动态世界（结构参见示例响应） |
-| POST | /api/examples/information-leak | 导入泄密示例事实图 |
+| PUT | /api/worlds/{id} | 更新名称、对象及关系，必须提交当前 version；成功后版本加一，已有运行保持初始副本 |
+| DELETE | /api/worlds/{id} | 删除未被场景引用的自定义世界，返回 204；两份初始世界禁止删除，已有运行历史保留 |
+| POST | /api/worlds/{id}/copy | 请求体 `{"name":"副本名称"}`，创建独立世界 |
+| GET | /api/worlds/{id}/export | 下载可重新导入的完整世界 JSON |
+| POST | /api/examples/information-leak | 返回固定的泄密初始世界，重复调用不新增世界、不覆盖维护结果 |
+| POST | /api/examples/bank-transfer | 返回固定的银行初始世界，重复调用不新增世界、不覆盖维护结果 |
 | GET | /api/worlds/{id} 或 /graph | 世界完整实体和有向关系 |
 | GET | /api/worlds/{id}/expand?entityId=document_f&depth=3 | 递归多跳；可选 relationType |
 | GET | /api/worlds/{id}/path?from=document_f&to=system_t | 启用边最短路径 |
 | GET | /api/worlds/{id}/centrality | 介数中心性 |
 | GET / POST | /api/scenarios | 列表 / 保存场景 |
 | GET / PUT | /api/scenarios/{id} | 读取 / 修改场景，已创建运行仍使用原配置 |
+| DELETE | /api/scenarios/{id} | 删除场景，返回 204；已有运行、事件和回放快照保留，场景不存在返回 404 |
 | POST | /api/scenarios/{id}/runs | 创建独立 PAUSED 运行 |
 | GET | /api/runs 或 /api/runs/{id} | 列表 / 元数据 |
+| DELETE | /api/runs/{id} | 删除非 RUNNING 且无子分支的运行及其事件、快照、命令、待执行事件和分支关联，返回 204；不删除场景或世界；不存在返回 404 |
 | POST | /api/runs/{id}/step | 单步；必须提供 Idempotency-Key（最长100字符），重复键不重复执行 |
 | POST | /api/runs/{id}/pause、/resume、/stop | 生命周期控制 |
 | GET | /api/runs/{id}/events?after=0 | 递增 sequence 的持久化事件，最多2000条 |
@@ -51,8 +58,14 @@ SSE、Fork、Compare 与银行领域已开放，参见下节。POST 创建资源
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | POST | /api/models/mock | 创建/复用无需密钥的 mock://local 模型 |
-| POST | /api/examples/information/demo | 创建泄密世界、模拟模型、四角色场景和暂停运行，注入初始事件 |
-| POST | /api/examples/bank/demo | 创建银行世界、银行/风险 Agent、暂停运行和500万元初始请求 |
+| POST | /api/examples/information/demo | 请求体 `{"worldId":"已有泄密世界ID"}`；复用所选世界，创建模拟模型、四角色场景和暂停运行，注入初始事件，不新增世界 |
+| POST | /api/examples/bank/demo | 请求体 `{"worldId":"已有银行世界ID"}`；复用所选世界，创建银行/风险 Agent 和暂停运行，注入不超过源账户余额及500万元的初始请求，不新增世界 |
+
+世界目录启动时补齐 `demo-information` 与 `demo-bank` 两份初始世界。新建、复制和导入的世界仅支持 `information`、`bank` 两类。导入复用 `POST /api/worlds`，由服务端校验完整图结构；编辑不得更换世界类型或移除仍被场景 Agent 引用的对象。
+
+世界维护的 409 响应额外返回稳定 `code`：`WORLD_STALE`（版本过期）、`WORLD_IN_USE`（被场景引用）、`WORLD_INITIAL_PROTECTED`（初始世界禁止删除）。客户端按此提供中英文提示。
+
+V6 是已授权的一次性历史数据重置：清除旧世界、场景、运行、事件、快照、命令与分支，保留账号及模型配置。应用重启不会重复清理，也不会覆盖之后维护的世界。运行和分支保存独立的 `world_json`，后续删除世界不影响历史回放、评估和推演。
 | POST | /api/examples/bank-transfer | 仅导入银行模板 |
 | GET | /api/runs/{id}/agents | 冻结 Agent 配置，供活动/干预面板使用 |
 | GET | /api/runs/{id}/stream | SSE；事件名 simulation，id 为 sequence；支持 Last-Event-ID 与 after |
@@ -65,6 +78,8 @@ SSE、Fork、Compare 与银行领域已开放，参见下节。POST 创建资源
 | GET | /api/domains/bank/actions | 银行 Action 参数 Schema |
 
 Fork 请求：`{"sequence":12,"label":"限制传播方案"}`。子分支拥有独立快照、队列、时钟和事件序号，不修改父运行。重复相同命令键返回同一子运行。
+
+运行删除冲突返回 409 和稳定错误码：`RUN_ACTIVE` 表示需先暂停或停止，`RUN_HAS_BRANCHES` 表示需先删除子分支。删除与单步、干预及分支创建使用同一运行锁；所有历史清理在同一事务中完成。
 
 干预请求：`{"agentId":"response","expectedVersion":0,"decision":{"actionType":"DISABLE_SYNC","targetId":"sync_st","parameters":{},"reason":"用户模拟干预"}}`。记录为 USER_INTERVENTION，而不是模型决策。带唯一 Idempotency-Key；过期版本返回409。
 
