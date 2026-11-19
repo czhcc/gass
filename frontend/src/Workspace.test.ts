@@ -6,6 +6,7 @@ import Workspace from "./components/Workspace.vue";
 import type { World } from "./types";
 
 vi.mock("./components/RunStudio.vue", () => ({
+  __esModule: true,
   default: { template: "<div>Run viewer</div>" },
 }));
 
@@ -48,6 +49,8 @@ describe("demos use existing worlds", () => {
 
   it("requires a world and sends its ID without importing another world", async () => {
     const { fetcher, router } = await setup("en", undefined, worlds);
+    await fireEvent.click(screen.getByRole('link', { name: 'Demo world' }));
+    await screen.findByLabelText('Demo world');
     const leak = screen.getByRole("button", { name: "Create leak demo" }) as HTMLButtonElement;
     const bank = screen.getByRole("button", { name: "Create bank demo" }) as HTMLButtonElement;
     expect(leak.disabled).toBe(true);
@@ -65,6 +68,8 @@ describe("demos use existing worlds", () => {
 
   it("enables only the matching bank demo for a bank world", async () => {
     const { fetcher } = await setup("en", undefined, worlds);
+    await fireEvent.click(screen.getByRole('link', { name: 'Demo world' }));
+    await screen.findByLabelText('Demo world');
     await fireEvent.update(screen.getByLabelText("Demo world"), "bank-selected");
     expect((screen.getByRole("button", { name: "Create leak demo" }) as HTMLButtonElement).disabled).toBe(true);
     await fireEvent.click(screen.getByRole("button", { name: "Create bank demo" }));
@@ -75,9 +80,27 @@ describe("demos use existing worlds", () => {
 
   it("explains where to create a world when none exist", async () => {
     await setup("zh");
+    await fireEvent.click(screen.getByRole('link', { name: '演示世界' }));
+    await screen.findByLabelText('演示世界');
     expect(screen.getByText("请先在“世界与图谱”中导入或创建世界，再选择世界创建演示。")).toBeTruthy();
     expect((screen.getByRole("button", { name: "创建泄密演示" }) as HTMLButtonElement).disabled).toBe(true);
   });
+});
+
+it('keeps five sidebar destinations and limits demo operations to their own page', async () => {
+  const { router } = await setup();
+  const navigation = screen.getByRole('navigation', { name: 'Workspace navigation' });
+  expect(within(navigation).getAllByRole('link')).toHaveLength(5);
+  expect(within(navigation).getByRole('link', { name: 'Scenarios' }).getAttribute('aria-current')).toBe('page');
+  expect(screen.queryByLabelText('Demo world')).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Create leak demo' })).toBeNull();
+  await fireEvent.click(within(navigation).getByRole('link', { name: 'Demo world' }));
+  await screen.findByLabelText('Demo world');
+  expect(router.currentRoute.value.path).toBe('/demos');
+  expect(screen.queryByRole('button', { name: 'Create two-agent scenario' })).toBeNull();
+  await fireEvent.click(within(navigation).getByRole('link', { name: 'Simulation & replay' }));
+  await screen.findByText('Run viewer');
+  expect(screen.queryByLabelText('Demo world')).toBeNull();
 });
 
 describe("scenario deletion", () => {

@@ -3,7 +3,7 @@ export const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     {
-      path: "/:tab(worlds|models|scenarios|studio)?",
+      path: "/:tab(worlds|models|scenarios|studio|demos)?",
       component: { render: () => null },
     },
   ],
