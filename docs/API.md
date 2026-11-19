@@ -20,6 +20,8 @@
 | DELETE | /api/scenarios/{id} | 删除场景，返回 204；已有运行、事件和回放快照保留，场景不存在返回 404 |
 | POST | /api/scenarios/{id}/runs | 创建独立 PAUSED 运行 |
 | GET | /api/runs 或 /api/runs/{id} | 列表 / 元数据 |
+| GET | /api/domains/information/ontology | 泄密领域对象类型及所属 Action 契约（版本二，不含关系 Action） |
+| GET | /api/runs/{id}/action-capabilities | 当前状态版本和各 Agent 可见的对象行动、可用状态及前置条件失败原因 |
 | DELETE | /api/runs/{id} | 删除非 RUNNING 且无子分支的运行及其事件、快照、命令、待执行事件和分支关联，返回 204；不删除场景或世界；不存在返回 404 |
 | POST | /api/runs/{id}/step | 单步；必须提供 Idempotency-Key（最长100字符），重复键不重复执行 |
 | POST | /api/runs/{id}/pause、/resume、/stop | 生命周期控制 |
@@ -51,7 +53,7 @@ SSE、Fork、Compare 与银行领域已开放，参见下节。POST 创建资源
 - `GET /api/runs/{id}/evaluation`：区分已确认接触、潜在可达、模拟暴露与模拟干预的指标。
 - `POST /api/runs/{id}/inject`：带 `Idempotency-Key` 注入 `{"eventType":"POTENTIAL_LEAK","targetId":"document_f","simulationTime":0,"parameters":{"confidence":0.8}}`，或 USER_NOTE / BANK_TRANSFER。事件不直接改变实体，必须由 Agent 提案经过 World Engine 才能变更状态。
 
-`SIMULATE_PROPAGATION` 参数为 `{"sourceId":"document_f"}`，targetId 指向目标对象。其他 Action 参数必须为空对象。传播必须有启用的直接关系，并在结果中标记为 SIMULATED。
+`SIMULATE_PROPAGATION` 参数为 `{"sourceId":"document_f"}`，targetId 指向接收对象。`REVOKE_SHARING` 的 targetId 为共享来源人员，参数为 `{"recipientId":"接收对象ID"}`；`DISABLE_SYNC` 的 targetId 为同步来源系统，参数为 `{"destinationId":"同步目标对象ID"}`。`MARK_REVIEWED`、`ANALYZE_RELATIONS` 参数必须为 `{}`。相关对象必须来自能力列表的 `parameterOptions`；传播必须有启用的直接关系，并在结果中标记为 SIMULATED。
 
 ## 模拟模型、实时、分支与银行
 
@@ -81,7 +83,9 @@ Fork 请求：`{"sequence":12,"label":"限制传播方案"}`。子分支拥有�
 
 运行删除冲突返回 409 和稳定错误码：`RUN_ACTIVE` 表示需先暂停或停止，`RUN_HAS_BRANCHES` 表示需先删除子分支。删除与单步、干预及分支创建使用同一运行锁；所有历史清理在同一事务中完成。
 
-干预请求：`{"agentId":"response","expectedVersion":0,"decision":{"actionType":"DISABLE_SYNC","targetId":"sync_st","parameters":{},"reason":"用户模拟干预"}}`。记录为 USER_INTERVENTION，而不是模型决策。带唯一 Idempotency-Key；过期版本返回409。
+泄密对象 Action 的类型绑定、参数规范、执行规则和兼容策略见 [INFORMATION_ACTIONS.md](INFORMATION_ACTIONS.md)。泄密业务决策的 `targetKind` 只能为 ENTITY，END 使用 AGENT；关系由引擎根据对象参数维护。世界 JSON 包含随运行冻结的 `ontology`；Agent 观察的 `availableActions` 提供 `parameterOptions`；接受/拒绝事件包含 `affectedRelationIds`，记录本次实际修改的关系。
+
+干预请求：`{"agentId":"response","expectedVersion":0,"decision":{"actionType":"DISABLE_SYNC","targetKind":"ENTITY","targetId":"system_s","parameters":{"destinationId":"system_t"},"reason":"用户模拟干预"}}`。记录为 USER_INTERVENTION，而不是模型决策。带唯一 Idempotency-Key；过期版本返回409。
 
 银行 TRANSFER 参数：`{"sourceId":"account_a","amount":"5000000.00","currency":"CNY"}`，targetId 为 account_b。初始账户 A=1000000000分、B=200000000分；成功后 A=500000000分、B=700000000分，合计不变。非正数、三位小数、越权或不足余额均拒绝。
 

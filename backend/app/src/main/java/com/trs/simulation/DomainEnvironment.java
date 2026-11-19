@@ -21,6 +21,19 @@ public interface DomainEnvironment {
   /** Computes an outcome from a proposal without mutating the supplied state. @author agent */
   Outcome execute(AgentDefinition agent, Decision proposal, State state);
 
+  /** Normalizes a legacy decision before execution and audit. @author czhcc-trsdsj\codexsandboxoffline */
+  default Decision normalizeDecision(Decision decision, State state) { return decision; }
+
+  /** Executes a decision using frozen world contracts where supported. @author czhcc-trsdsj\codexsandboxoffline */
+  default Outcome execute(World world, AgentDefinition agent, Decision proposal, State state) {
+    return execute(agent, proposal, state);
+  }
+
+  /** Returns visible object capabilities; legacy domains retain their original protocol. @author czhcc-trsdsj\codexsandboxoffline */
+  default java.util.List<ActionCapability> capabilities(World world, AgentDefinition agent, State state) {
+    return java.util.List.of();
+  }
+
   /**
    * Lists registered action schemas; domains never provide executable user scripts. @author agent
    */

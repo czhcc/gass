@@ -9,8 +9,11 @@ import {
 } from "vue";
 import { api, ApiError } from "../api";
 import { mergeEvents } from "../playback";
+import ObjectActions from "./ObjectActions.vue";
 import type {
   Agent,
+  ActionCatalog,
+  ObjectActionInput,
   CompareResult,
   Entity,
   Lang,
@@ -21,6 +24,7 @@ import type {
 const Graph = defineAsyncComponent(() => import("./Graph.vue"));
 const Comparison = defineAsyncComponent(() => import("./Comparison.vue"));
 const props = defineProps<{ lang: Lang; initialId?: string }>();
+const actionCatalog = ref<ActionCatalog>();
 const runs = ref<Run[]>([]),
   selected = ref(props.initialId ?? ""),
   info = ref<Run>(),
@@ -216,6 +220,7 @@ async function loadRun() {
   error.value = "";
   selectedEntity.value = undefined;
   if (!selected.value) {
+    actionCatalog.value = undefined;
     info.value = undefined;
     state.value = undefined;
     agents.value = [];
@@ -226,15 +231,17 @@ async function loadRun() {
     return;
   }
   try {
-    const [r, a, e, s, baseline] = await Promise.all([
+    const [r, a, e, s, baseline, catalog] = await Promise.all([
       api<Run>("/runs/" + selected.value),
       api<Agent[]>("/runs/" + selected.value + "/agents"),
       api<RunEvent[]>("/runs/" + selected.value + "/events"),
       api<RunState>("/runs/" + selected.value + "/state"),
       api<RunState>("/runs/" + selected.value + "/replay?sequence=0"),
+      api<ActionCatalog>("/runs/" + selected.value + "/action-capabilities"),
     ]);
     if (generation !== revision || disposed) return;
     info.value = r;
+    actionCatalog.value = catalog;
     agents.value = a;
     events.value = e;
     state.value = s;
@@ -265,6 +272,12 @@ async function loadRun() {
           if (event.eventType === "WORLD_STATE_CHANGED")
             state.value = event.payload.after as RunState;
         }
+        if (event.eventType === "WORLD_STATE_CHANGED" || event.eventType === "ACTION_ACCEPTED")
+          void api<ActionCatalog>("/runs/" + selected.value + "/action-capabilities")
+            .then(catalog => {
+              if (generation === revision && catalog?.version >= (state.value?.version ?? 0)) actionCatalog.value = catalog;
+            })
+            .catch(() => {});
         if (event.eventType.startsWith("RUN_"))
           void api<Run>("/runs/" + selected.value)
             .then((r) => {
@@ -399,6 +412,17 @@ async function intervene() {
   } finally {
     busy.value = false;
   }
+}
+async function executeObjectAction(input: ObjectActionInput) {
+  if (busy.value) return;
+  busy.value = true;
+  error.value = "";
+  try {
+    await api("/runs/" + selected.value + "/actions", "POST", input, { "Idempotency-Key": crypto.randomUUID() });
+    await loadRun();
+    await listRuns();
+  } catch (e) { error.value = String(e); }
+  finally { busy.value = false; }
 }
 function selectEntity(id: string) {
   selectedEntity.value = state.value?.entities.find((e) => e.id === id);
@@ -696,8 +720,10 @@ onBeforeUnmount(() => {
           </button>
         </form>
       </div>
+      <ObjectActions v-if="info.status === 'PAUSED' && live && actionCatalog?.domainCode === 'information'"
+        :catalog="actionCatalog" :agents="agents" :lang="lang" :busy="busy" :target-id="selectedEntity?.id" @submit="executeObjectAction" />
       <form
-        v-if="info.status === 'PAUSED' && live"
+        v-if="info.status === 'PAUSED' && live && actionCatalog?.domainCode !== 'information'"
         class="panel grid gap-4"
         @submit.prevent="intervene"
       >

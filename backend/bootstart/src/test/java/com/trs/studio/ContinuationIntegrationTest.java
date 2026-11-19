@@ -62,12 +62,25 @@ class ContinuationIntegrationTest {
     assertEquals(10, events.stream().filter(e -> e.eventType().equals("AGENT_DECISION")).count());
     assertTrue(
         events.stream().filter(e -> e.eventType().equals("WORLD_STATE_CHANGED")).count() >= 3);
-    assertTrue(events.stream().anyMatch(e -> e.eventType().equals("ACTION_REJECTED")));
+    assertFalse(events.stream().anyMatch(e -> e.eventType().equals("ACTION_REJECTED")));
     assertTrue(events.stream().anyMatch(e -> e.eventType().equals("AGENT_TOOL_CALL")));
     assertTrue(
         events.stream()
             .filter(e -> e.eventType().equals("AGENT_STARTED"))
             .allMatch(e -> "MOCK".equals(e.payload().get("modelMode"))));
+  }
+
+  @Test
+  void simulatedAgentEndsWhenItsWorldDefinesNoObjectActions() {
+    var template = Examples.informationLeak();
+    var world = worlds.create(new World(null, "No actions", "information", template.entityTypes(),
+        template.relationTypes(), template.entities(), template.relations(), 1, new Ontology(2, List.of())));
+    var agent = new AgentDefinition("a", "A", "Analyze", models.mock().id(), List.of("ANALYZE_RELATIONS", "END"), List.of("document_f"), 10);
+    var run = runs.create(worlds.scenario(new Scenario(null, "No actions", world.id(), List.of(agent), 5, 200)).id());
+    runs.step(run.id(), "one");
+    assertTrue(runs.events(run.id(), 0).stream().anyMatch(e -> e.eventType().equals("ACTION_ACCEPTED")
+        && e.payload().get("actionType").equals("END")));
+    assertFalse(runs.events(run.id(), 0).stream().anyMatch(e -> e.eventType().equals("ACTION_REJECTED")));
   }
 
   @Test
