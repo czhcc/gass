@@ -281,8 +281,10 @@ class ContinuationIntegrationTest {
     runs.resume(run.id());
     runs.pause(run.id());
     int paused = runs.get(run.id()).step();
+    long pausedRuntime = runs.get(run.id()).activeRuntimeMs();
     Thread.sleep(150);
     assertEquals(paused, runs.get(run.id()).step());
+    assertEquals(pausedRuntime, runs.get(run.id()).activeRuntimeMs());
     runs.resume(run.id());
     assertTimeoutPreemptively(
         java.time.Duration.ofSeconds(5),

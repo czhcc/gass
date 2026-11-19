@@ -81,7 +81,7 @@ class SimulationIntegrationTest {
                         List.of("document_f", "system_s", "system_t"),
                         10)),
                 5,
-                30));
+                100));
     when(decisions.decide(any(), any()))
         .thenAnswer(
             inv -> {
@@ -227,7 +227,8 @@ class SimulationIntegrationTest {
       runs.step(first.id(), "step-" + n);
       runs.step(second.id(), "step-" + n);
     }
-    assertEquals("COMPLETED", runs.get(first.id()).status());
+    assertEquals("BUDGET_EXHAUSTED", runs.get(first.id()).status());
+    assertEquals("MAX_STEPS", runs.get(first.id()).terminationReason());
     assertTrue(runs.state(first.id()).version() >= 3);
     assertEquals(
         10,

@@ -143,7 +143,13 @@ public final class SimulationTypes {
 
   /** Persisted lifecycle metadata. @author agent */
   public record Run(
-      String id, String scenarioId, String status, int step, int maxSteps, long version) {}
+      String id, String scenarioId, String status, int step, int maxSteps, long version,
+      long activeRuntimeMs, String terminationReason) {
+    /** Accepts metadata created before active timing and explicit termination. @author czhcc-trsdsj\czhcc */
+    public Run(String id, String scenarioId, String status, int step, int maxSteps, long version) {
+      this(id, scenarioId, status, step, maxSteps, version, 0, null);
+    }
+  }
 
   /** Append-only event with a per-run sequence number. @author agent */
   public record Event(

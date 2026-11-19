@@ -193,8 +193,35 @@ const graphWorld = computed(() =>
 const terminal = computed(
   () =>
     info.value &&
-    ["COMPLETED", "STOPPED", "FAILED"].includes(info.value.status),
+    ["COMPLETED", "BUDGET_EXHAUSTED", "STOPPED", "FAILED"].includes(info.value.status),
 );
+const terminationMessages: Record<string, [string, string]> = {
+  ALL_AGENTS_ENDED: ['所有 Agent 均已成功结束任务', 'All agents submitted accepted END decisions'],
+  MAX_STEPS: ['推演轮数达到上限', 'Simulation round limit reached'],
+  MAX_EVENTS: ['事件数量达到预算限制（预留 10 条审计事件）', 'Event limit reached (10 audit events reserved)'],
+  MAX_RUNTIME: ['实际推演耗时达到上限', 'Active computation time limit reached'],
+  MAX_AGENT_DECISIONS: ['尚未结束的 Agent 均已耗尽各自的决策次数', 'All remaining agents exhausted their decision limits'],
+  MAX_DECISIONS: ['运行总决策次数达到上限', 'Global decision limit reached'],
+  MODEL_REQUEST_BUDGET: ['模型请求预算不足以预留下一次决策（按预估请求数计算）', 'Insufficient request budget for the next decision (reserved estimate)'],
+  TOKEN_BUDGET: ['输出 Token 预算不足以预留下一次决策（按预估用量计算）', 'Insufficient token budget for the next decision (reserved estimate)'],
+  MAX_STATE_CHANGES: ['状态变更次数达到上限', 'State change limit reached'],
+  USER_STOPPED: ['用户手动停止运行', 'Stopped by user'],
+  MODEL_DECISION_FAILED: ['模型决策失败或超时，请检查模型配置', 'Model decision failed or timed out; verify model configuration'],
+};
+function runStatus(run: Run) {
+  if (run.status === 'COMPLETED') return run.terminationReason === 'ALL_AGENTS_ENDED'
+    ? (props.lang === 'zh' ? '任务完成' : 'Task completed') : (props.lang === 'zh' ? '历史已结束' : 'Ended (legacy)');
+  if (run.status === 'BUDGET_EXHAUSTED') return props.lang === 'zh' ? '预算耗尽' : 'Budget exhausted';
+  return run.status;
+}
+const terminationSummary = computed(() => {
+  if (!info.value || !terminal.value) return '';
+  const code = info.value.terminationReason;
+  return code ? terminationMessages[code]?.[props.lang === 'zh' ? 0 : 1] ?? code
+    : props.lang === 'zh' ? '旧记录未区分任务完成与预算耗尽，无法确定具体结束原因' : 'This legacy record did not distinguish completion from budget exhaustion; the exact reason is unknown.';
+});
+const terminationEvent = computed(() => [...events.value].reverse().find(e =>
+  ['RUN_COMPLETED', 'RUN_BUDGET_EXHAUSTED', 'RUN_FAILED', 'RUN_STOPPED'].includes(e.eventType)));
 const allowed = computed(
   () =>
     agents.value.find((a) => a.id === intervention.value.agentId)
@@ -282,7 +309,10 @@ async function loadRun() {
         if (event.eventType.startsWith("RUN_"))
           void api<Run>("/runs/" + selected.value)
             .then((r) => {
-              if (generation === revision) info.value = r;
+              if (generation === revision) {
+                info.value = r;
+                runs.value = runs.value.map(run => run.id === r.id ? r : run);
+              }
             })
             .catch(() => {});
       });
@@ -514,7 +544,7 @@ onBeforeUnmount(() => {
           }}<select ref="runSelect" :disabled="busy" :aria-label="t.run" v-model="selected" @change="loadRun">
             <option v-for="run in runs" :key="run.id" :value="run.id">
               {{ branchLabels[run.id] ?? run.id.slice(0, 8) }} ·
-              {{ run.status }}
+              {{ runStatus(run) }}
             </option>
           </select></label
         ><button class="secondary" :disabled="busy" @click="loadRun">
@@ -526,8 +556,8 @@ onBeforeUnmount(() => {
       <p v-if="error" role="alert">{{ error }}</p>
       <p v-if="!selected" class="mt-5">{{ t.none }}</p>
       <div v-if="info" class="mt-5 flex flex-wrap items-center gap-3">
-        <span class="rounded-md bg-slate-100 px-3 py-2 text-sm">{{
-          info.status
+        <span data-testid="run-status" class="rounded-md bg-slate-100 px-3 py-2 text-sm">{{
+          runStatus(info)
         }}</span
         ><button
           class="primary"
@@ -556,6 +586,16 @@ onBeforeUnmount(() => {
         ><span class="ml-auto text-xs text-slate-500" role="status">{{
           connection
         }}</span>
+      </div>
+      <p v-if="info?.activeRuntimeMs !== undefined" data-testid="active-runtime" class="mt-3 text-xs text-slate-500">
+        {{ lang === 'zh' ? '累计实际推演耗时' : 'Accumulated active computation time' }}：{{ (info.activeRuntimeMs / 1000).toFixed(2) }} {{ lang === 'zh' ? '秒（不含暂停等待）' : 'seconds (paused waiting excluded)' }}
+      </p>
+      <div v-if="terminationSummary" data-testid="termination-summary" class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+        <p>{{ lang === 'zh' ? '结束原因' : 'Termination reason' }}：{{ terminationSummary }}</p>
+        <p v-if="info?.terminationReason" class="mt-1 text-xs text-slate-500">{{ info.terminationReason }}</p>
+        <p v-if="info?.terminationReason && terminationEvent?.payload.actual !== undefined" class="mt-1 text-xs">
+          {{ lang === 'zh' ? '触发值 / 限额' : 'Trigger value / limit' }}：{{ terminationEvent.payload.actual }} / {{ terminationEvent.payload.limit }}{{ info.terminationReason === 'MAX_RUNTIME' ? (lang === 'zh' ? ' 毫秒' : ' ms') : '' }}
+        </p>
       </div>
     </div>
     <template v-if="state && info"
@@ -709,7 +749,7 @@ onBeforeUnmount(() => {
                 :value="run.id"
               >
                 {{ branchLabels[run.id] ?? run.id.slice(0, 8) }} ·
-                {{ run.status }}
+                {{ runStatus(run) }}
               </option>
             </select></label
           ><button class="primary" :disabled="busy || !other">
