@@ -3,6 +3,11 @@ import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
-  server: { proxy: { "/api": "http://localhost:8080" } },
+  server: {
+    host: "127.0.0.1",
+    port: 5173,
+    strictPort: false,
+    proxy: { "/api": "http://localhost:8080" },
+  },
   test: { environment: "jsdom", include: ["src/**/*.test.ts"] },
 });

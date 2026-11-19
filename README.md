@@ -35,7 +35,7 @@ pnpm build
 pnpm dev
 ```
 
-Vite 默认 5173，`/api` 转发到 8080。开发数据库为启动目录的 `studio-dev.db`；Flyway 自动迁移，JPA 校验账号表，业务图和运行记录使用 JDBC。SQLite 配置 WAL、外键和 busy timeout。会话在进程内，重启后需要登录；运行状态仍在数据库中，重启后运行恢复为暂停。
+Vite 默认监听本机 `127.0.0.1`，优先使用 5173；端口被占用时自动尝试 5174、5175 等后续端口，请访问启动终端中显示的实际地址。本地开发统一使用 IPv4 回环地址，避免 Windows 上不同监听地址同时绑定相同端口而绕过冲突检测。`/api` 转发到 8080，不受前端端口变化影响。开发数据库为启动目录的 `studio-dev.db`；Flyway 自动迁移，JPA 校验账号表，业务图和运行记录使用 JDBC。SQLite 配置 WAL、外键和 busy timeout。会话在进程内，重启后需要登录；运行状态仍在数据库中，重启后运行恢复为暂停。
 
 当前云环境工具：`JAVA_HOME=/workspace/jdk-21.0.9+10`、Maven `/workspace/apache-maven-3.9.11/bin/mvn`；Maven 参数 `-s /workspace/maven-settings.xml -Dmaven.repo.local=/workspace/cache/m2`，`MAVEN_OPTS=-Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts`。pnpm 安装如遇不可写主目录，使用 `XDG_DATA_HOME=/workspace/cache pnpm install --store-dir /workspace/cache/pnpm --frozen-lockfile`。
 

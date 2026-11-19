@@ -10,12 +10,12 @@ import {
 import { api, ApiError } from "../api";
 import { mergeEvents } from "../playback";
 import ObjectActions from "./ObjectActions.vue";
+import EntityDetails from "./EntityDetails.vue";
 import type {
   Agent,
   ActionCatalog,
   ObjectActionInput,
   CompareResult,
-  Entity,
   Lang,
   Run,
   RunEvent,
@@ -39,7 +39,7 @@ const runs = ref<Run[]>([]),
   busy = ref(false),
   error = ref(""),
   connection = ref(""),
-  selectedEntity = ref<Entity>(),
+  selectedEntityId = ref(""),
   label = ref(""),
   other = ref(""),
   comparison = ref<CompareResult>(),
@@ -50,6 +50,7 @@ const intervention = ref({
   targetId: "",
   parameters: "{}",
 });
+const selectedEntity = computed(() => state.value?.entities.find(e => e.id === selectedEntityId.value));
 const deletionId = ref<string | null>(null), deletionError = ref("");
 const dialog = ref<HTMLElement>(), cancelButton = ref<HTMLButtonElement>(), runSelect = ref<HTMLSelectElement>();
 let deletionTrigger: HTMLElement | undefined;
@@ -218,7 +219,7 @@ async function loadRun() {
   stopPlayback();
   comparison.value = undefined;
   error.value = "";
-  selectedEntity.value = undefined;
+  selectedEntityId.value = "";
   if (!selected.value) {
     actionCatalog.value = undefined;
     info.value = undefined;
@@ -309,7 +310,7 @@ async function seek(sequence: number, stop = true) {
     );
     if (ticket === seekRevision && id === selected.value && !disposed) {
       state.value = s;
-      selectedEntity.value = undefined;
+      selectedEntityId.value = "";
     }
   } catch (e) {
     error.value = String(e);
@@ -425,7 +426,7 @@ async function executeObjectAction(input: ObjectActionInput) {
   finally { busy.value = false; }
 }
 function selectEntity(id: string) {
-  selectedEntity.value = state.value?.entities.find((e) => e.id === id);
+  selectedEntityId.value = id;
 }
 function pretty(value: unknown) {
   return JSON.stringify(value, null, 2);
@@ -578,11 +579,7 @@ onBeforeUnmount(() => {
           />
           <div class="border-t border-slate-100 pt-4">
             <h3 class="font-semibold">{{ t.object }}</h3>
-            <pre
-              v-if="selectedEntity"
-              class="mt-3 max-h-56 overflow-auto text-xs"
-              >{{ pretty(selectedEntity) }}</pre
-            >
+            <EntityDetails v-if="selectedEntity" :entity="selectedEntity" :lang="lang" :catalog="actionCatalog" :live="live" />
             <p v-else class="mt-2 text-sm text-slate-500">{{ t.noObject }}</p>
           </div>
         </article>
