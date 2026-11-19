@@ -4,9 +4,10 @@ import {
   defineAsyncComponent,
   onBeforeUnmount,
   onMounted,
+  nextTick,
   ref,
 } from "vue";
-import { api } from "../api";
+import { api, ApiError } from "../api";
 import { mergeEvents } from "../playback";
 import type {
   Agent,
@@ -45,6 +46,9 @@ const intervention = ref({
   targetId: "",
   parameters: "{}",
 });
+const deletionId = ref<string | null>(null), deletionError = ref("");
+const dialog = ref<HTMLElement>(), cancelButton = ref<HTMLButtonElement>(), runSelect = ref<HTMLSelectElement>();
+let deletionTrigger: HTMLElement | undefined;
 let source: EventSource | undefined,
   timer: ReturnType<typeof setTimeout> | undefined,
   revision = 0,
@@ -60,6 +64,12 @@ const t = computed(() =>
         pause: "暂停计算",
         stop: "停止运行",
         refresh: "刷新",
+        remove: "删除运行",
+        confirm: "确认删除",
+        cancel: "取消",
+        deleteHelp: "将永久删除此运行及其事件、快照和回放记录，无法恢复。场景和世界会保留。有子分支时需先删除子分支；正在计算时需先暂停或停止。",
+        hasBranches: "请先删除此运行的子分支。",
+        activeRun: "请先暂停或停止此运行，再删除。",
         live: "查看实时状态",
         history: "历史回放（不调用模型）",
         version: "状态版本",
@@ -101,6 +111,12 @@ const t = computed(() =>
         pause: "Pause computation",
         stop: "Stop run",
         refresh: "Refresh",
+        remove: "Delete run",
+        confirm: "Confirm deletion",
+        cancel: "Cancel",
+        deleteHelp: "Permanently delete this run and its events, snapshots and replay history? This cannot be undone. The scenario and world will be retained. Delete child branches first, and pause or stop computation before deleting.",
+        hasBranches: "Delete child branches first.",
+        activeRun: "Pause or stop this run before deleting it.",
         live: "Show live state",
         history: "Historical replay (no model calls)",
         version: "State version",
@@ -199,7 +215,16 @@ async function loadRun() {
   comparison.value = undefined;
   error.value = "";
   selectedEntity.value = undefined;
-  if (!selected.value) return;
+  if (!selected.value) {
+    info.value = undefined;
+    state.value = undefined;
+    agents.value = [];
+    events.value = [];
+    baselineIds.value = [];
+    connection.value = "";
+    cursor.value = 0;
+    return;
+  }
   try {
     const [r, a, e, s, baseline] = await Promise.all([
       api<Run>("/runs/" + selected.value),
@@ -381,10 +406,66 @@ function selectEntity(id: string) {
 function pretty(value: unknown) {
   return JSON.stringify(value, null, 2);
 }
+async function openDeletion(event: MouseEvent) {
+  if (!selected.value || busy.value) return;
+  deletionTrigger = event.currentTarget as HTMLElement;
+  deletionId.value = selected.value;
+  deletionError.value = "";
+  await nextTick();
+  cancelButton.value?.focus();
+}
+async function closeDeletion() {
+  if (busy.value) return;
+  deletionId.value = null;
+  await nextTick();
+  deletionTrigger?.focus();
+}
+function dialogKeydown(event: KeyboardEvent) {
+  if (event.key === "Escape") { event.preventDefault(); void closeDeletion(); }
+  if (event.key === "Tab") {
+    event.preventDefault();
+    const buttons = Array.from(dialog.value?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? []);
+    const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    if (buttons.length) buttons[(index + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length]?.focus();
+  }
+}
+async function deleteRun() {
+  if (!deletionId.value || busy.value) return;
+  busy.value = true;
+  deletionError.value = "";
+  const id = deletionId.value;
+  try {
+    await api<void>("/runs/" + id, "DELETE");
+  } catch (e) {
+    deletionError.value = e instanceof ApiError && e.code === "RUN_HAS_BRANCHES" ? t.value.hasBranches
+      : e instanceof ApiError && e.code === "RUN_ACTIVE" ? t.value.activeRun : String(e);
+    busy.value = false;
+    await nextTick();
+    cancelButton.value?.focus();
+    return;
+  }
+  // Clear the deleted view immediately, even if refreshing the catalog fails.
+  runs.value = runs.value.filter(run => run.id !== id);
+  delete branchLabels.value[id];
+  if (other.value === id) other.value = "";
+  selected.value = "";
+  await loadRun();
+  deletionId.value = null;
+  try {
+    await listRuns();
+    selected.value = runs.value[0]?.id ?? "";
+    await loadRun();
+  } catch (e) { error.value = String(e); }
+  finally {
+    busy.value = false;
+    await nextTick();
+    runSelect.value?.focus();
+  }
+}
 onMounted(async () => {
   try {
     await listRuns();
-    if (!selected.value) selected.value = runs.value[0]?.id ?? "";
+    if (!runs.value.some(run => run.id === selected.value)) selected.value = runs.value[0]?.id ?? "";
     await loadRun();
   } catch (e) {
     error.value = String(e);
@@ -399,13 +480,13 @@ onBeforeUnmount(() => {
 });
 </script>
 <template>
-  <section class="space-y-5">
+  <section :inert="deletionId !== null ? true : undefined" class="space-y-5">
     <div class="panel">
       <div class="flex flex-wrap items-end gap-4">
         <h2 class="mr-auto text-xl font-semibold">{{ t.title }}</h2>
         <label class="min-w-64"
           >{{ t.run
-          }}<select :aria-label="t.run" v-model="selected" @change="loadRun">
+          }}<select ref="runSelect" :disabled="busy" :aria-label="t.run" v-model="selected" @change="loadRun">
             <option v-for="run in runs" :key="run.id" :value="run.id">
               {{ branchLabels[run.id] ?? run.id.slice(0, 8) }} ·
               {{ run.status }}
@@ -414,6 +495,7 @@ onBeforeUnmount(() => {
         ><button class="secondary" :disabled="busy" @click="loadRun">
           {{ t.refresh }}
         </button>
+        <button class="secondary text-red-700" :disabled="busy || !selected" @click="openDeletion">{{ t.remove }}</button>
       </div>
       <p class="mt-4 text-xs text-amber-800">{{ t.notice }}</p>
       <p v-if="error" role="alert">{{ error }}</p>
@@ -657,4 +739,18 @@ onBeforeUnmount(() => {
       <Comparison v-if="comparison" :result="comparison" :lang="lang" />
     </template>
   </section>
+  <Teleport to="body">
+    <div v-if="deletionId !== null" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-5" @click.self="closeDeletion">
+      <div ref="dialog" role="dialog" aria-modal="true" aria-labelledby="run-delete-title" aria-describedby="run-delete-description" class="panel w-full max-w-md" @keydown="dialogKeydown">
+        <h2 id="run-delete-title" class="text-lg font-semibold">{{ t.confirm }}</h2>
+        <p class="mt-3 break-all font-mono text-xs">{{ branchLabels[deletionId] ?? deletionId }}</p>
+        <p id="run-delete-description" class="mt-3 text-sm text-slate-600">{{ t.deleteHelp }}</p>
+        <p v-if="deletionError" role="alert" class="mt-3">{{ deletionError }}</p>
+        <div class="mt-6 flex justify-end gap-3">
+          <button class="secondary text-red-700" :disabled="busy" @click="deleteRun">{{ t.confirm }}</button>
+          <button ref="cancelButton" class="secondary" :disabled="busy" @click="closeDeletion">{{ t.cancel }}</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>

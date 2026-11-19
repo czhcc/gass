@@ -17,6 +17,9 @@ export interface World {
   id: string;
   name: string;
   domainCode: string;
+  version: number;
+  entityTypes: string[];
+  relationTypes: string[];
   entities: Entity[];
   relations: Relation[];
 }

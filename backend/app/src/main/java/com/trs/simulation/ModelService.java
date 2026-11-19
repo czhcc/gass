@@ -2,6 +2,7 @@ package com.trs.simulation;
 
 import java.net.URI;
 import java.nio.file.*;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.SecureRandom;
 import java.util.*;
@@ -13,7 +14,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 /**
- * Model settings; API keys encrypted locally or referenced from environment bindings. @author agent
+ * Model settings; API keys encrypted locally or referenced from environment bindings.
+ * @author czhcc-trsdsj\codexsandboxoffline
  */
 @Service
 public class ModelService {
@@ -102,7 +104,7 @@ public class ModelService {
         || i.temperature() > 2
         || !Double.isFinite(i.temperature())
         || i.maxTokens() < 64
-        || i.maxTokens() > 1024
+        || i.maxTokens() > 8192
         || i.timeoutSeconds() < 1
         || i.timeoutSeconds() > 60
         || i.concurrency() < 1
@@ -205,14 +207,19 @@ public class ModelService {
   private synchronized byte[] master() {
     try {
       if (!Files.exists(keyFile)) {
-        Files.createDirectories(keyFile.toAbsolutePath().getParent());
+        Path parent = keyFile.toAbsolutePath().getParent();
+        Files.createDirectories(parent);
         byte[] key = new byte[32];
         new SecureRandom().nextBytes(key);
-        Files.createFile(
-            keyFile,
-            PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+        if (Files.getFileStore(parent).supportsFileAttributeView(PosixFileAttributeView.class)) {
+          Files.createFile(
+              keyFile,
+              PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+        } else {
+          // Windows uses native inherited ACLs rather than POSIX permission attributes.
+          Files.createFile(keyFile);
+        }
         Files.write(keyFile, key);
-        Files.setPosixFilePermissions(keyFile, PosixFilePermissions.fromString("rw-------"));
       }
       return Files.readAllBytes(keyFile);
     } catch (Exception e) {

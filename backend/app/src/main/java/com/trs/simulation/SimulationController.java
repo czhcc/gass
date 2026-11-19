@@ -50,7 +50,36 @@ public class SimulationController {
   /** Imports the document-leak example facts. @author agent */
   @PostMapping("/examples/information-leak")
   public World example() {
-    return worlds.create(Examples.informationLeak());
+    return worlds.example("information");
+  }
+
+  /** Updates a world with optimistic version validation. @author czhcc-trsdsj\codexsandboxoffline */
+  @PutMapping("/worlds/{id}")
+  public World updateWorld(@PathVariable String id, @RequestBody World input) {
+    return worlds.update(id, input);
+  }
+
+  /** World copy display name. @author czhcc-trsdsj\codexsandboxoffline */
+  public record WorldCopyInput(String name) {}
+
+  /** Copies a world under a new identity. @author czhcc-trsdsj\codexsandboxoffline */
+  @PostMapping("/worlds/{id}/copy")
+  public World copyWorld(@PathVariable String id, @RequestBody WorldCopyInput input) {
+    return worlds.copy(id, input.name());
+  }
+
+  /** Exports a reusable world as JSON. @author czhcc-trsdsj\codexsandboxoffline */
+  @GetMapping("/worlds/{id}/export")
+  public ResponseEntity<World> exportWorld(@PathVariable String id) {
+    return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
+        ContentDisposition.attachment().filename("world.json").build().toString()).body(worlds.get(id));
+  }
+
+  /** Removes an unused custom world and its graph indexes. @author czhcc-trsdsj\codexsandboxoffline */
+  @DeleteMapping("/worlds/{id}")
+  public ResponseEntity<Void> deleteWorld(@PathVariable String id) {
+    worlds.delete(id);
+    return ResponseEntity.noContent().build();
   }
 
   /** Gets the world template. @author agent */
@@ -163,6 +192,16 @@ public class SimulationController {
     return worlds.scenario(id);
   }
 
+  /**
+   * Removes a scenario while preserving independent runs, events and replay snapshots.
+   * @author czhcc-trsdsj\codexsandboxoffline
+   */
+  @DeleteMapping("/scenarios/{id}")
+  public ResponseEntity<Void> deleteScenario(@PathVariable String id) {
+    worlds.deleteScenario(id);
+    return ResponseEntity.noContent().build();
+  }
+
   /** Updates an editable scenario; existing runs retain frozen configuration. @author agent */
   @PutMapping("/scenarios/{id}")
   public Scenario update(@PathVariable String id, @RequestBody Scenario s) {
@@ -180,6 +219,13 @@ public class SimulationController {
   @GetMapping("/runs")
   public List<Run> runs() {
     return runs.list();
+  }
+
+  /** Deletes an inactive leaf run and its history. @author czhcc-trsdsj\codexsandboxoffline */
+  @DeleteMapping("/runs/{id}")
+  public ResponseEntity<Void> deleteRun(@PathVariable String id) {
+    runs.delete(id);
+    return ResponseEntity.noContent().build();
   }
 
   /** Gets lifecycle metadata. @author agent */
