@@ -84,6 +84,8 @@ export interface Run {
   step: number;
   maxSteps: number;
   version: number;
+  activeRuntimeMs?: number;
+  terminationReason?: string | null;
 }
 export interface RunState {
   runId: string;

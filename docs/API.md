@@ -91,4 +91,23 @@ Fork 请求：`{"sequence":12,"label":"限制传播方案"}`。子分支拥有�
 
 模拟模型输出在 Agent 事件中标记 MOCK。它可以验证完整功能闭环，但不能证明真实 LLM 自主性。
 
+## 运行结束与实际耗时
+
+`GET /api/runs` 和 `GET /api/runs/{id}` 增加 `activeRuntimeMs`（累计实际推演毫秒数）及 `terminationReason`（结束原因编码，未结束或旧记录为 null）。
+
+| 状态 | 含义 | 结束事件 |
+|---|---|---|
+| COMPLETED | 所有 Agent 的 END 均被引擎接受 | RUN_COMPLETED，reasonCode=ALL_AGENTS_ENDED |
+| BUDGET_EXHAUSTED | 推演因资源或次数限制结束，不表示任务完成 | RUN_BUDGET_EXHAUSTED |
+| STOPPED | 用户手动停止 | RUN_STOPPED，reasonCode=USER_STOPPED |
+| FAILED | 模型决策失败或超时 | RUN_FAILED，reasonCode=MODEL_DECISION_FAILED |
+
+预算原因包括 `MAX_STEPS`（轮数）、`MAX_EVENTS`（事件数，预留 10 条审计事件）、`MAX_RUNTIME`（实际推演时间）、`MAX_AGENT_DECISIONS`（未结束 Agent 均达到各自决策上限）、`MAX_DECISIONS`（总决策数）、`MODEL_REQUEST_BUDGET`、`TOKEN_BUDGET`、`MAX_STATE_CHANGES`。请求和 Token 仍沿用现有的保守预留估算，不代表供应商实际计费。
+
+完成或预算结束事件保存 `reasonCode`、可读 `reason`、`actual`、`limit`、`activeRuntimeMs`、`agentId`。时间预算的触发值和限额均为毫秒；请求/Token 预算的触发值是包含下一次决策预留的估算需求。Agent 次数预算的 agentId 指出一个尚未结束且已耗尽次数的 Agent。多项条件同时成立时优先识别所有 Agent 主动结束，其次记录检查到的首个预算原因；终态不重复生成结束事件。
+
+单步及自动运行使用单调时钟，只累计单步执行区间（包含模型、工具和引擎耗时），不累计创建后等待、暂停、轮间调度等待或停机时间；每轮退出时保存累计值，失败也计时。时间限制在决策边界检查，不强制中断正在执行的模型调用；调用返回后立即检查，不必等待再点击单步。新分支拥有独立的零起始耗时预算。
+
+V7 仅新增计时与原因字段，不清理数据、不改写历史事件。旧运行从升级后开始累计耗时，升级前耗时无法追溯；旧 COMPLETED 缺少原因时界面显示“历史已结束”，不能据此认定任务完成。预算结束后可以回放或从历史事件创建新分支，不能直接继续原终态运行。
+
 模型编辑：API Key 留空且密钥来源未变时保留已保存的密钥；填写新 API Key 会加密替换；填写不同的 API Key 环境变量名时改用该变量。响应仍只返回安全 View，不返回明文或密文。修改的运行参数在后续模型调用中生效。

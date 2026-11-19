@@ -38,6 +38,8 @@ public class RunService {
   private final Map<String, DomainEnvironment> domains = new HashMap<>();
   private final ExecutorService workers = Executors.newVirtualThreadPerTaskExecutor();
   private final Map<String, UUID> active = new ConcurrentHashMap<>();
+  private java.util.function.LongSupplier nanoClock = System::nanoTime;
+  private final Map<String, Long> activeStarts = new ConcurrentHashMap<>();
 
   /** Injects SDK-independent runtime boundaries and domain plugins. @author agent */
   public RunService(
@@ -88,7 +90,7 @@ public class RunService {
     return db.query(
         "SELECT id,status,step,JSON_EXTRACT(scenario_json,'$.id')"
             + " scenario_id,JSON_EXTRACT(scenario_json,'$.maxSteps')"
-            + " max_steps,JSON_EXTRACT(state_json,'$.version') version FROM simulation_run ORDER BY"
+            + " max_steps,JSON_EXTRACT(state_json,'$.version') version,active_runtime_ms,termination_reason FROM simulation_run ORDER BY"
             + " created_at DESC",
         (r, n) ->
             new Run(
@@ -97,7 +99,8 @@ public class RunService {
                 r.getString("status"),
                 r.getInt("step"),
                 r.getInt("max_steps"),
-                r.getLong("version")));
+                r.getLong("version"), r.getLong("active_runtime_ms") + currentIntervalMs(r.getString("id")),
+                r.getString("termination_reason")));
   }
 
   /** Safe deletion conflict with a stable client code. @author czhcc-trsdsj\codexsandboxoffline */
@@ -167,14 +170,15 @@ public class RunService {
   /** Returns metadata for an isolated run. @author agent */
   public Run get(String id) {
     var s = scenario(id);
-    var row = db.queryForMap("SELECT status,step FROM simulation_run WHERE id=?", id);
+    var row = db.queryForMap("SELECT status,step,active_runtime_ms,termination_reason FROM simulation_run WHERE id=?", id);
     return new Run(
         id,
         s.id(),
         (String) row.get("status"),
         ((Number) row.get("step")).intValue(),
         s.maxSteps(),
-        state(id).version());
+        state(id).version(), ((Number) row.get("active_runtime_ms")).longValue() + currentIntervalMs(id),
+        (String) row.get("termination_reason"));
   }
 
   /** Gets current immutable state. @author agent */
@@ -280,24 +284,24 @@ public class RunService {
   public synchronized State step(String id, String command) {
     if (command == null || command.isBlank() || command.length() > 100)
       throw new IllegalArgumentException("Idempotency-Key required, max 100 characters");
-    if (db.queryForObject(
-            "SELECT COUNT(*) FROM simulation_command WHERE run_id=? AND command_id=?",
-            Integer.class,
-            id,
-            command)
-        > 0) return state(id);
-    var run = get(id);
-    if (!List.of("PAUSED", "RUNNING").contains(run.status()))
-      throw new IllegalStateException("Run is terminal");
-    var scenario = scenario(id);
-    long started =
-        db.queryForObject("SELECT created_at FROM simulation_run WHERE id=?", Long.class, id);
-    if (run.step() >= run.maxSteps()
-        || System.currentTimeMillis() - started > Math.max(1, timeBudget) * 1000L
-        || eventCount(id) > scenario.maxEvents() - 10) {
-      complete(id);
+    if (db.queryForObject("SELECT COUNT(*) FROM simulation_command WHERE run_id=? AND command_id=?", Integer.class, id, command) > 0)
       return state(id);
+    if (!List.of("PAUSED", "RUNNING").contains(get(id).status()))
+      throw new IllegalStateException("Run is terminal");
+    activeStarts.put(id, nanoClock.getAsLong());
+    try {
+      return stepRound(id, command);
+    } finally {
+      long elapsed = currentIntervalMs(id);
+      activeStarts.remove(id);
+      db.update("UPDATE simulation_run SET active_runtime_ms=active_runtime_ms+? WHERE id=?", elapsed, id);
     }
+  }
+
+  private State stepRound(String id, String command) {
+    var run = get(id);
+    var scenario = scenario(id);
+    if (checkTermination(id, scenario, true)) return state(id);
     long clock =
         db.queryForObject("SELECT base_time FROM simulation_run WHERE id=?", Long.class, id)
             + run.step()
@@ -333,10 +337,6 @@ public class RunService {
     var plugin = domains.get(world.domainCode());
     if (plugin == null) throw new IllegalStateException("Domain plugin unavailable");
     for (var agent : scenario.agents()) {
-      if (eventCount(id) > scenario.maxEvents() - 10) {
-        complete(id);
-        break;
-      }
       int count =
           db.queryForObject(
               "SELECT COUNT(*) FROM simulation_event WHERE run_id=? AND agent_id=? AND"
@@ -344,26 +344,11 @@ public class RunService {
               Integer.class,
               id,
               agent.id());
-      int total =
-          db.queryForObject(
-              "SELECT COUNT(*) FROM simulation_event WHERE run_id=? AND event_type='AGENT_STARTED'",
-              Integer.class,
-              id);
       if (count >= agent.maxDecisions() || hasEnded(id, agent.id())) continue;
       // Each SDK decision has <= 3 iterations plus structured response, <= 6 requests / 1024 output
       // tokens each.
       // At most 50 decisions: <=300 model requests, <=307200 generated tokens per run.
-      if (total >= Math.min(50, decisionBudget)
-          || (total + 1) * 6 > requestBudget
-          || (total + 1) * 6144L > tokenBudget
-          || state(id).version()
-                  - db.queryForObject(
-                      "SELECT MIN(version) FROM simulation_snapshot WHERE run_id=?", Long.class, id)
-              >= changeBudget
-          || System.currentTimeMillis() - started > Math.max(1, timeBudget) * 1000L) {
-        complete(id);
-        break;
-      }
+      if (checkTermination(id, scenario, false)) break;
       var before = state(id);
       var visible = plugin.observationScope(agent, before);
       var history =
@@ -415,8 +400,8 @@ public class RunService {
             "RUN_FAILED",
             clock,
             agent.id(),
-            Map.of("reason", "Model decision failed or timed out; verify model configuration"));
-        db.update("UPDATE simulation_run SET status='FAILED' WHERE id=?", id);
+            Map.of("reason", "Model decision failed or timed out; verify model configuration", "reasonCode", "MODEL_DECISION_FAILED", "activeRuntimeMs", get(id).activeRuntimeMs()));
+        db.update("UPDATE simulation_run SET status='FAILED',termination_reason='MODEL_DECISION_FAILED' WHERE id=?", id);
         return state(id);
       }
       decisions
@@ -429,10 +414,7 @@ public class RunService {
       var outcome = plugin.execute(world, agent, d, current);
       commit(id, agent.id(), d, current, outcome, "AGENT");
     }
-    if (get(id).step() >= scenario.maxSteps()
-        || scenario.agents().stream()
-            .allMatch(a -> hasEnded(id, a.id()) || decisionCount(id, a.id()) >= a.maxDecisions()))
-      complete(id);
+    checkTermination(id, scenario, true);
     return state(id);
   }
 
@@ -541,6 +523,7 @@ public class RunService {
     if (!r.status().equals("RUNNING"))
       throw new IllegalStateException("Only running simulations can pause");
     db.update("UPDATE simulation_run SET status='PAUSED' WHERE id=?", id);
+    active.remove(id);
     append(id, "RUN_PAUSED", r.step(), null, Map.of());
     return get(id);
   }
@@ -585,10 +568,10 @@ public class RunService {
   public synchronized Run stop(String id) {
     var r = get(id);
     if (r.status().equals("STOPPED")) return r;
-    if (List.of("FAILED", "COMPLETED").contains(r.status()))
+    if (List.of("FAILED", "COMPLETED", "BUDGET_EXHAUSTED").contains(r.status()))
       throw new IllegalStateException("Run is terminal");
-    db.update("UPDATE simulation_run SET status='STOPPED' WHERE id=?", id);
-    append(id, "RUN_STOPPED", r.step(), null, Map.of());
+    db.update("UPDATE simulation_run SET status='STOPPED',termination_reason='USER_STOPPED' WHERE id=?", id);
+    append(id, "RUN_STOPPED", r.step(), null, Map.of("reasonCode", "USER_STOPPED", "reason", "Stopped by user", "activeRuntimeMs", r.activeRuntimeMs()));
     return get(id);
   }
 
@@ -597,15 +580,53 @@ public class RunService {
     return state.entities().stream().anyMatch(e -> e.id().equals(decision.targetId())) ? "ENTITY" : "RELATION";
   }
 
-  private void complete(String id) {
-    if (get(id).status().equals("COMPLETED")) return;
-    db.update("UPDATE simulation_run SET status='COMPLETED' WHERE id=?", id);
-    append(
-        id,
-        "RUN_COMPLETED",
-        get(id).step(),
-        null,
-        Map.of("reason", "Termination or budget reached"));
+  private long currentIntervalMs(String id) {
+    Long start = activeStarts.get(id);
+    return start == null ? 0 : Math.max(0, (nanoClock.getAsLong() - start) / 1_000_000L);
+  }
+
+  private boolean checkTermination(String id, Scenario scenario, boolean checkSteps) {
+    var run = get(id);
+    if (!List.of("PAUSED", "RUNNING").contains(run.status())) return true;
+    if (scenario.agents().stream().allMatch(a -> hasEnded(id, a.id())))
+      return finish(id, "ALL_AGENTS_ENDED", scenario.agents().size(), scenario.agents().size(), "All agents submitted accepted END decisions", "");
+    if (checkSteps && run.step() >= scenario.maxSteps())
+      return finish(id, "MAX_STEPS", run.step(), scenario.maxSteps(), "Maximum simulation rounds reached", "");
+    int events = eventCount(id);
+    if (events > scenario.maxEvents() - 10)
+      return finish(id, "MAX_EVENTS", events, scenario.maxEvents(), "Event budget reached (10 events reserved for audit)", "");
+    long timeLimit = Math.max(1, timeBudget) * 1000L;
+    if (run.activeRuntimeMs() >= timeLimit)
+      return finish(id, "MAX_RUNTIME", run.activeRuntimeMs(), timeLimit, "Active computation time budget reached", "");
+    if (scenario.agents().stream().allMatch(a -> hasEnded(id, a.id()) || decisionCount(id, a.id()) >= a.maxDecisions())) {
+      var exhausted = scenario.agents().stream().filter(a -> !hasEnded(id, a.id())).findFirst().orElseThrow();
+      return finish(id, "MAX_AGENT_DECISIONS", decisionCount(id, exhausted.id()), exhausted.maxDecisions(), "All remaining agents exhausted their decision budgets", exhausted.id());
+    }
+    int total = db.queryForObject("SELECT COUNT(*) FROM simulation_event WHERE run_id=? AND event_type='AGENT_STARTED'", Integer.class, id);
+    if (total >= Math.min(50, decisionBudget))
+      return finish(id, "MAX_DECISIONS", total, Math.min(50, decisionBudget), "Global decision budget reached", "");
+    if ((total + 1) * 6L > requestBudget)
+      return finish(id, "MODEL_REQUEST_BUDGET", (total + 1) * 6L, requestBudget, "Insufficient model request budget for the next decision (reserved estimate)", "");
+    if ((total + 1) * 6144L > tokenBudget)
+      return finish(id, "TOKEN_BUDGET", (total + 1) * 6144L, tokenBudget, "Insufficient generated token budget for the next decision (reserved estimate)", "");
+    long changes = state(id).version() - db.queryForObject("SELECT MIN(version) FROM simulation_snapshot WHERE run_id=?", Long.class, id);
+    if (changes >= changeBudget)
+      return finish(id, "MAX_STATE_CHANGES", changes, changeBudget, "State change budget reached", "");
+    return false;
+  }
+
+  private boolean finish(String id, String reason, long actual, long limit, String message, String agentId) {
+    var run = get(id);
+    if (!List.of("PAUSED", "RUNNING").contains(run.status())) return true;
+    boolean completed = reason.equals("ALL_AGENTS_ENDED");
+    String status = completed ? "COMPLETED" : "BUDGET_EXHAUSTED";
+    tx.executeWithoutResult(t -> {
+      db.update("UPDATE simulation_run SET status=?,termination_reason=? WHERE id=?", status, reason, id);
+      append(id, completed ? "RUN_COMPLETED" : "RUN_BUDGET_EXHAUSTED", run.step(), null,
+          Map.of("reasonCode", reason, "reason", message, "actual", actual, "limit", limit,
+              "activeRuntimeMs", run.activeRuntimeMs(), "agentId", agentId));
+    });
+    return true;
   }
 
   private int decisionCount(String id, String agent) {
