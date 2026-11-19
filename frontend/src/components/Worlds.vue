@@ -3,7 +3,7 @@ import { computed, defineAsyncComponent, nextTick, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { api, ApiError } from "../api";
 import { useWorkspaceStore } from "../stores/workspace";
-import type { Lang, World } from "../types";
+import type { Lang, Ontology, World } from "../types";
 
 const props = defineProps<{ lang: Lang }>();
 const Graph = defineAsyncComponent(() => import("./Graph.vue"));
@@ -20,6 +20,7 @@ const editing = ref(false), editingId = ref<string | null>(null), importing = re
 const sourceJson = ref(""), entityJson = ref("[]"), relationJson = ref("[]");
 const name = ref(""), domain = ref("information"), entityTypes = ref(""), relationTypes = ref("");
 const version = ref(1), editor = ref<HTMLElement>(), list = ref<HTMLElement>();
+const ontology = ref<Ontology | null>();
 const deletionId = ref<string | null>(null), deletionError = ref("");
 const dialog = ref<HTMLDivElement>(), cancelButton = ref<HTMLButtonElement>();
 let deletionTrigger: HTMLElement | null = null;
@@ -38,6 +39,8 @@ const t = computed(() => props.lang === "zh" ? {
   jsonInvalid: "请提供有效的世界定义及对象、关系 JSON 数组。",
   stale: "世界已被修改，请重新选择并载入最新版本后再编辑。",
   inUse: "此世界正被场景引用，请先调整或删除相关场景。",
+  typeActions: "类型行动定义", type: "类型", kind: "作用目标", entity: "对象", relation: "关系", noActions: "此类型未定义行动",
+  actionHelp: "行动只属于对象类型，关联对象通过参数指定，关系由执行引擎维护。Agent 在场景中获得行动权限，定义随世界导出并在运行时冻结。",
 } : {
   title: "World management", intro: "Worlds define initial objects, relationships and state. Agents and models belong to scenarios. Reuse the two initial worlds; demos do not add worlds.",
   create: "Create world", search: "Search worlds", filter: "Filter world type", all: "All types",
@@ -53,6 +56,8 @@ const t = computed(() => props.lang === "zh" ? {
   jsonInvalid: "Provide a valid world definition and JSON arrays for entities and relationships.",
   stale: "The world changed. Select it again and load the latest version before editing.",
   inUse: "This world is used by a scenario. Change or delete the referencing scenarios first.",
+  typeActions: "Type action definitions", type: "Type", kind: "Target kind", entity: "Entity", relation: "Relation", noActions: "No actions defined for this type",
+  actionHelp: "Actions belong only to entity types. Parameters identify related objects; the engine maintains relations. Contracts are exported with worlds and frozen in runs.",
 });
 
 function errorText(e: unknown) {
@@ -81,6 +86,7 @@ async function openEditor(w: World, id: string | null) {
   relationTypes.value = w.relationTypes.join(", ");
   entityJson.value = JSON.stringify(w.entities, null, 2);
   relationJson.value = JSON.stringify(w.relations, null, 2);
+  ontology.value = w.ontology;
   editing.value = true;
   importing.value = false;
   error.value = "";
@@ -95,6 +101,7 @@ async function createWorld() {
 function changeDomain() {
   const seed = worlds.value.find(w => w.id === "demo-" + domain.value);
   if (seed) {
+    ontology.value = seed.ontology;
     entityTypes.value = seed.entityTypes.join(", ");
     relationTypes.value = seed.relationTypes.join(", ");
     entityJson.value = JSON.stringify(seed.entities, null, 2);
@@ -115,7 +122,8 @@ async function saveWorld() {
     if (!Array.isArray(entities) || !Array.isArray(relations)) throw new Error(t.value.jsonInvalid);
     const split = (value: string) => value.split(",").map(part => part.trim()).filter(Boolean);
     const body = { name: name.value.trim(), domainCode: domain.value, version: version.value,
-      entityTypes: split(entityTypes.value), relationTypes: split(relationTypes.value), entities, relations };
+      entityTypes: split(entityTypes.value), relationTypes: split(relationTypes.value), entities, relations,
+      ontology: domain.value === "information" ? ontology.value : null };
     busy.value = true;
     const w = await api<World>(editingId.value ? "/worlds/" + editingId.value : "/worlds",
       editingId.value ? "PUT" : "POST", body);
@@ -252,6 +260,19 @@ async function deleteWorld() {
           </div>
           <p v-if="initial(selected.id)" class="mb-4 text-xs text-slate-500">{{ t.protected }}</p>
           <Graph :world="selected" :lang="lang" />
+          <section v-if="selected.ontology" class="mt-5 space-y-3">
+            <h4 class="font-semibold">{{ t.typeActions }}</h4>
+            <p class="text-xs text-slate-500">{{ t.actionHelp }}</p>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead><tr><th class="p-2">{{ t.kind }}</th><th class="p-2">{{ t.type }}</th><th class="p-2">Action</th></tr></thead>
+                <tbody><tr v-for="type in selected.ontology.types.filter(type => type.targetKind === 'ENTITY' && selected!.entityTypes.includes(type.type))" :key="type.targetKind + type.type" class="border-t border-slate-100 align-top">
+                  <td class="p-2">{{ type.targetKind === 'ENTITY' ? t.entity : t.relation }}</td><td class="p-2 font-mono text-xs">{{ type.type }}</td>
+                  <td class="p-2"><details v-for="action in type.actions" :key="action.actionType" class="mb-2"><summary class="cursor-pointer">{{ lang === 'zh' ? action.nameZh : action.nameEn }} · {{ action.actionType }}</summary><pre class="mt-2 max-h-48 overflow-auto whitespace-pre-wrap text-xs">{{ JSON.stringify(action, null, 2) }}</pre></details><span v-if="!type.actions.length">{{ t.noActions }}</span></td>
+                </tr></tbody>
+              </table>
+            </div>
+          </section>
           <details class="mt-4"><summary>{{ t.fullJson }}</summary><pre class="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-all text-xs">{{ JSON.stringify(selected, null, 2) }}</pre></details>
         </template>
         <p v-else class="text-sm text-slate-500">{{ t.choose }}</p>

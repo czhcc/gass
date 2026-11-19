@@ -26,6 +26,7 @@ class AgentScopeContractTest {
   void sdkSelectsReadOnlyToolAndParsesStructuredDecision() throws Exception {
     var calls = new AtomicInteger();
     var sawToolFeedback = new java.util.concurrent.atomic.AtomicBoolean();
+    var sawObjectContracts = new java.util.concurrent.atomic.AtomicBoolean();
     var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
     server.createContext(
         "/v1/chat/completions",
@@ -33,12 +34,14 @@ class AgentScopeContractTest {
           String body =
               new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
           if (body.contains("tool_call_id")) sawToolFeedback.set(true);
+          if (body.contains("availableActions") && body.contains("parametersSchema")
+              && body.contains("targetKind") && body.contains("additionalProperties")) sawObjectContracts.set(true);
           int call = calls.incrementAndGet();
           String tool = call == 1 ? "graph_search_entity" : "generate_response";
           String args =
               call == 1
                   ? "{\"query\":\"document\"}"
-                  : "{\"actionType\":\"MARK_REVIEWED\",\"targetId\":\"document_f\",\"parameters\":{},\"reason\":\"review"
+                  : "{\"actionType\":\"MARK_REVIEWED\",\"targetKind\":\"ENTITY\",\"targetId\":\"document_f\",\"parameters\":{},\"reason\":\"review"
                         + " discovered document\"}";
           if (call > 1) args = "{\"response\":" + args + "}";
           String json =
@@ -112,9 +115,13 @@ class AgentScopeContractTest {
                   0,
                   List.of(new Entity("document_f", "DOCUMENT", "Document", Map.of())),
                   List.of(),
-                  List.of()));
+                  List.of(), List.of(), new InformationActionEngine().capabilities(Examples.informationLeak(),
+                      new AgentDefinition("a", "Investigator", "Review", "fixture", List.of("MARK_REVIEWED"), List.of("document_f"), 5),
+                      new State("fixture-run", 0, 0, Examples.informationLeak().entities(), Examples.informationLeak().relations()))));
       assertEquals("MARK_REVIEWED", decision.actionType());
       assertEquals("document_f", decision.targetId());
+      assertEquals("ENTITY", decision.targetKind());
+      assertTrue(sawObjectContracts.get());
       assertEquals(1, provider.drainToolCalls().size());
       assertTrue(sawToolFeedback.get());
       assertTrue(calls.get() >= 2);

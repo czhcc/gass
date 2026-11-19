@@ -20,6 +20,33 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe("historical playback", () => {
+  it("uses engine-provided object actions and refreshes their state after manual execution", async () => {
+    let version = 0;
+    const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
+      if (url.endsWith("/actions") && options?.method === "POST") version = 1;
+      const state = { runId: "r1", simulationTime: 0, version, entities: [{ id: "document_f", type: "DOCUMENT", name: "文件 F", properties: { reviewed: version > 0 } }], relations: [] };
+      const run = { id: "r1", scenarioId: "s", status: "PAUSED", step: 0, maxSteps: 5, version };
+      const value = url === "/api/runs" ? [run] : url === "/api/branches" || url.endsWith("/events") ? []
+        : url.endsWith("/agents") ? [{ id: "a", name: "Investigator", goal: "Review", modelId: "m", allowedActions: ["MARK_REVIEWED", "END"] }]
+        : url.endsWith("/action-capabilities") ? { domainCode: "information", version, agents: [{ agentId: "a", capabilities: [{ targetKind: "ENTITY", targetId: "document_f", targetName: "文件 F", type: "DOCUMENT", available: version === 0, unavailableReason: version ? "Object is already reviewed" : "", sourceIds: [], action: { actionType: "MARK_REVIEWED", nameEn: "Mark reviewed", nameZh: "标记审查", description: "Review", parametersSchema: {}, preconditions: [], effect: "SET_REVIEWED" } }] }] }
+        : url.endsWith("/state") || url.includes("/replay?") || url.endsWith("/actions") ? state : run;
+      return { ok: true, json: async () => value };
+    });
+    vi.stubGlobal("fetch", fetcher);
+    vi.stubGlobal("EventSource", class { addEventListener() {} close() {} });
+    render(RunStudio, { props: { lang: "en", initialId: "r1" } });
+    const execute = await screen.findByRole("button", { name: "Execute action" });
+    expect(screen.queryByLabelText("Parameters JSON")).toBeNull();
+    await fireEvent.click(execute);
+    await waitFor(() => expect(screen.getByTestId("world-version").textContent).toContain("1"));
+    const submission = fetcher.mock.calls.find(([, options]) => options?.method === "POST")!;
+    expect(submission[0]).toBe("/api/runs/r1/actions");
+    expect(JSON.parse(String(submission[1]!.body))).toEqual({ agentId: "a", expectedVersion: 0, decision: {
+      actionType: "MARK_REVIEWED", targetKind: "ENTITY", targetId: "document_f", parameters: {}, reason: "User-requested simulated action",
+    } });
+    expect((screen.getByRole("button", { name: "Execute action" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it("seeks persisted history without triggering computation", async () => {
     const run = {
       id: "r1",

@@ -150,6 +150,20 @@ public class RunService {
     return scenario(id).agents();
   }
 
+  /** Lists current object capabilities for manual decisions without invoking a model. @author czhcc-trsdsj\codexsandboxoffline */
+  public ActionCatalog actionCapabilities(String id) {
+    return tx.execute(transaction -> {
+      var world = frozenWorld(id);
+      var state = state(id);
+      var plugin = domains.get(world.domainCode());
+      return new ActionCatalog(world.domainCode(), state.version(), scenario(id).agents().stream()
+          .map(agent -> {
+            boolean ended = hasEnded(id, agent.id());
+            return new AgentCapabilities(agent.id(), ended ? List.of() : plugin.capabilities(world, agent, state), ended);
+          }).toList());
+    });
+  }
+
   /** Returns metadata for an isolated run. @author agent */
   public Run get(String id) {
     var s = scenario(id);
@@ -379,7 +393,8 @@ public class RunService {
                               && visible.contains(String.valueOf(e.payload().get("targetId"))))
                   .map(Event::payload)
                   .limit(20)
-                  .toList());
+                  .toList(),
+              plugin.capabilities(world, agent, before), world.domainCode());
       append(
           id,
           "AGENT_STARTED",
@@ -409,9 +424,9 @@ public class RunService {
           .forEach(call -> append(id, "AGENT_TOOL_CALL", clock, agent.id(), call));
       // Normalize through JSON to prevent a provider retaining references to mutable proposal maps.
       proposal = Json.read(Json.write(proposal), Decision.class);
-      var d = proposal;
       var current = new State(id, clock, before.version(), before.entities(), before.relations());
-      var outcome = plugin.execute(agent, d, current);
+      var d = plugin.normalizeDecision(proposal, current);
+      var outcome = plugin.execute(world, agent, d, current);
       commit(id, agent.id(), d, current, outcome, "AGENT");
     }
     if (get(id).step() >= scenario.maxSteps()
@@ -454,12 +469,15 @@ public class RunService {
             .filter(a -> a.id().equals(agentId))
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Agent not found"));
-    var plugin = domains.get(frozenWorld(id).domainCode());
-    var outcome = plugin.execute(agent, decision, current);
+    if (hasEnded(id, agent.id())) throw new IllegalStateException("Agent has ended its task");
+    var world = frozenWorld(id);
+    var plugin = domains.get(world.domainCode());
+    var normalized = plugin.normalizeDecision(decision, current);
+    var outcome = plugin.execute(world, agent, normalized, current);
     tx.executeWithoutResult(
         t -> {
           db.update("INSERT INTO simulation_command VALUES (?,?)", id, key);
-          commit(id, agent.id(), decision, current, outcome, "USER");
+          commit(id, agent.id(), normalized, current, outcome, "USER");
         });
     return state(id);
   }
@@ -481,6 +499,9 @@ public class RunService {
               current.simulationTime(),
               agent,
               Map.of(
+                  "code", outcome.code(),
+                  "affectedRelationIds", outcome.affectedRelationIds(),
+                  "targetKind", d.targetKind() == null ? legacyTargetKind(d, current) : d.targetKind(),
                   "reason",
                   outcome.message(),
                   "actionType",
@@ -569,6 +590,11 @@ public class RunService {
     db.update("UPDATE simulation_run SET status='STOPPED' WHERE id=?", id);
     append(id, "RUN_STOPPED", r.step(), null, Map.of());
     return get(id);
+  }
+
+  private String legacyTargetKind(Decision decision, State state) {
+    if ("END".equals(decision.actionType())) return "AGENT";
+    return state.entities().stream().anyMatch(e -> e.id().equals(decision.targetId())) ? "ENTITY" : "RELATION";
   }
 
   private void complete(String id) {

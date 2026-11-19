@@ -89,7 +89,7 @@ public class WorldService {
   /** Copies a world as a separately maintained template. @author czhcc-trsdsj\codexsandboxoffline */
   public synchronized World copy(String id, String name) {
     var w = get(id);
-    return create(new World(null, name, w.domainCode(), w.entityTypes(), w.relationTypes(), w.entities(), w.relations(), 1));
+    return create(new World(null, name, w.domainCode(), w.entityTypes(), w.relationTypes(), w.entities(), w.relations(), 1, w.ontology()));
   }
 
   /** Deletes an unreferenced custom world; initial demo worlds remain available. @author czhcc-trsdsj\codexsandboxoffline */
@@ -162,7 +162,8 @@ public class WorldService {
             input.relationTypes(),
             input.entities(),
             input.relations(),
-            version);
+            version,
+            input.ontology());
     require(Json.write(w).length() < 1_000_000, "World too large");
     tx.executeWithoutResult(
         status -> {

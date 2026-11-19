@@ -27,6 +27,23 @@ function setup(lang: "en" | "zh" = "en") {
 }
 
 describe("world maintenance", () => {
+  it("shows type-owned action contracts and preserves them when editing graph data", async () => {
+    const { store, fetcher } = setup();
+    const ontology = { version: 1, types: [{ targetKind: "ENTITY", type: "DOCUMENT", actions: [{
+      actionType: "MARK_REVIEWED", nameZh: "标记审查", nameEn: "Mark reviewed", description: "Review a document",
+      parametersSchema: { type: "object", properties: {}, additionalProperties: false }, preconditions: ["NOT_REVIEWED"], effect: "SET_REVIEWED",
+    }] }] };
+    store.worlds[0]!.ontology = ontology;
+    fetcher.mockResolvedValue({ ok: true, json: async () => ({ ...initial, ontology, version: 2 }) });
+    await fireEvent.click(screen.getByRole("button", { name: "Leak initial" }));
+    expect(screen.getByRole("heading", { name: "Type action definitions" })).toBeTruthy();
+    expect(screen.getByText("Mark reviewed · MARK_REVIEWED")).toBeTruthy();
+    await fireEvent.click(screen.getByRole("button", { name: "Edit world" }));
+    await fireEvent.click(screen.getByRole("button", { name: "Save world" }));
+    await waitFor(() => expect(fetcher).toHaveBeenCalled());
+    expect(JSON.parse(fetcher.mock.calls[0][1].body).ontology).toEqual(ontology);
+  });
+
   it("filters worlds, views their graph and protects the initial worlds", async () => {
     setup();
     await fireEvent.click(screen.getByRole("button", { name: "Leak initial" }));

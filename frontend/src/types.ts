@@ -22,6 +22,42 @@ export interface World {
   relationTypes: string[];
   entities: Entity[];
   relations: Relation[];
+  ontology?: Ontology | null;
+}
+
+export interface ActionDefinition {
+  actionType: string;
+  nameZh: string;
+  nameEn: string;
+  description: string;
+  parametersSchema: Record<string, unknown>;
+  preconditions: string[];
+  effect: string;
+}
+export interface Ontology {
+  version: number;
+  types: { targetKind: string; type: string; actions: ActionDefinition[] }[];
+}
+export interface ActionCapability {
+  targetKind: string;
+  targetId: string;
+  targetName: string;
+  type: string;
+  action: ActionDefinition;
+  available: boolean;
+  unavailableReason: string;
+  sourceIds: string[];
+  parameterOptions?: Record<string, string[]>;
+}
+export interface ActionCatalog {
+  domainCode: string;
+  version: number;
+  agents: { agentId: string; capabilities: ActionCapability[]; ended?: boolean }[];
+}
+export interface ObjectActionInput {
+  agentId: string;
+  expectedVersion: number;
+  decision: { actionType: string; targetId: string; targetKind: string; parameters: Record<string, unknown>; reason: string };
 }
 export interface Model {
   id: string;

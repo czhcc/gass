@@ -87,67 +87,18 @@ public final class SimulatedModel implements Model {
             Map.of(),
             "Mock: flag simulated large-transfer account");
     }
-    for (var relation :
-        observation.relations().stream()
-            .sorted(Comparator.comparingInt(e -> e.relationType().equals("SYNCS_TO") ? 0 : 1))
-            .toList()) {
-      String action =
-          relation.relationType().equals("SYNCS_TO")
-              ? "DISABLE_SYNC"
-              : relation.relationType().equals("SHARED_WITH") ? "REVOKE_SHARING" : "";
-      if (relation.enabled() && allowed.contains(action))
-        return decision(
-            action, relation.id(), Map.of(), "Mock: contain an enabled channel observed now");
-    }
-    // A visible, explicitly labelled validation probe exercises rejection, then adapts to feedback.
-    if (allowed.contains("DISABLE_SYNC")
-        && observation.relations().stream()
-            .anyMatch(e -> !e.enabled() && e.relationType().equals("SYNCS_TO"))
-        && observation.feedback().stream()
-            .noneMatch(f -> f.contains("disabled or has incompatible type")))
-      return decision(
-          "DISABLE_SYNC",
-          observation.relations().stream()
-              .filter(e -> e.relationType().equals("SYNCS_TO"))
-              .findFirst()
-              .orElseThrow()
-              .id(),
-          Map.of(),
-          "Mock validation probe: confirm engine rejects an already disabled channel");
-    if (allowed.contains("SIMULATE_PROPAGATION")) {
-      for (var relation : observation.relations()) {
-        var from =
-            observation.entities().stream()
-                .filter(e -> e.id().equals(relation.sourceId()))
-                .findFirst();
-        var to =
-            observation.entities().stream()
-                .filter(e -> e.id().equals(relation.targetId()))
-                .findFirst();
-        if (relation.enabled()
-            && from.isPresent()
-            && to.isPresent()
-            && (from.get().type().equals("DOCUMENT")
-                || Boolean.TRUE.equals(from.get().properties().get("exposed")))
-            && !Boolean.TRUE.equals(to.get().properties().get("exposed")))
-          return decision(
-              "SIMULATE_PROPAGATION",
-              to.get().id(),
-              Map.of("sourceId", from.get().id()),
-              "Mock: simulate a currently reachable propagation opportunity");
+    if ("information".equals(observation.domainCode()) || !observation.availableActions().isEmpty()) {
+      var priority = List.of("DISABLE_SYNC", "REVOKE_SHARING", "SIMULATE_PROPAGATION", "MARK_REVIEWED", "ANALYZE_RELATIONS");
+      var selected = observation.availableActions().stream().filter(ActionCapability::available)
+          .sorted(Comparator.comparingInt(c -> priority.indexOf(c.action().actionType()))).findFirst();
+      if (selected.isPresent()) {
+        var capability = selected.get();
+        Map<String, Object> parameters = new LinkedHashMap<>();
+        capability.parameterOptions().forEach((name, ids) -> parameters.put(name, ids.getFirst()));
+        return new Decision(capability.action().actionType(), capability.targetId(), parameters,
+            "Mock: choose a currently available type-owned action", capability.targetKind());
       }
-    }
-    if (allowed.contains("MARK_REVIEWED")) {
-      var target =
-          observation.entities().stream()
-              .filter(e -> !Boolean.TRUE.equals(e.properties().get("reviewed")))
-              .findFirst();
-      if (target.isPresent())
-        return decision(
-            "MARK_REVIEWED",
-            target.get().id(),
-            Map.of(),
-            "Mock: review an object not yet reviewed in the latest observation");
+      return new Decision("END", "", Map.of(), "Mock: no available object actions remain", "AGENT");
     }
     if (allowed.contains("ANALYZE_ACCOUNT") && !observation.entities().isEmpty())
       return decision(

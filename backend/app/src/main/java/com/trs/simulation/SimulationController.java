@@ -29,6 +29,14 @@ public class SimulationController {
     return new InformationEnvironment().actions();
   }
 
+  /** Lists type-owned action contracts for information worlds. @author czhcc-trsdsj\codexsandboxoffline */
+  @GetMapping("/domains/information/ontology")
+  public Ontology informationOntology() { return InformationOntology.definition(); }
+
+  /** Lists scoped target capabilities against the run's current state. @author czhcc-trsdsj\codexsandboxoffline */
+  @GetMapping("/runs/{id}/action-capabilities")
+  public ActionCatalog actionCapabilities(@PathVariable String id) { return runs.actionCapabilities(id); }
+
   /** Returns domain evaluation with explicit fact/inference/simulation labels. @author agent */
   @GetMapping("/runs/{id}/evaluation")
   public Map<String, Object> evaluate(@PathVariable String id) {
