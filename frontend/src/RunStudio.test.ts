@@ -9,7 +9,7 @@ import {
 import RunStudio from "./components/RunStudio.vue";
 vi.mock("./components/Graph.vue", () => ({
   __esModule: true,
-  default: { template: "<div>graph</div>" },
+  default: { template: '<button @click="$emit(\'select\', \'document_f\')">Select document F</button>' },
 }));
 vi.mock("./components/Comparison.vue", () => ({
   __esModule: true,
@@ -36,6 +36,10 @@ describe("historical playback", () => {
     vi.stubGlobal("EventSource", class { addEventListener() {} close() {} });
     render(RunStudio, { props: { lang: "en", initialId: "r1" } });
     const execute = await screen.findByRole("button", { name: "Execute action" });
+    await fireEvent.click(await screen.findByRole("button", { name: "Select document F" }));
+    const details = await screen.findByRole("region", { name: "Object details" });
+    expect(details.textContent).toContain("MARK_REVIEWED");
+    expect(details.textContent).toContain("SET_REVIEWED");
     expect(screen.queryByLabelText("Parameters JSON")).toBeNull();
     await fireEvent.click(execute);
     await waitFor(() => expect(screen.getByTestId("world-version").textContent).toContain("1"));

@@ -3,6 +3,7 @@ import { computed, defineAsyncComponent, nextTick, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { api, ApiError } from "../api";
 import { useWorkspaceStore } from "../stores/workspace";
+import EntityDetails from "./EntityDetails.vue";
 import type { Lang, Ontology, World } from "../types";
 
 const props = defineProps<{ lang: Lang }>();
@@ -10,6 +11,9 @@ const Graph = defineAsyncComponent(() => import("./Graph.vue"));
 const { worlds } = storeToRefs(useWorkspaceStore());
 const selectedId = ref(""), search = ref(""), domainFilter = ref("");
 const selected = computed(() => worlds.value.find(w => w.id === selectedId.value));
+const selectedObject = ref<{ worldId: string; entityId: string }>();
+const selectedEntity = computed(() => selectedObject.value?.worldId === selected.value?.id
+  ? selected.value?.entities.find(e => e.id === selectedObject.value?.entityId) : undefined);
 const visible = computed(() => worlds.value.filter(w =>
   (!domainFilter.value || w.domainCode === domainFilter.value) &&
   (w.name + " " + w.id).toLowerCase().includes(search.value.toLowerCase()),
@@ -259,7 +263,8 @@ async function deleteWorld() {
             <button class="secondary text-red-700" :disabled="busy || initial(selected.id)" @click="openDeletion">{{ t.remove }}</button>
           </div>
           <p v-if="initial(selected.id)" class="mb-4 text-xs text-slate-500">{{ t.protected }}</p>
-          <Graph :world="selected" :lang="lang" />
+          <Graph :world="selected" :lang="lang" @select="id => selectedObject = { worldId: selected!.id, entityId: id }" />
+          <EntityDetails v-if="selectedEntity" :entity="selectedEntity" :lang="lang" :ontology="selected.ontology" />
           <section v-if="selected.ontology" class="mt-5 space-y-3">
             <h4 class="font-semibold">{{ t.typeActions }}</h4>
             <p class="text-xs text-slate-500">{{ t.actionHelp }}</p>
