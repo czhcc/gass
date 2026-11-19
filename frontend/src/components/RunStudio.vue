@@ -757,10 +757,10 @@ onBeforeUnmount(() => {
           </button>
         </form>
       </div>
-      <ObjectActions v-if="info.status === 'PAUSED' && live && actionCatalog?.domainCode === 'information'"
+      <ObjectActions v-if="info.status === 'PAUSED' && live && actionCatalog?.agents"
         :catalog="actionCatalog" :agents="agents" :lang="lang" :busy="busy" :target-id="selectedEntity?.id" @submit="executeObjectAction" />
       <form
-        v-if="info.status === 'PAUSED' && live && actionCatalog?.domainCode !== 'information'"
+        v-if="info.status === 'PAUSED' && live && !actionCatalog?.agents"
         class="panel grid gap-4"
         @submit.prevent="intervene"
       >

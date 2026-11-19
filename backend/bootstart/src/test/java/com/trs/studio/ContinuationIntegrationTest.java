@@ -22,7 +22,19 @@ class ContinuationIntegrationTest {
   @Autowired RunService runs;
   @Autowired HistoryService history;
   @Autowired ModelService models;
+  @Autowired DemoService demos;
   @MockitoSpyBean AgentScopeDecisionProvider provider;
+
+  @Test
+  void bankDemoActuallyExecutesCelScoringAndKeepsMoneyConserved() {
+    var world = worlds.create(Examples.bankTransfer());
+    var run = demos.create("bank", world.id());
+    runs.step(run.id(), "demo-cel");
+    assertTrue(runs.events(run.id(), 0).stream().anyMatch(e -> e.eventType().equals("ACTION_ACCEPTED") && e.payload().get("actionType").equals("ASSESS_RISK_CEL")));
+    assertTrue(runs.state(run.id()).entities().stream().anyMatch(e -> Long.valueOf(80).equals(e.properties().get("riskScore")) || Integer.valueOf(80).equals(e.properties().get("riskScore"))));
+    assertEquals(1200000000L, runs.state(run.id()).entities().stream().filter(e -> e.type().equals("BANK_ACCOUNT")).mapToLong(e -> ((Number) e.properties().get("balanceMinor")).longValue()).sum());
+    assertFalse(runs.events(run.id(), 0).stream().anyMatch(e -> e.eventType().equals("ACTION_REJECTED")));
+  }
 
   private Scenario leak() {
     var model = models.mock();

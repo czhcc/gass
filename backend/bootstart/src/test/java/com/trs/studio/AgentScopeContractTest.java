@@ -23,6 +23,37 @@ class AgentScopeContractTest {
   @TempDir java.nio.file.Path directory;
 
   @Test
+  void configuredLlmGeneratesNestedDeclarativeContractWithoutGraphTools() throws Exception {
+    var sawTools = new java.util.concurrent.atomic.AtomicBoolean();
+    var invalid = new java.util.concurrent.atomic.AtomicBoolean();
+    var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+    server.createContext("/v1/chat/completions", exchange -> {
+      String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+      if (body.contains("graph_search_entity") || body.contains("graph_get_entity")) sawTools.set(true);
+      var template = ActionPrograms.ontology("bank").types().getFirst().actions().getLast();
+      var action = invalid.get() ? new ActionDefinition(template.actionType(), template.nameZh(), template.nameEn(), template.description(), template.parametersSchema(), List.of(), template.effect(),
+          new ActionProgram(1, List.of(), List.of(new ActionOperation("SET_PROPERTY", Map.of("object", "target.id", "property", "'riskScore'", "value", "target.getClass()"))), Map.of())) : template;
+      String args = Json.write(Map.of("response", action));
+      String json = Json.write(Map.of("id", "generation", "object", "chat.completion", "created", 1, "model", "fixture", "choices", List.of(Map.of("index", 0, "finish_reason", "tool_calls", "message", Map.of("role", "assistant", "tool_calls", List.of(Map.of("id", "draft", "type", "function", "function", Map.of("name", "generate_response", "arguments", args))))))));
+      byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+      exchange.getResponseHeaders().set("Content-Type", "application/json"); exchange.sendResponseHeaders(200, bytes.length); exchange.getResponseBody().write(bytes); exchange.close();
+    });
+    server.start();
+    try {
+      var models = mock(ModelService.class);
+      var config = new ModelService.Config("author", "Author", "http://127.0.0.1:" + server.getAddress().getPort() + "/v1", "fixture", null, null, 0, 2048, 10, 1);
+      when(models.get("author")).thenReturn(config); when(models.credential(config)).thenReturn("fixture-key");
+      var provider = new AgentScopeDecisionProvider(models);
+      var generated = provider.generateAction("author", "bank", "BANK_ACCOUNT", "根据余额生成风险评分");
+      assertEquals("ASSESS_RISK_CEL", generated.actionType());
+      assertTrue(generated.program().operations().getFirst().arguments().get("value").contains("balanceMinor"));
+      assertFalse(sawTools.get());
+      invalid.set(true);
+      assertThrows(IllegalArgumentException.class, () -> provider.generateAction("author", "bank", "BANK_ACCOUNT", "生成无效表达式"));
+    } finally { server.stop(0); }
+  }
+
+  @Test
   void sdkSelectsReadOnlyToolAndParsesStructuredDecision() throws Exception {
     var calls = new AtomicInteger();
     var sawToolFeedback = new java.util.concurrent.atomic.AtomicBoolean();

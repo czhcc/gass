@@ -52,7 +52,7 @@ public class DemoService {
                   "风控 / Risk Agent",
                   "Review current transfers and flag simulated risks",
                   model.id(),
-                  List.of("FLAG_RISK", "ANALYZE_ACCOUNT", "END"),
+                  List.of("ASSESS_RISK_CEL", "FLAG_RISK", "ANALYZE_ACCOUNT", "END"),
                   visible));
     else
       agents =

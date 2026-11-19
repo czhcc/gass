@@ -18,7 +18,7 @@ public class InformationEnvironment implements DomainEnvironment {
 
   /** Validates persisted type contracts. @author czhcc-trsdsj\codexsandboxoffline */
   @Override
-  public void validate(World world) { InformationOntology.validate(world.ontology()); }
+  public void validate(World world) { ActionPrograms.validate(world.ontology()); }
 
   /** Executes legacy direct domain calls through the object action engine. @author czhcc-trsdsj\codexsandboxoffline */
   public Outcome execute(AgentDefinition agent, Decision decision, State state) {
@@ -40,7 +40,7 @@ public class InformationEnvironment implements DomainEnvironment {
   /** Legacy permission catalog derived from type-owned definitions; END is lifecycle control. @author czhcc-trsdsj\codexsandboxoffline */
   public List<Map<String, Object>> actions() {
     var definitions = new TreeMap<String, ActionDefinition>();
-    InformationOntology.definition().types().forEach(t -> t.actions().forEach(a -> definitions.put(a.actionType(), a)));
+    ActionPrograms.ontology("information").types().forEach(t -> t.actions().forEach(a -> definitions.put(a.actionType(), a)));
     var result = new ArrayList<Map<String, Object>>();
     definitions.values().forEach(a -> result.add(Map.of("actionType", a.actionType(), "parameters", a.parametersSchema(), "targetRequired", true)));
     result.add(Map.of("actionType", "END", "parameters", Map.of("type", "object", "properties", Map.of(), "additionalProperties", false), "targetRequired", false));

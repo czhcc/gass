@@ -4,6 +4,7 @@ import { api } from "../api";
 import type { Lang, Scenario } from "../types";
 import Models from "./Models.vue";
 import Worlds from "./Worlds.vue";
+import Actions from "./Actions.vue";
 import { defineAsyncComponent } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
@@ -18,6 +19,13 @@ const tab = computed(() => String(route.params.tab || "worlds"));
 const error = ref(""),
   busy = ref(false);
 const scenarioForm = ref({ name: "", worldId: "", modelId: "" });
+const extraPermissions = ref<string[]>([]);
+const customActions = computed(() => {
+  const known = new Set(['TRANSFER', 'FLAG_RISK', 'ANALYZE_ACCOUNT', 'ASSESS_RISK_CEL', 'MARK_REVIEWED', 'ANALYZE_RELATIONS', 'SIMULATE_PROPAGATION', 'REVOKE_SHARING', 'DISABLE_SYNC', 'END']);
+  const w = worlds.value.find(w => w.id === scenarioForm.value.worldId);
+  return [...new Map((w?.ontology?.types ?? []).flatMap(t => t.actions).filter(a => !known.has(a.actionType)).map(a => [a.actionType, a])).values()];
+});
+watch(() => scenarioForm.value.worldId, () => { extraPermissions.value = []; });
 const demoWorldId = ref("");
 const demoWorld = computed(() => worlds.value.find((world) => world.id === demoWorldId.value));
 watch(() => worlds.value.map(world => world.id), ids => {
@@ -47,6 +55,7 @@ const t = computed(() =>
         bankDomain: "银行",
         worlds: "世界与图谱",
         models: "模型配置",
+        actions: "Action 维护",
         scenarios: "场景配置",
         note: "推演生成模拟状态，不代表真实世界事实。可选择无需密钥的模拟模型，或配置真实模型。",
         scenario: "创建场景",
@@ -77,6 +86,7 @@ const t = computed(() =>
         bankDomain: "Bank",
         worlds: "Worlds & graph",
         models: "Models",
+        actions: "Action library",
         scenarios: "Scenarios",
         note: "Simulation is not real-world fact. Use the credential-free mock model or configure a real model.",
         scenario: "Create scenario",
@@ -124,7 +134,7 @@ async function createScenario() {
                 name: "Bank Agent",
                 goal: "Process simulated transfer",
                 modelId: scenarioForm.value.modelId,
-                allowedActions: ["TRANSFER", "ANALYZE_ACCOUNT", "END"],
+                allowedActions: ["TRANSFER", "ANALYZE_ACCOUNT", "END", ...extraPermissions.value],
                 visibleEntityIds: visible,
                 maxDecisions: 10,
               },
@@ -133,7 +143,7 @@ async function createScenario() {
                 name: "Risk Agent",
                 goal: "Flag simulated transfer risk",
                 modelId: scenarioForm.value.modelId,
-                allowedActions: ["FLAG_RISK", "ANALYZE_ACCOUNT", "END"],
+                allowedActions: ["ASSESS_RISK_CEL", "FLAG_RISK", "ANALYZE_ACCOUNT", "END"],
                 visibleEntityIds: visible,
                 maxDecisions: 10,
               },
@@ -144,7 +154,7 @@ async function createScenario() {
                 name: "Investigation Agent",
                 goal: "Investigate potential paths and record simulated reviews. Connectivity is not proof of propagation.",
                 modelId: scenarioForm.value.modelId,
-                allowedActions: ["ANALYZE_RELATIONS", "MARK_REVIEWED", "END"],
+                allowedActions: ["ANALYZE_RELATIONS", "MARK_REVIEWED", "END", ...extraPermissions.value],
                 visibleEntityIds: visible,
                 maxDecisions: 10,
               },
@@ -290,7 +300,7 @@ async function demo(domain: string) {
     <aside class="workspace-sidebar">
     <nav class="grid gap-2" :aria-label="lang === 'zh' ? '工作台导航' : 'Workspace navigation'">
       <RouterLink
-        v-for="item in ['worlds', 'models', 'scenarios', 'studio', 'demos'] as const"
+        v-for="item in ['worlds', 'actions', 'models', 'scenarios', 'studio', 'demos'] as const"
         :key="item"
         :to="'/' + item"
         :aria-current="tab === item ? 'page' : undefined"
@@ -331,6 +341,7 @@ async function demo(domain: string) {
       :lang="lang"
       :initial-id="route.query.run ? String(route.query.run) : undefined"
     /><Models v-else-if="tab === 'models'" :lang="lang" />
+    <Actions v-else-if="tab === 'actions'" :lang="lang" />
     <Worlds v-else-if="tab === 'worlds'" :lang="lang" />
     <section v-else-if="tab === 'scenarios'" class="grid gap-5 lg:grid-cols-2">
       <form class="panel grid gap-4" @submit.prevent="createScenario">
@@ -352,6 +363,10 @@ async function demo(domain: string) {
           </select></label
         >
         <p class="text-xs text-slate-500">{{ t.agents }}</p>
+        <fieldset v-if="customActions.length && !agentsJson.trim()" :disabled="busy" class="grid gap-2 rounded border border-slate-200 p-3">
+          <legend class="text-sm">{{ lang === 'zh' ? '额外授权给调查 / 银行 Agent 的自定义 Action' : 'Custom Actions to grant to the Investigation / Bank Agent' }}</legend>
+          <label v-for="action in customActions" :key="action.actionType" class="flex items-center gap-2 text-sm"><input v-model="extraPermissions" type="checkbox" :value="action.actionType" class="w-auto" />{{ action.actionType }} · {{ lang === 'zh' ? action.nameZh : action.nameEn }}</label>
+        </fieldset>
         <label
           >{{ t.agentsJson }}<textarea v-model="agentsJson" rows="5" /></label
         ><button class="primary" :disabled="busy">{{ t.create }}</button>

@@ -8,6 +8,7 @@
   </parent>
   <artifactId>app</artifactId>
   <dependencies>
+    <dependency><groupId>dev.cel</groupId><artifactId>cel</artifactId><version>0.15.0</version></dependency>
     <dependency>
       <groupId>com.trs</groupId>
       <artifactId>common</artifactId>

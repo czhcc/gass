@@ -71,6 +71,10 @@ public final class SimulatedModel implements Model {
             "Mock: evaluate requested simulated transfer");
       }
     }
+    if (allowed.contains("ASSESS_RISK_CEL")) {
+      var score = observation.availableActions().stream().filter(c -> c.available() && c.action().actionType().equals("ASSESS_RISK_CEL")).findFirst();
+      if (score.isPresent()) return new Decision("ASSESS_RISK_CEL", score.get().targetId(), Map.of(), "Mock: request declarative CEL risk score", "ENTITY");
+    }
     if (allowed.contains("FLAG_RISK")) {
       var account =
           observation.entities().stream()
@@ -90,6 +94,8 @@ public final class SimulatedModel implements Model {
     if ("information".equals(observation.domainCode()) || !observation.availableActions().isEmpty()) {
       var priority = List.of("DISABLE_SYNC", "REVOKE_SHARING", "SIMULATE_PROPAGATION", "MARK_REVIEWED", "ANALYZE_RELATIONS");
       var selected = observation.availableActions().stream().filter(ActionCapability::available)
+          .filter(c -> !c.action().actionType().equals("TRANSFER"))
+          .filter(c -> ((List<?>) c.action().parametersSchema().getOrDefault("required", List.of())).stream().allMatch(p -> !c.parameterOptions().getOrDefault(p, List.of()).isEmpty()))
           .sorted(Comparator.comparingInt(c -> priority.indexOf(c.action().actionType()))).findFirst();
       if (selected.isPresent()) {
         var capability = selected.get();

@@ -27,7 +27,7 @@ const reasons: Record<string, string> = {
   'No visible destination with enabled outgoing synchronization': '没有对该 Agent 可见且与当前系统存在已启用同步关系的目标对象。',
 };
 export const effectDescription = (action: ActionDefinition, lang: Lang) => lang === 'zh'
-  ? effects[action.effect] ?? `暂无中文执行效果说明（${action.effect}）。` : action.description;
+  ? effects[action.effect] ?? action.description : action.description;
 export const conditionDescription = (code: string, lang: Lang) => lang === 'zh'
   ? conditions[code] ?? `暂无中文条件说明（${code}）。` : code;
 export const parameterLabel = (name: string, lang: Lang) => lang === 'zh' ? parameters[name]?.[0] ?? name : name;
@@ -39,6 +39,6 @@ export function parameterDetails(action: ActionDefinition, lang: Lang) {
   return Object.entries(fields).map(([name, field]) => ({
     name, label: parameterLabel(name, lang), required: required.includes(name),
     type: lang === 'zh' ? parameters[name] ? '对象 ID（文本）' : ({ string: '文本', number: '数字', integer: '整数', boolean: '布尔值', object: '对象', array: '列表' } as Record<string, string>)[field.type ?? ''] ?? field.type ?? '未指定' : field.type ?? 'Unspecified',
-    description: lang === 'zh' ? parameters[name]?.[1] ?? field.description ?? '暂无参数说明。' : field.description ?? '',
+    description: lang === 'zh' ? (action.program ? field.description ?? parameters[name]?.[1] : parameters[name]?.[1] ?? field.description) ?? '暂无参数说明。' : field.description ?? '',
   }));
 }

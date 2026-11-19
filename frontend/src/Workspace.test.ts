@@ -4,6 +4,7 @@ import { createPinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
 import Workspace from "./components/Workspace.vue";
 import type { World } from "./types";
+import { useWorkspaceStore } from './stores/workspace';
 
 vi.mock("./components/RunStudio.vue", () => ({
   __esModule: true,
@@ -17,6 +18,7 @@ afterEach(() => {
 
 async function setup(lang: "zh" | "en" = "en", deletion?: Promise<unknown>, worlds: World[] = []) {
   const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
+    if (url === '/api/scenarios' && options?.method === 'POST') return { ok: true, json: async () => ({ id: 'new', ...JSON.parse(String(options.body)) }) };
     if (options?.method === "DELETE") {
       return deletion ?? { ok: true, status: 204 };
     }
@@ -35,11 +37,27 @@ async function setup(lang: "zh" | "en" = "en", deletion?: Promise<unknown>, worl
   });
   await router.push("/scenarios");
   await router.isReady();
-  render(Workspace, { props: { lang }, global: { plugins: [createPinia(), router] } });
+  const pinia = createPinia();
+  render(Workspace, { props: { lang }, global: { plugins: [pinia, router] } });
   await screen.findByText("First scenario");
   const card = screen.getByText("First scenario").closest("article")!;
-  return { fetcher, card, router };
+  return { fetcher, card, router, store: useWorkspaceStore(pinia) };
 }
+
+it('explicitly grants selected custom world Actions to the primary default agent', async () => {
+  const custom: World = { id: 'custom', name: 'Custom world', domainCode: 'bank', version: 1, entityTypes: ['BANK_ACCOUNT'], relationTypes: [], entities: [{ id: 'a', type: 'BANK_ACCOUNT', name: 'A', properties: {} }], relations: [], ontology: { version: 3, types: [{ targetKind: 'ENTITY', type: 'BANK_ACCOUNT', actions: [{ actionType: 'CUSTOM_SCORE', nameZh: '自定义评分', nameEn: 'Custom score', description: '', parametersSchema: {}, preconditions: [], effect: 'CUSTOM' }] }] } };
+  const { fetcher, store } = await setup('en', undefined, [custom]);
+  store.models = [{ id: 'm', name: 'Model', modelName: 'Model', baseUrl: 'mock://local', keyConfigured: false, apiKeyEnv: null, temperature: 0, maxTokens: 1024, timeoutSeconds: 10, concurrency: 1 }];
+  await fireEvent.update(screen.getByLabelText('Scenario name'), 'Custom permission');
+  await fireEvent.update(screen.getByLabelText('World'), 'custom');
+  await fireEvent.update(screen.getByLabelText('Model'), 'm');
+  await fireEvent.click(screen.getByLabelText('CUSTOM_SCORE · Custom score'));
+  await fireEvent.click(screen.getByRole('button', { name: 'Create two-agent scenario' }));
+  await waitFor(() => expect(fetcher.mock.calls.some(([url, init]) => url === '/api/scenarios' && init?.method === 'POST')).toBe(true));
+  const body = JSON.parse(String(fetcher.mock.calls.find(([url, init]) => url === '/api/scenarios' && init?.method === 'POST')![1]!.body));
+  expect(body.agents[0].allowedActions).toContain('CUSTOM_SCORE');
+  expect(body.agents[1].allowedActions).not.toContain('CUSTOM_SCORE');
+});
 
 describe("demos use existing worlds", () => {
   const worlds: World[] = [
@@ -87,10 +105,10 @@ describe("demos use existing worlds", () => {
   });
 });
 
-it('keeps five sidebar destinations and limits demo operations to their own page', async () => {
+it('keeps six sidebar destinations and limits demo operations to their own page', async () => {
   const { router } = await setup();
   const navigation = screen.getByRole('navigation', { name: 'Workspace navigation' });
-  expect(within(navigation).getAllByRole('link')).toHaveLength(5);
+  expect(within(navigation).getAllByRole('link')).toHaveLength(6);
   expect(within(navigation).getByRole('link', { name: 'Scenarios' }).getAttribute('aria-current')).toBe('page');
   expect(screen.queryByLabelText('Demo world')).toBeNull();
   expect(screen.queryByRole('button', { name: 'Create leak demo' })).toBeNull();
