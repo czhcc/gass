@@ -27,7 +27,7 @@ class RunDeletionIntegrationTest {
 
   @Test
   void deletesLeafHistoryOnlyAndRequiresAuthentication() throws Exception {
-    var parent = demos.create("information", worlds.example("information").id());
+    var parent = demos.create("information", worlds.example("information").id(), 8);
     runs.step(parent.id(), "before-delete");
     var child = history.fork(parent.id(), 0, "child", "fork");
     var sibling = history.fork(parent.id(), 0, "sibling", "fork-other");
@@ -61,7 +61,7 @@ class RunDeletionIntegrationTest {
 
   @Test
   void refusesRunningRunThenDeletesPausedRunWithQueuedData() throws Exception {
-    var run = demos.create("bank", worlds.example("bank").id());
+    var run = demos.create("bank", worlds.example("bank").id(), 8);
     // Persist RUNNING without starting a worker, making the conflict deterministic.
     db.update("UPDATE simulation_run SET status='RUNNING' WHERE id=?", run.id());
     var client = HttpClient.newBuilder().cookieHandler(new CookieManager()).build();

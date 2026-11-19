@@ -36,13 +36,15 @@ public class ContinuationController {
     this.streams = streams;
   }
 
-  /** Explicit existing world selection for a demo. @author czhcc-trsdsj\codexsandboxoffline */
-  public record DemoInput(String worldId) {}
+  /** Explicit existing world and required round budget for a demo. @author czhcc-trsdsj\codexsandboxoffline */
+  public record DemoInput(String worldId, Integer maxSteps) {}
 
   /** Creates a simulated demo from the selected world. @author czhcc-trsdsj\codexsandboxoffline */
   @PostMapping("/examples/{domain}/demo")
   public Run demo(@PathVariable String domain, @RequestBody DemoInput input) {
-    return demos.create(domain, input == null ? null : input.worldId());
+    if (input == null || input.maxSteps() == null)
+      throw new IllegalArgumentException("Maximum simulation rounds required (integer from 1 to 20)");
+    return demos.create(domain, input.worldId(), input.maxSteps());
   }
 
   /** Creates an explicitly simulated SDK model without credentials. @author agent */

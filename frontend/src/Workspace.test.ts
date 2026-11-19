@@ -51,11 +51,13 @@ it('explicitly grants selected custom world Actions to the primary default agent
   await fireEvent.update(screen.getByLabelText('Scenario name'), 'Custom permission');
   await fireEvent.update(screen.getByLabelText('World'), 'custom');
   await fireEvent.update(screen.getByLabelText('Model'), 'm');
+  await fireEvent.update(screen.getByLabelText('Maximum simulation rounds'), '13');
   await fireEvent.click(screen.getByLabelText('CUSTOM_SCORE · Custom score'));
   await fireEvent.click(screen.getByRole('button', { name: 'Create two-agent scenario' }));
   await waitFor(() => expect(fetcher.mock.calls.some(([url, init]) => url === '/api/scenarios' && init?.method === 'POST')).toBe(true));
   const body = JSON.parse(String(fetcher.mock.calls.find(([url, init]) => url === '/api/scenarios' && init?.method === 'POST')![1]!.body));
   expect(body.agents[0].allowedActions).toContain('CUSTOM_SCORE');
+  expect(body.maxSteps).toBe(13);
   expect(body.agents[1].allowedActions).not.toContain('CUSTOM_SCORE');
 });
 
@@ -74,12 +76,13 @@ describe("demos use existing worlds", () => {
     expect(leak.disabled).toBe(true);
     expect(bank.disabled).toBe(true);
     await fireEvent.update(screen.getByLabelText("Demo world"), "leak-selected");
+    await fireEvent.update(screen.getByLabelText('Maximum simulation rounds'), '12');
     expect(leak.disabled).toBe(false);
     expect(bank.disabled).toBe(true);
     await fireEvent.click(leak);
     await waitFor(() => expect(router.currentRoute.value.query.run).toBe("demo-run"));
     expect(fetcher).toHaveBeenCalledWith("/api/examples/information/demo", expect.objectContaining({
-      method: "POST", body: JSON.stringify({ worldId: "leak-selected" }),
+      method: "POST", body: JSON.stringify({ worldId: "leak-selected", maxSteps: 12 }),
     }));
     expect(fetcher.mock.calls.some(([url, options]) => options?.method === "POST" && url !== "/api/examples/information/demo")).toBe(false);
   });
@@ -89,10 +92,11 @@ describe("demos use existing worlds", () => {
     await fireEvent.click(screen.getByRole('link', { name: 'Demo world' }));
     await screen.findByLabelText('Demo world');
     await fireEvent.update(screen.getByLabelText("Demo world"), "bank-selected");
+    await fireEvent.update(screen.getByLabelText('Maximum simulation rounds'), '20');
     expect((screen.getByRole("button", { name: "Create leak demo" }) as HTMLButtonElement).disabled).toBe(true);
     await fireEvent.click(screen.getByRole("button", { name: "Create bank demo" }));
     await waitFor(() => expect(fetcher).toHaveBeenCalledWith("/api/examples/bank/demo", expect.objectContaining({
-      method: "POST", body: JSON.stringify({ worldId: "bank-selected" }),
+      method: "POST", body: JSON.stringify({ worldId: "bank-selected", maxSteps: 20 }),
     })));
   });
 
@@ -103,6 +107,32 @@ describe("demos use existing worlds", () => {
     expect(screen.getByText("请先在“世界与图谱”中导入或创建世界，再选择世界创建演示。")).toBeTruthy();
     expect((screen.getByRole("button", { name: "创建泄密演示" }) as HTMLButtonElement).disabled).toBe(true);
   });
+});
+
+it.each(['zh', 'en'] as const)('validates integer round limits in both creation forms in %s', async lang => {
+  const world: World = { id: 'w', name: 'World', domainCode: 'information', version: 1, entityTypes: [], relationTypes: [], entities: [], relations: [] };
+  const { fetcher } = await setup(lang, undefined, [world]);
+  const label = lang === 'zh' ? '推演最大轮数' : 'Maximum simulation rounds';
+  for (const value of ['0', '21', '1.5', '']) {
+    await fireEvent.update(screen.getByLabelText(label), value);
+    expect((screen.getByRole('button', { name: lang === 'zh' ? '创建双 Agent 场景' : 'Create two-agent scenario' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole('alert').textContent).toContain(lang === 'zh' ? '1～20 的整数' : 'integer from 1 to 20');
+  }
+  await fireEvent.update(screen.getByLabelText(label), '1');
+  expect((screen.getByRole('button', { name: lang === 'zh' ? '创建双 Agent 场景' : 'Create two-agent scenario' }) as HTMLButtonElement).disabled).toBe(false);
+  await fireEvent.click(screen.getByRole('link', { name: lang === 'zh' ? '演示世界' : 'Demo world' }));
+  await screen.findByLabelText(lang === 'zh' ? '演示世界' : 'Demo world');
+  await fireEvent.update(screen.getByLabelText(lang === 'zh' ? '演示世界' : 'Demo world'), 'w');
+  for (const value of ['0', '21', '1.5', '']) {
+    await fireEvent.update(screen.getByLabelText(label), value);
+    const button = screen.getByRole('button', { name: lang === 'zh' ? '创建泄密演示' : 'Create leak demo' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    await fireEvent.click(button);
+  }
+  expect(fetcher.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false);
+  await fireEvent.update(screen.getByLabelText(label), '1');
+  await fireEvent.click(screen.getByRole('button', { name: lang === 'zh' ? '创建泄密演示' : 'Create leak demo' }));
+  await waitFor(() => expect(fetcher).toHaveBeenCalledWith('/api/examples/information/demo', expect.objectContaining({ body: JSON.stringify({ worldId: 'w', maxSteps: 1 }) })));
 });
 
 it('keeps six sidebar destinations and limits demo operations to their own page', async () => {

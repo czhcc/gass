@@ -18,7 +18,9 @@ const props = defineProps<{ lang: Lang }>();
 const tab = computed(() => String(route.params.tab || "worlds"));
 const error = ref(""),
   busy = ref(false);
-const scenarioForm = ref({ name: "", worldId: "", modelId: "" });
+const scenarioForm = ref({ name: "", worldId: "", modelId: "", maxSteps: 5 });
+const demoMaxSteps = ref<number | string>(8);
+const validRounds = (value: unknown) => typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 20;
 const extraPermissions = ref<string[]>([]);
 const customActions = computed(() => {
   const known = new Set(['TRANSFER', 'FLAG_RISK', 'ANALYZE_ACCOUNT', 'ASSESS_RISK_CEL', 'MARK_REVIEWED', 'ANALYZE_RELATIONS', 'SIMULATE_PROPAGATION', 'REVOKE_SHARING', 'DISABLE_SYNC', 'END']);
@@ -62,6 +64,9 @@ const t = computed(() =>
         name: "场景名称",
         world: "世界",
         model: "模型",
+        maxSteps: "推演最大轮数",
+        roundsHelp: "可设置 1～20 轮；任务完成或其他预算耗尽时会提前结束。",
+        roundsInvalid: "推演最大轮数必须是 1～20 的整数。",
         create: "创建双 Agent 场景",
         run: "创建暂停运行",
         delete: "删除",
@@ -93,6 +98,9 @@ const t = computed(() =>
         name: "Scenario name",
         world: "World",
         model: "Model",
+        maxSteps: "Maximum simulation rounds",
+        roundsHelp: "Choose 1–20 rounds. Task completion or other budget limits may end the run earlier.",
+        roundsInvalid: "Maximum simulation rounds must be an integer from 1 to 20.",
         create: "Create two-agent scenario",
         run: "Create paused run",
         delete: "Delete",
@@ -115,6 +123,7 @@ async function load() {
 }
 onMounted(load);
 async function createScenario() {
+  if (busy.value || !validRounds(scenarioForm.value.maxSteps)) return;
   busy.value = true;
   error.value = "";
   try {
@@ -123,7 +132,7 @@ async function createScenario() {
     const s = await api<Scenario>("/scenarios", "POST", {
       name: scenarioForm.value.name,
       worldId: w.id,
-      maxSteps: 5,
+      maxSteps: scenarioForm.value.maxSteps,
       maxEvents: 500,
       agents: agentsJson.value.trim()
         ? JSON.parse(agentsJson.value)
@@ -277,14 +286,14 @@ async function run(id: string) {
   }
 }
 async function demo(domain: string) {
-  if (busy.value || !demoWorld.value || demoWorld.value.domainCode !== domain) return;
+  if (busy.value || !validRounds(demoMaxSteps.value) || !demoWorld.value || demoWorld.value.domainCode !== domain) return;
   busy.value = true;
   error.value = "";
   try {
     const run = await api<{ id: string }>(
       "/examples/" + domain + "/demo",
       "POST",
-      { worldId: demoWorldId.value },
+      { worldId: demoWorldId.value, maxSteps: demoMaxSteps.value },
     );
     await workspace.reload();
     await router.push("/studio?run=" + run.id);
@@ -326,10 +335,13 @@ async function demo(domain: string) {
         </select>
       </label>
       <p class="text-sm text-slate-500">{{ worlds.length ? t.demoHelp : t.noDemoWorld }}</p>
+      <label class="block">{{ t.maxSteps }}<input v-model.number="demoMaxSteps" type="number" min="1" max="20" step="1" required :disabled="busy" aria-describedby="demo-rounds-help" :aria-invalid="!validRounds(demoMaxSteps)" /></label>
+      <p id="demo-rounds-help" class="text-xs text-slate-500">{{ t.roundsHelp }}</p>
+      <p v-if="!validRounds(demoMaxSteps)" role="alert" class="text-sm text-red-700">{{ t.roundsInvalid }}</p>
       <div class="flex flex-wrap gap-3">
-      <button class="secondary" :disabled="busy || demoWorld?.domainCode !== 'information'" @click="demo('information')">
+      <button class="secondary" :disabled="busy || !validRounds(demoMaxSteps) || demoWorld?.domainCode !== 'information'" @click="demo('information')">
         {{ t.leakDemo }}</button
-      ><button class="secondary" :disabled="busy || demoWorld?.domainCode !== 'bank'" @click="demo('bank')">
+      ><button class="secondary" :disabled="busy || !validRounds(demoMaxSteps) || demoWorld?.domainCode !== 'bank'" @click="demo('bank')">
         {{ t.bankDemo }}
       </button>
       </div>
@@ -363,13 +375,16 @@ async function demo(domain: string) {
           </select></label
         >
         <p class="text-xs text-slate-500">{{ t.agents }}</p>
+        <label>{{ t.maxSteps }}<input v-model.number="scenarioForm.maxSteps" type="number" min="1" max="20" step="1" required :disabled="busy" aria-describedby="scenario-rounds-help" :aria-invalid="!validRounds(scenarioForm.maxSteps)" /></label>
+        <p id="scenario-rounds-help" class="text-xs text-slate-500">{{ t.roundsHelp }}</p>
+        <p v-if="!validRounds(scenarioForm.maxSteps)" role="alert" class="text-sm text-red-700">{{ t.roundsInvalid }}</p>
         <fieldset v-if="customActions.length && !agentsJson.trim()" :disabled="busy" class="grid gap-2 rounded border border-slate-200 p-3">
           <legend class="text-sm">{{ lang === 'zh' ? '额外授权给调查 / 银行 Agent 的自定义 Action' : 'Custom Actions to grant to the Investigation / Bank Agent' }}</legend>
           <label v-for="action in customActions" :key="action.actionType" class="flex items-center gap-2 text-sm"><input v-model="extraPermissions" type="checkbox" :value="action.actionType" class="w-auto" />{{ action.actionType }} · {{ lang === 'zh' ? action.nameZh : action.nameEn }}</label>
         </fieldset>
         <label
           >{{ t.agentsJson }}<textarea v-model="agentsJson" rows="5" /></label
-        ><button class="primary" :disabled="busy">{{ t.create }}</button>
+        ><button class="primary" :disabled="busy || !validRounds(scenarioForm.maxSteps)">{{ t.create }}</button>
       </form>
       <div ref="scenarioList" class="space-y-4" tabindex="-1">
         <article v-for="scenario in scenarios" :key="scenario.id" class="panel">

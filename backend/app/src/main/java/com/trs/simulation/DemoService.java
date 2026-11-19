@@ -22,10 +22,12 @@ public class DemoService {
   }
 
   /**
-   * Creates a credential-free paused demo using an existing world without copying its template.
+   * Creates a credential-free paused demo with an explicitly selected round budget.
    * @author czhcc-trsdsj\codexsandboxoffline
    */
-  public Run create(String domain, String worldId) {
+  public Run create(String domain, String worldId, int maxSteps) {
+    if (maxSteps < 1 || maxSteps > 20)
+      throw new IllegalArgumentException("Maximum simulation rounds must be an integer from 1 to 20");
     if (!List.of("information", "bank").contains(domain))
       throw new IllegalArgumentException("Unknown demo domain");
     if (worldId == null || worldId.isBlank())
@@ -86,7 +88,7 @@ public class DemoService {
                   List.of("ANALYZE_RELATIONS", "END"),
                   visible));
     var scenario =
-        worlds.scenario(new Scenario(null, world.name() + " · MOCK", world.id(), agents, 8, 1500));
+        worlds.scenario(new Scenario(null, world.name() + " · MOCK", world.id(), agents, maxSteps, 1500));
     var run = runs.create(scenario.id());
     runs.inject(run.id(), "demo-initial", initial);
     return run;

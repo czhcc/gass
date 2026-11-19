@@ -41,7 +41,7 @@ class WorldMaintenanceIntegrationTest {
   @Test
   void editsValidateVersionGraphAndSceneReferencesAndDoNotChangeFrozenRuns() {
     var original = worlds.create(Examples.informationLeak());
-    var run = demos.create("information", original.id());
+    var run = demos.create("information", original.id(), 8);
     var state = runs.state(run.id());
     var updated = worlds.update(original.id(), renamed(original, "Edited world"));
     assertEquals(original.id(), updated.id());

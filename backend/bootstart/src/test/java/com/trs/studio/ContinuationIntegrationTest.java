@@ -28,7 +28,7 @@ class ContinuationIntegrationTest {
   @Test
   void bankDemoActuallyExecutesCelScoringAndKeepsMoneyConserved() {
     var world = worlds.create(Examples.bankTransfer());
-    var run = demos.create("bank", world.id());
+    var run = demos.create("bank", world.id(), 8);
     runs.step(run.id(), "demo-cel");
     assertTrue(runs.events(run.id(), 0).stream().anyMatch(e -> e.eventType().equals("ACTION_ACCEPTED") && e.payload().get("actionType").equals("ASSESS_RISK_CEL")));
     assertTrue(runs.state(run.id()).entities().stream().anyMatch(e -> Long.valueOf(80).equals(e.properties().get("riskScore")) || Integer.valueOf(80).equals(e.properties().get("riskScore"))));
