@@ -2,6 +2,10 @@
 
 工程依赖保持 `bootstart → app → common`。业务位于 `com.trs.simulation`，不依赖外部图数据库、消息队列或真实银行服务。
 
+泄密与银行业务 Action 统一使用 `ActionPrograms` 的版本三对象本体和 `DeclarativeActionEngine`。CEL-Java 编译条件、候选对象和步骤参数；引擎执行 SET_PROPERTY / DISABLE_RELATIONS / TRANSFER_MONEY 白名单原语，验证权限、可见性和金融不变量，原子提交。业务 Action 无须逐个增加 Java 名称分支；新增原语仍需 Java 实现。历史本体在加载时适配，图谱与运行状态不重置。
+
+`ActionLibraryService` 维护 V8 草稿 / 不可变发布修订；生成器复用模型配置与并发限制，只保存合法草稿。显式发布、绑定和场景授权后，新运行才使用该定义。完整定义随世界和运行冻结，编辑和重新绑定不改变已有回放或分支。模型决策上下文仅包含可见能力的参数规范、说明和条件提示，不发送执行程序；完整运行契约仍由引擎与人工干预 UI 使用。详细格式与资源边界见 [声明式 Action](DECLARATIVE_ACTIONS.md)。
+
 ## 决策与状态隔离
 
 `Model → AgentScope ReActAgent → DecisionProvider → DomainEnvironment → RunService事务提交 → SQLite事件/快照 → SSE/查询 → GUI`

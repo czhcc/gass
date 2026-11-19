@@ -31,7 +31,11 @@ public class SimulationController {
 
   /** Lists type-owned action contracts for information worlds. @author czhcc-trsdsj\codexsandboxoffline */
   @GetMapping("/domains/information/ontology")
-  public Ontology informationOntology() { return InformationOntology.definition(); }
+  public Ontology informationOntology() { return ActionPrograms.ontology("information"); }
+
+  /** Returns bank object action contracts, including the CEL scoring demo. @author czhcc-trsdsj\czhcc */
+  @GetMapping("/domains/bank/ontology")
+  public Ontology bankOntology() { return ActionPrograms.ontology("bank"); }
 
   /** Lists scoped target capabilities against the run's current state. @author czhcc-trsdsj\codexsandboxoffline */
   @GetMapping("/runs/{id}/action-capabilities")

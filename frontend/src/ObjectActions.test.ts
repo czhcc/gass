@@ -18,6 +18,20 @@ const catalog: ActionCatalog = { domainCode: "information", version: 3, agents: 
 ] }] };
 const agents = [{ id: "response", name: "Response", goal: "Contain", modelId: "m", allowedActions: ["DISABLE_SYNC", "MARK_REVIEWED", "SIMULATE_PROPAGATION", "END"] }];
 
+it('supports bank scalar parameters and typed custom values instead of treating every field as an object selector', async () => {
+  const scalar = { ...action('TRANSFER', '转账', 'Transfer'), parametersSchema: { type: 'object', properties: {
+    sourceId: { type: 'string', description: 'Source account' }, amount: { type: 'string', description: 'Amount' }, currency: { type: 'string', description: 'Currency' },
+    count: { type: 'integer', description: 'Count' }, confirm: { type: 'boolean', description: 'Confirm' }, note: { type: 'string', description: 'Note' },
+  }, required: ['sourceId', 'amount', 'currency', 'count', 'confirm'], additionalProperties: false } };
+  const view = render(ObjectActions, { props: { catalog: { domainCode: 'bank', version: 2, agents: [{ agentId: 'response', capabilities: [{ targetKind: 'ENTITY', targetId: 'b', targetName: 'B', type: 'BANK_ACCOUNT', action: scalar, available: true, unavailableReason: '', sourceIds: [], parameterOptions: { sourceId: ['a'] } }] }] }, agents, busy: false, lang: 'en' } });
+  await fireEvent.update(screen.getByLabelText('Amount'), '1.25');
+  await fireEvent.update(screen.getByLabelText('Currency'), 'CNY');
+  await fireEvent.update(screen.getByLabelText('Count'), '3');
+  await fireEvent.update(screen.getByLabelText('Confirm'), 'true');
+  await fireEvent.click(screen.getByRole('button', { name: 'Execute action' }));
+  expect(view.emitted().submit?.[0]).toEqual([expect.objectContaining({ decision: expect.objectContaining({ parameters: { sourceId: 'a', amount: '1.25', currency: 'CNY', count: 3, confirm: true } }) })]);
+});
+
 it.each([ ["REVOKE_SHARING", "person_a", "recipientId", "person_c", "Sharing recipient"],
   ["DISABLE_SYNC", "system_s", "destinationId", "system_t", "Sync destination"] ] as const)(
   "submits %s on its owner object with a selected related object", async (id, owner, parameter, related, label) => {

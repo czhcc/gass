@@ -20,7 +20,7 @@
 | DELETE | /api/scenarios/{id} | 删除场景，返回 204；已有运行、事件和回放快照保留，场景不存在返回 404 |
 | POST | /api/scenarios/{id}/runs | 创建独立 PAUSED 运行 |
 | GET | /api/runs 或 /api/runs/{id} | 列表 / 元数据 |
-| GET | /api/domains/information/ontology | 泄密领域对象类型及所属 Action 契约（版本二，不含关系 Action） |
+| GET | /api/domains/information/ontology 或 /api/domains/bank/ontology | 对象类型及所属 CEL + 声明式 Action 契约（版本三，不含关系 Action） |
 | GET | /api/runs/{id}/action-capabilities | 当前状态版本和各 Agent 可见的对象行动、可用状态及前置条件失败原因 |
 | DELETE | /api/runs/{id} | 删除非 RUNNING 且无子分支的运行及其事件、快照、命令、待执行事件和分支关联，返回 204；不删除场景或世界；不存在返回 404 |
 | POST | /api/runs/{id}/step | 单步；必须提供 Idempotency-Key（最长100字符），重复键不重复执行 |
@@ -42,6 +42,24 @@
 运行示例：先在界面配置模型、导入世界并创建场景。使用浏览器同一会话或 REST 登录获得 cookie 后，创建运行、带唯一 Idempotency-Key 调用五次 step，再读取 events 和 state。自动执行使用 resume。生产环境需要 HTTPS。
 
 SSE、Fork、Compare 与银行领域已开放，参见下节。POST 创建资源目前不做跨请求幂等去重，仅 step 具有显式请求键。
+
+## Action 维护与生成
+
+所有接口需要登录。定义格式见 [声明式 Action](DECLARATIVE_ACTIONS.md)。
+
+| 方法 | 路径 | 请求与结果 |
+| --- | --- | --- |
+| GET / POST | /api/action-library | 列表 / 新建草稿；输入 `{domainCode,ownerType,definition,version:0}` |
+| PUT | /api/action-library/{id} | 修改草稿，输入同上，version 必须为最新编辑版本；身份字段不可修改 |
+| DELETE | /api/action-library/{id}?version=N | 仅删除草稿，成功返回 204；已发布或版本过期返回 409 |
+| POST | /api/action-library/validate | 输入同新建，校验 Schema、原语和 CEL；合法返回 `{valid:true}`，非法返回 400 |
+| POST | /api/action-library/preview | 输入 `{domainCode,ownerType,definition,worldId,targetId,parameters}`；返回 Outcome 与候选 state，不持久化图谱 |
+| POST | /api/action-library/generate | `{domainCode,ownerType,modelId,description}`；通过指定模型生成并校验，仅保存 DRAFT，source 为 LLM 或 MOCK |
+| POST | /api/action-library/{id}/publish | `{version:N}`；校验并发布不可变修订，不自动绑定 |
+| POST | /api/action-library/{id}/bind | `{worldId,expectedVersion:N}`；将已发布定义绑定世界对应对象类型并递增世界版本；世界过期返回 WORLD_STALE |
+| POST | /api/action-library/unbind | `{worldId,ownerType,actionType,expectedVersion:N}`；移除未来运行的绑定，保留库和历史运行 |
+
+Entry 包含 id、domainCode、ownerType、revision（同编码修订号）、status、source、modelId、definition、version（编辑并发版本）。发布后修改请 POST 新草稿；绑定成功后，还需在场景 Agent 的 allowedActions 中授权，已有运行保持冻结定义。
 
 ## 图与领域补充接口
 

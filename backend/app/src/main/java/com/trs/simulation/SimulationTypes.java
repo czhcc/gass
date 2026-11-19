@@ -33,8 +33,8 @@ public final class SimulationTypes {
       Ontology ontology) {
     /** Resolves absent or legacy contracts to object-owned actions without changing graph state. @author czhcc-trsdsj\codexsandboxoffline */
     public World {
-      if (ontology == null && "information".equals(domainCode)) ontology = InformationOntology.definition();
-      else if (ontology != null && "information".equals(domainCode)) ontology = InformationOntology.upgrade(ontology);
+      if (Set.of("information", "bank").contains(domainCode == null ? "" : domainCode))
+        ontology = ActionPrograms.upgrade(domainCode, ontology);
     }
 
     /** Preserves the original world input protocol. @author czhcc-trsdsj\codexsandboxoffline */
@@ -52,7 +52,23 @@ public final class SimulationTypes {
 
   /** Declarative engine contract; no arbitrary code or state patches. @author czhcc-trsdsj\codexsandboxoffline */
   public record ActionDefinition(String actionType, String nameZh, String nameEn, String description,
-      Map<String, Object> parametersSchema, List<String> preconditions, String effect) {}
+      Map<String, Object> parametersSchema, List<String> preconditions, String effect, ActionProgram program) {
+    /** Accepts historical contracts; world loading upgrades registered legacy effects. @author czhcc-trsdsj\czhcc */
+    public ActionDefinition(String actionType, String nameZh, String nameEn, String description,
+        Map<String, Object> parametersSchema, List<String> preconditions, String effect) {
+      this(actionType, nameZh, nameEn, description, parametersSchema, preconditions, effect, null);
+    }
+  }
+
+  /** Bounded CEL conditions and allow-listed graph operations, frozen with each world. @author czhcc-trsdsj\czhcc */
+  public record ActionProgram(int version, List<ActionCondition> conditions,
+      List<ActionOperation> operations, Map<String, String> parameterOptions) {}
+
+  /** Pure boolean CEL expression with user-readable failure explanations. @author czhcc-trsdsj\czhcc */
+  public record ActionCondition(String expression, String messageZh, String messageEn) {}
+
+  /** Primitive operation whose arguments are pure CEL expressions. @author czhcc-trsdsj\czhcc */
+  public record ActionOperation(String op, Map<String, String> arguments) {}
 
   /** Object capability and allowed related-object IDs evaluated against current state. @author czhcc-trsdsj\codexsandboxoffline */
   public record ActionCapability(String targetKind, String targetId, String targetName, String type,

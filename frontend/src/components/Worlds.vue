@@ -127,7 +127,7 @@ async function saveWorld() {
     const split = (value: string) => value.split(",").map(part => part.trim()).filter(Boolean);
     const body = { name: name.value.trim(), domainCode: domain.value, version: version.value,
       entityTypes: split(entityTypes.value), relationTypes: split(relationTypes.value), entities, relations,
-      ontology: domain.value === "information" ? ontology.value : null };
+      ontology: ontology.value };
     busy.value = true;
     const w = await api<World>(editingId.value ? "/worlds/" + editingId.value : "/worlds",
       editingId.value ? "PUT" : "POST", body);

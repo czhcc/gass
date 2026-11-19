@@ -26,7 +26,8 @@ const pretty = (value: unknown) => JSON.stringify(value, null, 2);
     <article v-for="action in actions" :key="action.actionType" class="rounded-lg border border-slate-200 p-3 text-sm">
       <h5 class="font-medium">{{ lang === 'zh' ? action.nameZh : action.nameEn }}</h5>
       <code class="text-xs">{{ action.actionType }}</code>
-      <p v-if="lang === 'en'" class="my-2">{{ action.description }}</p>
+      <span v-if="action.program" class="ml-2 rounded bg-blue-50 px-2 py-1 text-xs text-blue-800">{{ lang === 'zh' ? 'CEL + 声明式执行' : 'CEL + declarative execution' }}</span>
+      <p v-if="lang === 'en' || action.program" class="my-2">{{ action.description }}</p>
       <dl class="space-y-2">
         <div><dt class="font-medium">{{ lang === 'zh' ? '参数说明' : 'Parameters' }}</dt><dd>
           <p v-if="!parameterDetails(action, lang).length">{{ lang === 'zh' ? '无需填写参数。' : 'No parameters required.' }}</p>
@@ -36,12 +37,13 @@ const pretty = (value: unknown) => JSON.stringify(value, null, 2);
           </li></ul>
         </dd></div>
         <div><dt class="font-medium">{{ lang === 'zh' ? '执行前置条件' : 'Preconditions' }}</dt><dd class="break-words">
-          <ul v-if="action.preconditions.length"><li v-for="condition in action.preconditions" :key="condition">{{ conditionDescription(condition, lang) }}</li></ul>
+          <ul v-if="action.program?.conditions.length"><li v-for="(condition, i) in action.program.conditions" :key="i">{{ lang === 'zh' ? condition.messageZh : condition.messageEn }}</li></ul>
+          <ul v-else-if="action.preconditions.length"><li v-for="condition in action.preconditions" :key="condition">{{ conditionDescription(condition, lang) }}</li></ul>
           <p v-else>{{ lang === 'zh' ? '无额外状态条件，仍需通过执行权限、对象可见性和参数校验。' : 'No additional state conditions; permissions, visibility and parameters are still validated.' }}</p>
         </dd></div>
         <div><dt class="font-medium">{{ lang === 'zh' ? '执行效果' : 'Effect' }}</dt><dd class="break-words">{{ effectDescription(action, lang) }}</dd></div>
       </dl>
-      <details class="mt-3 text-xs text-slate-500"><summary class="cursor-pointer">{{ lang === 'zh' ? '技术定义（JSON 与编码）' : 'Technical definition (JSON and codes)' }}</summary><pre class="mt-2 overflow-auto">{{ pretty({ parametersSchema: action.parametersSchema, preconditions: action.preconditions, effect: action.effect }) }}</pre></details>
+      <details class="mt-3 text-xs text-slate-500"><summary class="cursor-pointer">{{ lang === 'zh' ? '技术定义（JSON 与编码）' : 'Technical definition (JSON and codes)' }}</summary><pre class="mt-2 overflow-auto">{{ pretty({ parametersSchema: action.parametersSchema, preconditions: action.preconditions, effect: action.effect, program: action.program }) }}</pre></details>
       <template v-if="live">
         <div v-for="c in capabilities.filter(c => c.action.actionType === action.actionType)" :key="c.agentId" class="mt-3 border-t pt-2 text-xs">
           <p>{{ c.agentId }} · {{ c.ended ? (lang === 'zh' ? 'Agent 已结束' : 'Agent ended') : c.available ? (lang === 'zh' ? '可执行' : 'Available') : (lang === 'zh' ? '不可执行' : 'Unavailable') }}<span v-if="!c.available"> · {{ unavailableDescription(c.unavailableReason, lang) }}</span></p>

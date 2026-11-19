@@ -100,11 +100,10 @@ class ObjectActionRuntimeIntegrationTest {
     var changed = new ActionDefinition("MARK_REVIEWED", "Bad", "Bad", "Bad", Map.of(), List.of(), "EXPOSE_ENTITY");
     for (var definition : List.of(new TypeDefinition(null, "DOCUMENT", List.of()),
         new TypeDefinition("ENTITY", "DOCUMENT", List.of(changed)))) {
-      var input = new World(null, "Invalid", world.domainCode(), world.entityTypes(), world.relationTypes(),
-          world.entities(), world.relations(), 1, new Ontology(2, List.of(definition)));
-      assertThrows(IllegalArgumentException.class, () -> worlds.create(input));
+      assertThrows(IllegalArgumentException.class, () -> worlds.create(new World(null, "Invalid", world.domainCode(), world.entityTypes(), world.relationTypes(),
+          world.entities(), world.relations(), 1, new Ontology(3, List.of(definition)))));
     }
-    var narrowed = new Ontology(2, List.of(new TypeDefinition(type.targetKind(), type.type(), List.of(type.actions().getFirst()))));
+    var narrowed = new Ontology(3, List.of(new TypeDefinition(type.targetKind(), type.type(), List.of(type.actions().getFirst()))));
     var updated = worlds.update(world.id(), new World(world.id(), world.name(), world.domainCode(), world.entityTypes(),
         world.relationTypes(), world.entities(), world.relations(), world.version(), narrowed));
     assertEquals(narrowed, worlds.copy(updated.id(), "Copied bindings").ontology());

@@ -293,10 +293,8 @@ public class WorldService {
           "Invalid agent visibility/budget");
       require(
           a.allowedActions() != null
-              && domains.get(w.domainCode()).actions().stream()
-                  .map(action -> String.valueOf(action.get("actionType")))
-                  .toList()
-                  .containsAll(a.allowedActions()),
+              && java.util.stream.Stream.concat(w.ontology().types().stream().flatMap(t -> t.actions().stream()).map(ActionDefinition::actionType), domains.get(w.domainCode()).actions().stream().map(contract -> String.valueOf(contract.get("actionType"))))
+                  .toList().containsAll(a.allowedActions()),
           "Unknown action permission");
     }
     require(Json.write(s).length() < 200000, "Scenario configuration too large");

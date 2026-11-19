@@ -33,6 +33,18 @@ export interface ActionDefinition {
   parametersSchema: Record<string, unknown>;
   preconditions: string[];
   effect: string;
+  program?: ActionProgram | null;
+}
+export interface ActionProgram {
+  version: number;
+  conditions: { expression: string; messageZh: string; messageEn: string }[];
+  operations: { op: string; arguments: Record<string, string> }[];
+  parameterOptions: Record<string, string>;
+}
+export interface ActionLibraryEntry {
+  id: string; domainCode: string; ownerType: string; revision: number;
+  status: 'DRAFT' | 'PUBLISHED'; source: string; modelId: string | null;
+  definition: ActionDefinition; version: number;
 }
 export interface Ontology {
   version: number;

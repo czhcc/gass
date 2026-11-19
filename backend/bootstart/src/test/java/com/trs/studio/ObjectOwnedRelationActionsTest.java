@@ -19,7 +19,7 @@ class ObjectOwnedRelationActionsTest {
 
   @Test
   void allBusinessActionsAreOwnedByEntityTypesWithRelatedObjectParameters() {
-    assertEquals(2, world.ontology().version());
+    assertEquals(3, world.ontology().version());
     assertTrue(world.ontology().types().stream().allMatch(t -> t.targetKind().equals("ENTITY")));
     var capabilities = engine.capabilities(world, agent, state);
     assertTrue(capabilities.stream().allMatch(c -> c.targetKind().equals("ENTITY")));
@@ -90,7 +90,7 @@ class ObjectOwnedRelationActionsTest {
     var legacy = InformationOntology.legacyDefinition();
     var old = new World("old", "Old", "information", world.entityTypes(), world.relationTypes(),
         world.entities(), world.relations(), 1, legacy);
-    assertEquals(2, old.ontology().version());
+    assertEquals(3, old.ontology().version());
     assertEquals(world.relations(), old.relations());
     assertTrue(engine.capabilities(old, agent, state).stream().allMatch(c -> c.targetKind().equals("ENTITY")));
     var disabled = engine.execute(old, agent, new Decision("DISABLE_SYNC", "sync_st", Map.of(), "Legacy request"), state);

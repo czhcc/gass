@@ -23,10 +23,19 @@ const targets = computed(() => [...new Map(capabilities.value.map(c => [key(c), 
 const actions = computed(() => capabilities.value.filter(c => key(c) === target.value));
 const chosen = computed(() => actions.value.find(c => c.action.actionType === actionId.value));
 const parameterNames = computed(() => Object.keys(chosen.value?.action.parametersSchema.properties ?? {}));
+const fields = computed(() => (chosen.value?.action.parametersSchema.properties ?? {}) as Record<string, { type?: string; description?: string; enum?: unknown[] }>);
+const required = computed(() => (chosen.value?.action.parametersSchema.required ?? parameterNames.value) as string[]);
 const parameterOptions = computed(() => chosen.value?.parameterOptions ?? (chosen.value?.action.actionType === "SIMULATE_PROPAGATION" ? { sourceId: chosen.value.sourceIds } : {}));
-const canSubmit = computed(() => chosen.value?.available && parameterNames.value.every(name => parameterOptions.value[name]?.includes(parameterValues.value[name] ?? "")));
+const canSubmit = computed(() => chosen.value?.available && parameterNames.value.every(name => {
+  const value = parameterValues.value[name] ?? '';
+  if (!value) return !required.value.includes(name);
+  if (parameterOptions.value[name]) return parameterOptions.value[name]!.includes(value);
+  if (fields.value[name]?.type === 'integer') return Number.isSafeInteger(Number(value));
+  if (fields.value[name]?.type === 'number') return Number.isFinite(Number(value));
+  return fields.value[name]?.type !== 'boolean' || ['true', 'false'].includes(value);
+}));
 function parameterLabel(name: string) {
-  return name === "recipientId" ? t.value.recipient : name === "destinationId" ? t.value.destination : name === "sourceId" ? t.value.source : name;
+  return name === "recipientId" ? t.value.recipient : name === "destinationId" ? t.value.destination : name === "sourceId" ? (props.catalog.domainCode === 'bank' ? (props.lang === 'zh' ? '转出账户' : 'Source account') : t.value.source) : fields.value[name]?.description || name;
 }
 const canEnd = computed(() => !props.catalog.agents.find(a => a.agentId === agentId.value)?.ended
   && props.agents.find(a => a.id === agentId.value)?.allowedActions.includes("END"));
@@ -36,7 +45,7 @@ const description = computed(() => props.lang === "en" ? chosen.value?.action.de
   SIMULATE_PROPAGATION: "沿启用的直接关系模拟此目标接收信息，传播来源须来自引擎提供的可选项。",
   DISABLE_SYNC: "由此系统禁用向所选对象的同步，执行引擎维护对应的出向同步关系。",
   REVOKE_SHARING: "由此人员撤销向所选对象的共享，执行引擎维护对应的出向共享关系。",
-} as Record<string, string>)[chosen.value?.action.actionType ?? ""]);
+} as Record<string, string>)[chosen.value?.action.actionType ?? ""] ?? chosen.value?.action.description);
 const blockedReason = computed(() => {
   const reason = chosen.value?.unavailableReason ?? "";
   if (props.lang === "en") return reason;
@@ -65,7 +74,7 @@ watch(chosen, () => {
   parameterValues.value = Object.fromEntries(parameterNames.value.map(name => {
     const options = parameterOptions.value[name] ?? [];
     const previous = parameterValues.value[name] ?? "";
-    return [name, options.includes(previous) ? previous : options[0] ?? ""];
+    return [name, parameterOptions.value[name] ? (options.includes(previous) ? previous : options[0] ?? '') : previous];
   }));
 }, { immediate: true });
 watch(() => props.targetId, id => {
@@ -78,7 +87,10 @@ function submit(end = false) {
     actionType: end ? "END" : chosen.value!.action.actionType,
     targetKind: end ? "AGENT" : "ENTITY",
     targetId: end ? "" : chosen.value!.targetId,
-    parameters: end ? {} : Object.fromEntries(parameterNames.value.map(name => [name, parameterValues.value[name]])),
+    parameters: end ? {} : Object.fromEntries(parameterNames.value.filter(name => parameterValues.value[name] !== '').map(name => {
+      const value = parameterValues.value[name];
+      return [name, fields.value[name]?.type === 'boolean' ? value === 'true' : ['integer', 'number'].includes(fields.value[name]?.type ?? '') ? Number(value) : value];
+    })),
     reason: "User-requested simulated action",
   } });
 }
@@ -97,7 +109,13 @@ function submit(end = false) {
     <template v-if="chosen">
       <p class="text-sm">{{ description }}</p>
       <p v-if="!chosen.available" role="status" class="text-amber-800">{{ blockedReason }}</p>
-      <label v-for="name in parameterNames" :key="name">{{ parameterLabel(name) }}<select v-model="parameterValues[name]" :aria-label="parameterLabel(name)" :disabled="busy || !chosen.available"><option v-for="id in parameterOptions[name] ?? []" :key="id" :value="id">{{ id }}</option></select></label>
+      <label v-for="name in parameterNames" :key="name">{{ parameterLabel(name) }}
+        <select v-if="parameterOptions[name] || fields[name]?.enum || fields[name]?.type === 'boolean'" v-model="parameterValues[name]" :aria-label="parameterLabel(name)" :disabled="busy || !chosen.available">
+          <option value="">{{ lang === 'zh' ? '请选择' : 'Select' }}</option>
+          <option v-for="value in parameterOptions[name] ?? fields[name]?.enum ?? ['true', 'false']" :key="String(value)" :value="String(value)">{{ String(value) }}</option>
+        </select>
+        <input v-else v-model="parameterValues[name]" :type="['integer', 'number'].includes(fields[name]?.type ?? '') ? 'number' : 'text'" :step="fields[name]?.type === 'integer' ? '1' : 'any'" :aria-label="parameterLabel(name)" :required="required.includes(name)" :disabled="busy || !chosen.available" />
+      </label>
       <p v-if="!parameterNames.length" class="text-xs text-slate-500">{{ t.noParameters }}</p>
       <details><summary class="cursor-pointer text-xs">{{ t.schema }}</summary><pre class="overflow-auto text-xs">{{ JSON.stringify(chosen.action.parametersSchema, null, 2) }}</pre></details>
     </template>
