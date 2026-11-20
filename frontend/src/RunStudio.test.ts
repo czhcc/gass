@@ -5,6 +5,7 @@ import {
   fireEvent,
   waitFor,
   cleanup,
+  within,
 } from "@testing-library/vue";
 import RunStudio from "./components/RunStudio.vue";
 vi.mock("./components/Graph.vue", () => ({
@@ -18,6 +19,41 @@ vi.mock("./components/Comparison.vue", () => ({
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+});
+
+it('shows readable key events and related objects, retaining all-event playback without computation', async () => {
+  const run = { id: 'readable', scenarioId: 's', status: 'BUDGET_EXHAUSTED', terminationReason: 'MAX_STEPS', step: 6, maxSteps: 6, version: 1 };
+  const entities = [{ id: 'a', type: 'PERSON', name: '人员 A', properties: {} }, { id: 'c', type: 'PERSON', name: '人员 C', properties: {} }];
+  const state = { runId: run.id, entities, relations: [], simulationTime: 6, version: 1 };
+  const events = [
+    { runId: run.id, sequence: 17, simulationTime: 1, agentId: 'response', eventType: 'ACTION_PROPOSED', payload: { action: { actionType: 'REVOKE_SHARING', targetId: 'a', parameters: { recipientId: 'c' }, reason: 'Model original explanation' } } },
+    { runId: run.id, sequence: 18, simulationTime: 1, agentId: 'response', eventType: 'ACTION_ACCEPTED', payload: { actionType: 'REVOKE_SHARING', targetId: 'a', affectedRelationIds: ['share'] } },
+    { runId: run.id, sequence: 86, simulationTime: 6, agentId: null, eventType: 'RUN_BUDGET_EXHAUSTED', payload: { reasonCode: 'MAX_STEPS', actual: 6, limit: 6 } },
+  ];
+  const fetcher = vi.fn(async (url: string, _init?: RequestInit) => ({ ok: true, json: async () => url === '/api/runs' ? [run] : url.endsWith('/branches') ? [] : url.endsWith('/events') ? events
+    : url.endsWith('/agents') ? [{ id: 'response', name: 'Response Agent', goal: 'Reduce simulated propagation risk using currently enabled channels. Review the updated state each round.', allowedActions: [] }]
+    : url.endsWith('/action-capabilities') ? { agents: [] }
+    : url.endsWith('/state') || url.includes('/replay?') ? state : run }));
+  vi.stubGlobal('fetch', fetcher); vi.stubGlobal('EventSource', class { addEventListener() {} close() {} });
+  render(RunStudio, { props: { lang: 'zh', initialId: run.id } });
+  await fireEvent.click(await screen.findByRole('button', { name: /#18 行动已接受/ }));
+  expect(screen.getByRole('heading', { name: '响应 Agent' })).toBeTruthy();
+  const timeline = screen.getByRole('article', { name: '事件时间线' });
+  const activity = screen.getByRole('complementary', { name: 'Agent 活动' });
+  const graph = screen.getByRole('article', { name: '关联图' });
+  expect(timeline.parentElement).toBe(activity.parentElement);
+  expect(timeline.parentElement?.contains(graph)).toBe(false);
+  expect(graph.compareDocumentPosition(timeline) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(screen.getByText('根据当前启用的通道降低模拟传播风险，每轮重新检查最新状态。')).toBeTruthy();
+  expect(screen.getByText('Response Agent').closest('details')?.open).toBe(false);
+  const selectedDetails = await screen.findByTestId('selected-event-details');
+  expect(within(selectedDetails).getByRole('heading', { name: '行动已接受' })).toBeTruthy();
+  expect(screen.getAllByText(/人员 A.*人员 C/).length).toBeGreaterThan(0);
+  expect(screen.queryByRole('button', { name: /#17/ })).toBeNull();
+  await fireEvent.update(screen.getByLabelText('事件范围'), 'all');
+  await fireEvent.click(screen.getByRole('button', { name: /#17 行动等待校验/ }));
+  await waitFor(() => expect(within(screen.getByTestId('selected-event-details')).getByRole('heading', { name: '行动等待校验' })).toBeTruthy());
+  expect(fetcher.mock.calls.every(([url, init]) => init?.method === 'GET' && !url.endsWith('/step'))).toBe(true);
 });
 describe("historical playback", () => {
   it.each([
