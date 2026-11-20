@@ -32,14 +32,17 @@ def main():
     world_count = len(request('/worlds'))
     leak = request('/examples/information/demo', 'POST', {'worldId': leak_world['id'], 'maxSteps': 8})
     assert len(request('/worlds')) == world_count
-    for n in range(5):
+    for n in range(8):
         request('/runs/' + leak['id'] + '/step', 'POST', {}, f'smoke-{n}')
     events = request('/runs/' + leak['id'] + '/events')
     counts = collections.Counter(e['eventType'] for e in events)
     assert counts['AGENT_DECISION'] >= 10 and counts['WORLD_STATE_CHANGED'] >= 3
-    assert counts['ACTION_REJECTED'] > 0 and counts['AGENT_TOOL_CALL'] > 0
+    assert counts['SUBTASK_DISPATCHED'] > 0 and counts['GRAPH_QUERY_RESULT'] > 0
+    assert counts['MASTER_REVIEW'] == 8
+    assert request('/runs/' + leak['id'] + '/outcome')['result'] == 'SUCCEEDED'
+    assert any(agent['runtime']['role'] == 'MASTER' for agent in request('/runs/' + leak['id'] + '/agents'))
     before = request('/runs/' + leak['id'] + '/state')
-    request('/runs/' + leak['id'] + '/step', 'POST', {}, 'smoke-4')
+    request('/runs/' + leak['id'] + '/step', 'POST', {}, 'smoke-7')
     assert before == request('/runs/' + leak['id'] + '/state')
     assert len(events) == len(request('/runs/' + leak['id'] + '/events'))
     replay = request('/runs/' + leak['id'] + '/replay?sequence=0')
@@ -58,7 +61,8 @@ def main():
 
     child = request('/runs/' + leak['id'] + '/fork', 'POST', {'sequence': 0, 'label': 'Containment branch'}, 'fork-smoke')
     assert child['id'] == request('/runs/' + leak['id'] + '/fork', 'POST', {'sequence': 0, 'label': 'Containment branch'}, 'fork-smoke')['id']
-    request('/runs/' + child['id'] + '/actions', 'POST', {'agentId': 'response', 'expectedVersion': 0, 'decision': {'actionType': 'DISABLE_SYNC', 'targetId': 'sync_st', 'parameters': {}, 'reason': 'Smoke intervention'}}, str(uuid.uuid4()))
+    request('/runs/' + child['id'] + '/actions', 'POST', {'agentId': 'response', 'expectedVersion': 0, 'decision': {'actionType': 'DISABLE_SYNC', 'targetKind': 'ENTITY', 'targetId': 'system_s', 'parameters': {'destinationId': 'system_t'}, 'reason': 'Smoke intervention'}}, str(uuid.uuid4()))
+    assert not next(edge for edge in request('/runs/' + child['id'] + '/state')['relations'] if edge['id'] == 'sync_st')['enabled']
     assert before == request('/runs/' + leak['id'] + '/state')
     diff = request('/runs/compare?left=' + leak['id'] + '&right=' + child['id'])
     assert diff['entityDifferences'] or diff['relationDifferences']
@@ -73,6 +77,10 @@ def main():
     assert metrics['totalMinor'] == 1200000000 and metrics['transferCount'] == 1
     request('/runs/' + bank['id'] + '/step', 'POST', {}, 'bank-two')
     assert request('/runs/' + bank['id'] + '/evaluation')['transferCount'] == 1
+    assert {agent['id'] for agent in request('/runs/' + bank['id'] + '/agents')} >= {'lead', 'research', 'bank', 'risk'}
+    for n in range(2, 8):
+        request('/runs/' + bank['id'] + '/step', 'POST', {}, f'bank-{n}')
+    assert request('/runs/' + bank['id'] + '/outcome')['result'] == 'SUCCEEDED'
     print(json.dumps({'mode': 'MOCK', 'leakRun': leak['id'], 'branchRun': child['id'], 'bankRun': bank['id'], 'counts': counts, 'sseResumeIds': ids, 'bank': metrics, 'result': 'PASS'}, indent=2))
 
 

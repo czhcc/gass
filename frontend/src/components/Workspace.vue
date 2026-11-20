@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from "vue";
 import { api } from "../api";
-import type { Lang, Scenario } from "../types";
+import type { Lang, Scenario, ScenarioProfile } from "../types";
 import Models from "./Models.vue";
 import Worlds from "./Worlds.vue";
 import Actions from "./Actions.vue";
@@ -22,12 +22,15 @@ const scenarioForm = ref({ name: "", worldId: "", modelId: "", maxSteps: 5 });
 const demoMaxSteps = ref<number | string>(8);
 const validRounds = (value: unknown) => typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 20;
 const extraPermissions = ref<string[]>([]);
+const profiles = ref<ScenarioProfile[]>([]);
+const teamJson = ref('');
+const selectedProfile = computed(() => profiles.value.find(p => p.domainCode === worlds.value.find(w => w.id === scenarioForm.value.worldId)?.domainCode));
 const customActions = computed(() => {
   const known = new Set(['TRANSFER', 'FLAG_RISK', 'ANALYZE_ACCOUNT', 'ASSESS_RISK_CEL', 'MARK_REVIEWED', 'ANALYZE_RELATIONS', 'SIMULATE_PROPAGATION', 'REVOKE_SHARING', 'DISABLE_SYNC', 'END']);
   const w = worlds.value.find(w => w.id === scenarioForm.value.worldId);
   return [...new Map((w?.ontology?.types ?? []).flatMap(t => t.actions).filter(a => !known.has(a.actionType)).map(a => [a.actionType, a])).values()];
 });
-watch(() => scenarioForm.value.worldId, () => { extraPermissions.value = []; });
+watch(() => scenarioForm.value.worldId, () => { extraPermissions.value = []; agentsJson.value = ''; teamJson.value = ''; });
 const demoWorldId = ref("");
 const demoWorld = computed(() => worlds.value.find((world) => world.id === demoWorldId.value));
 watch(() => worlds.value.map(world => world.id), ids => {
@@ -65,9 +68,9 @@ const t = computed(() =>
         world: "世界",
         model: "模型",
         maxSteps: "推演最大轮数",
-        roundsHelp: "可设置 1～20 轮；任务完成或其他预算耗尽时会提前结束。",
+        roundsHelp: "可设置 1～20 轮；到达指定轮数后由引擎判定效果是否达成，资源预算耗尽时提前结束。",
         roundsInvalid: "推演最大轮数必须是 1～20 的整数。",
-        create: "创建双 Agent 场景",
+        create: "创建主从 Agent 场景",
         run: "创建暂停运行",
         delete: "删除",
         confirmDelete: "确认删除",
@@ -75,9 +78,9 @@ const t = computed(() =>
         deleteNotice: "确认删除此场景？已有运行记录和推演结果将保留。",
         deleted: "场景已删除",
         saved: "已创建运行；可使用 REST 单步验收",
-        agentsJson: "自定义 Agent JSON（可选）",
+        agentsJson: "角色与提示词 JSON（可选，覆盖模板）",
         agents:
-          "调查 Agent 和响应 Agent 将共享所选世界可见范围，使用不同目标与操作权限。",
+          "主 Agent 负责研判和委派；查询分析、对象操作等子 Agent 按需执行。角色、工具权限和效果条件来自场景模板。",
       }
     : {
         studio: "Simulation & replay",
@@ -99,9 +102,9 @@ const t = computed(() =>
         world: "World",
         model: "Model",
         maxSteps: "Maximum simulation rounds",
-        roundsHelp: "Choose 1–20 rounds. Task completion or other budget limits may end the run earlier.",
+        roundsHelp: "Choose 1–20 rounds. The engine evaluates effects at this horizon; resource limits may stop computation earlier.",
         roundsInvalid: "Maximum simulation rounds must be an integer from 1 to 20.",
-        create: "Create two-agent scenario",
+        create: "Create hierarchical scenario",
         run: "Create paused run",
         delete: "Delete",
         confirmDelete: "Confirm deletion",
@@ -109,14 +112,14 @@ const t = computed(() =>
         deleteNotice: "Delete this scenario? Existing runs and simulation results will be retained.",
         deleted: "Scenario deleted",
         saved: "Run created; use REST for single-step acceptance",
-        agentsJson: "Custom Agent JSON (optional)",
+        agentsJson: "Roles and prompts JSON (optional template override)",
         agents:
-          "Investigator and response agents share this world visibility, with different goals and action permissions.",
+          "A master delegates to query, analysis and Action workers as needed. Roles, tool permissions and outcome conditions come from the scenario template.",
       },
 );
 async function load() {
   try {
-    await workspace.reload();
+    await Promise.all([workspace.reload(), api<ScenarioProfile[]>('/scenario-profiles').then(value => { profiles.value = value; })]);
   } catch (e) {
     error.value = String(e);
   }
@@ -129,59 +132,19 @@ async function createScenario() {
   try {
     const w = worlds.value.find((w) => w.id === scenarioForm.value.worldId)!;
     const visible = w.entities.map((e) => e.id);
+    const profile = selectedProfile.value;
+    if (!profile) throw new Error(props.lang === 'zh' ? '没有适用于此世界的主从场景模板' : 'No hierarchy profile for this world');
+    const configuredAgents = agentsJson.value.trim() ? JSON.parse(agentsJson.value) : profile.agents.map(a => ({
+      ...a, modelId: scenarioForm.value.modelId, visibleEntityIds: visible, maxDecisions: 20,
+      allowedActions: a.runtime?.role === 'ACTION' && a.id === profile.agents.find(role => role.runtime?.role === 'ACTION')?.id ? [...a.allowedActions, ...extraPermissions.value] : a.allowedActions,
+    }));
     const s = await api<Scenario>("/scenarios", "POST", {
       name: scenarioForm.value.name,
       worldId: w.id,
       maxSteps: scenarioForm.value.maxSteps,
-      maxEvents: 500,
-      agents: agentsJson.value.trim()
-        ? JSON.parse(agentsJson.value)
-        : w.domainCode === "bank"
-          ? [
-              {
-                id: "bank",
-                name: "Bank Agent",
-                goal: "Process simulated transfer",
-                modelId: scenarioForm.value.modelId,
-                allowedActions: ["TRANSFER", "ANALYZE_ACCOUNT", "END", ...extraPermissions.value],
-                visibleEntityIds: visible,
-                maxDecisions: 10,
-              },
-              {
-                id: "risk",
-                name: "Risk Agent",
-                goal: "Flag simulated transfer risk",
-                modelId: scenarioForm.value.modelId,
-                allowedActions: ["ASSESS_RISK_CEL", "FLAG_RISK", "ANALYZE_ACCOUNT", "END"],
-                visibleEntityIds: visible,
-                maxDecisions: 10,
-              },
-            ]
-          : [
-              {
-                id: "investigation",
-                name: "Investigation Agent",
-                goal: "Investigate potential paths and record simulated reviews. Connectivity is not proof of propagation.",
-                modelId: scenarioForm.value.modelId,
-                allowedActions: ["ANALYZE_RELATIONS", "MARK_REVIEWED", "END", ...extraPermissions.value],
-                visibleEntityIds: visible,
-                maxDecisions: 10,
-              },
-              {
-                id: "response",
-                name: "Response Agent",
-                goal: "Reduce simulated propagation risk using currently enabled channels. Review the updated state each round.",
-                modelId: scenarioForm.value.modelId,
-                allowedActions: [
-                  "DISABLE_SYNC",
-                  "REVOKE_SHARING",
-                  "MARK_REVIEWED",
-                  "END",
-                ],
-                visibleEntityIds: visible,
-                maxDecisions: 10,
-              },
-            ],
+      maxEvents: 2000,
+      agents: configuredAgents,
+      team: teamJson.value.trim() ? JSON.parse(teamJson.value) : profile.team,
     });
     scenarios.value.push(s);
   } catch (e) {
@@ -249,35 +212,7 @@ async function run(id: string) {
     createdRun.value = result.id;
     const scenario = scenarios.value.find((s) => s.id === id);
     const world = worlds.value.find((w) => w.id === scenario?.worldId);
-    const document = world?.entities.find((e) => e.type === "DOCUMENT");
-    if (document)
-      await api(
-        "/runs/" + result.id + "/inject",
-        "POST",
-        {
-          eventType: "POTENTIAL_LEAK",
-          targetId: document.id,
-          simulationTime: 0,
-          parameters: { confidence: 0.8 },
-        },
-        { "Idempotency-Key": crypto.randomUUID() },
-      );
-    if (world?.domainCode === "bank")
-      await api(
-        "/runs/" + result.id + "/inject",
-        "POST",
-        {
-          eventType: "BANK_TRANSFER",
-          targetId: "account_b",
-          simulationTime: 0,
-          parameters: {
-            sourceId: "account_a",
-            amount: "5000000.00",
-            currency: "CNY",
-          },
-        },
-        { "Idempotency-Key": crypto.randomUUID() },
-      );
+    if (world) await api("/runs/" + result.id + "/initial-input", "POST");
     await router.push("/studio?run=" + result.id);
   } catch (e) {
     error.value = String(e);
@@ -375,16 +310,22 @@ async function demo(domain: string) {
           </select></label
         >
         <p class="text-xs text-slate-500">{{ t.agents }}</p>
+        <div v-if="selectedProfile" class="rounded border border-slate-200 bg-slate-50 p-3 text-sm">
+          <p class="font-medium">{{ lang === 'zh' ? selectedProfile.nameZh : selectedProfile.nameEn }}</p>
+          <ul class="mt-2 list-inside list-disc"><li v-for="agent in selectedProfile.agents" :key="agent.id">{{ agent.name }} · {{ agent.runtime?.role === 'MASTER' ? (lang === 'zh' ? '主 Agent' : 'Master') : agent.runtime?.role === 'QUERY' ? (lang === 'zh' ? '查询分析' : 'Query and analysis') : (lang === 'zh' ? '对象操作' : 'Object Actions') }}</li></ul>
+          <button class="mt-2 text-xs text-blue-700 disabled:opacity-50" type="button" :disabled="busy || !scenarioForm.modelId" @click="agentsJson = JSON.stringify(selectedProfile.agents.map(a => ({...a, modelId: scenarioForm.modelId, visibleEntityIds: worlds.find(w => w.id === scenarioForm.worldId)?.entities.map(e => e.id), maxDecisions: 20})), null, 2); teamJson = JSON.stringify(selectedProfile.team, null, 2)">{{ lang === 'zh' ? '载入模板进行编辑' : 'Load template for editing' }}</button>
+        </div>
         <label>{{ t.maxSteps }}<input v-model.number="scenarioForm.maxSteps" type="number" min="1" max="20" step="1" required :disabled="busy" aria-describedby="scenario-rounds-help" :aria-invalid="!validRounds(scenarioForm.maxSteps)" /></label>
         <p id="scenario-rounds-help" class="text-xs text-slate-500">{{ t.roundsHelp }}</p>
         <p v-if="!validRounds(scenarioForm.maxSteps)" role="alert" class="text-sm text-red-700">{{ t.roundsInvalid }}</p>
         <fieldset v-if="customActions.length && !agentsJson.trim()" :disabled="busy" class="grid gap-2 rounded border border-slate-200 p-3">
-          <legend class="text-sm">{{ lang === 'zh' ? '额外授权给调查 / 银行 Agent 的自定义 Action' : 'Custom Actions to grant to the Investigation / Bank Agent' }}</legend>
+          <legend class="text-sm">{{ lang === 'zh' ? '额外授权给首个对象操作子 Agent 的自定义 Action' : 'Custom Actions for the first Action worker' }}</legend>
           <label v-for="action in customActions" :key="action.actionType" class="flex items-center gap-2 text-sm"><input v-model="extraPermissions" type="checkbox" :value="action.actionType" class="w-auto" />{{ action.actionType }} · {{ lang === 'zh' ? action.nameZh : action.nameEn }}</label>
         </fieldset>
         <label
-          >{{ t.agentsJson }}<textarea v-model="agentsJson" rows="5" /></label
-        ><button class="primary" :disabled="busy || !validRounds(scenarioForm.maxSteps)">{{ t.create }}</button>
+          >{{ t.agentsJson }}<textarea v-model="agentsJson" rows="5" /></label>
+        <label>{{ lang === 'zh' ? '调度与效果条件 JSON（可选，覆盖模板）' : 'Delegation and outcome conditions JSON (optional template override)' }}<textarea v-model="teamJson" rows="5" /></label>
+        <button class="primary" :disabled="busy || !validRounds(scenarioForm.maxSteps)">{{ t.create }}</button>
       </form>
       <div ref="scenarioList" class="space-y-4" tabindex="-1">
         <article v-for="scenario in scenarios" :key="scenario.id" class="panel">

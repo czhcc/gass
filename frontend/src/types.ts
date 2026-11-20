@@ -120,6 +120,29 @@ export interface Agent {
   goal: string;
   modelId: string;
   allowedActions: string[];
+  visibleEntityIds?: string[];
+  maxDecisions?: number;
+  runtime?: {role: 'MASTER' | 'QUERY' | 'ACTION'; toolName: string; description: string; tools: string[]};
+}
+export interface TeamConfig {
+  rootAgentId:string; maxDelegationsPerRound:number; maxActionsPerRound:number;
+  mockRules:{actionType:string;eventType:string|null;whenExpression:string}[];
+  conditions:{id:string;nameZh:string;nameEn:string;expression:string}[];
+  inputActions:Record<string,string[]>;
+}
+export interface ScenarioProfile {
+  domainCode:string;nameZh:string;nameEn:string;
+  agents:Omit<Agent,'modelId'>[];team:TeamConfig;
+}
+export interface TaskRecord {
+  runId:string;taskId:string;parentTaskId:string|null;agentId:string;round:number;status:string;
+  inputVersion:number;outputVersion:number;
+  request:{goal:string;scopeIds:string[];allowedActions:string[];inputEventId:string|null};
+  result:Record<string,unknown>;createdSequence:number;completedSequence:number|null;
+}
+export interface BusinessOutcome {
+  result:string;evaluatedRound:number;version:number;
+  conditions:{id:string;nameZh:string;nameEn:string;satisfied:boolean;error:string}[];
 }
 export interface Difference {
   id: string;

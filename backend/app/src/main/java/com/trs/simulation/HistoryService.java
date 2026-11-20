@@ -137,6 +137,7 @@ public class HistoryService {
                 child,
                 state.version(),
                 Json.write(state));
+            db.update("INSERT INTO simulation_usage(run_id) VALUES (?)", child);
             db.update(
                 "INSERT INTO simulation_branch VALUES (?,?,?,?,?)",
                 child,
@@ -153,10 +154,14 @@ public class HistoryService {
             var past =
                 runs.events(parent, 0).stream().filter(e -> e.sequence() <= sequence).toList();
             for (var event : past) {
+              if (event.eventType().equals("WORLD_STATE_CHANGED") && event.payload().get("inputEventId") instanceof String input && !input.isBlank()) append(child, "ACTION_INPUT_HANDLED", state.simulationTime(), event.agentId(), Map.of("inputEventId", input));
               if (event.eventType().equals("SIMULATION_EVENT_CREATED")) {
                 var payload = new HashMap<>(event.payload());
                 payload.put("inherited", true);
                 append(child, "SIMULATION_EVENT_CREATED", state.simulationTime(), null, payload);
+              }
+              if (List.of("SUBTASK_COMPLETED", "MASTER_REVIEW", "TASK_MEMORY_RESTORED", "ACTION_INPUT_HANDLED").contains(event.eventType())) {
+                append(child, event.eventType().equals("ACTION_INPUT_HANDLED") ? "ACTION_INPUT_HANDLED" : "TASK_MEMORY_RESTORED", state.simulationTime(), event.agentId(), event.payload());
               }
             }
             for (var event :

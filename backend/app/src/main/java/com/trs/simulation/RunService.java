@@ -35,6 +35,15 @@ public class RunService {
   private final TransactionTemplate tx;
   private final WorldService worlds;
   private final DecisionProvider decisions;
+  private final HierarchicalCoordinator hierarchy;
+  private final ModelService models;
+  private final Map<String, Lease> invocations = new HashMap<>();
+  /** Cancellation ownership for one round, shared by every nested task. @author czhcc-trsdsj\codexsandboxoffline */
+  private static final class Lease {
+    private final reactor.core.publisher.Sinks.One<Void> cancellation = reactor.core.publisher.Sinks.one();
+    private volatile boolean cancelled;
+    private void cancel() { cancelled = true; cancellation.tryEmitEmpty(); }
+  }
   private final Map<String, DomainEnvironment> domains = new HashMap<>();
   private final ExecutorService workers = Executors.newVirtualThreadPerTaskExecutor();
   private final Map<String, UUID> active = new ConcurrentHashMap<>();
@@ -47,18 +56,29 @@ public class RunService {
       TransactionTemplate tx,
       WorldService worlds,
       DecisionProvider decisions,
-      List<DomainEnvironment> plugins) {
+      List<DomainEnvironment> plugins, HierarchicalCoordinator hierarchy, ModelService models) {
     this.db = db;
     this.tx = tx;
     this.worlds = worlds;
     this.decisions = decisions;
+    this.hierarchy = hierarchy;
+    this.models = models;
     plugins.forEach(p -> domains.put(p.domainCode(), p));
   }
 
-  /** Restores interrupted runs as paused after a process restart. @author agent */
+  /** Restores interrupted runs and closes their task audit records after restart. @author czhcc-trsdsj\codexsandboxoffline */
   @jakarta.annotation.PostConstruct
-  public void recover() {
+  public synchronized void recover() {
     db.update("UPDATE simulation_run SET status='PAUSED' WHERE status='RUNNING'");
+    var interrupted = db.queryForList("SELECT DISTINCT run_id FROM simulation_task WHERE status='RUNNING'", String.class);
+    for (var id : interrupted) for (var task : tasks(id)) if (task.status().equals("RUNNING")) {
+      var receipts = events(id, 0).stream().filter(e -> e.eventType().equals("ACTION_TASK_RECEIPT") && task.taskId().equals(e.payload().get("taskId"))).map(Event::payload).toList();
+      var result = Map.<String,Object>of("message", "Task cancelled after application restart", "receipts", receipts, "inputEventId", task.request().inputEventId() == null ? "" : task.request().inputEventId());
+      tx.executeWithoutResult(t -> {
+        append(id, task.parentTaskId() == null ? "MASTER_TASK_COMPLETED" : "SUBTASK_COMPLETED", state(id).simulationTime(), task.agentId(), Map.of("taskId", task.taskId(), "parentTaskId", task.parentTaskId() == null ? "" : task.parentTaskId(), "status", "CANCELLED", "result", result));
+        db.update("UPDATE simulation_task SET status='CANCELLED',output_version=?,result_json=?,completed_sequence=? WHERE run_id=? AND task_id=?", state(id).version(), Json.write(result), eventCount(id), id, task.taskId());
+      });
+    }
   }
 
   /**
@@ -80,6 +100,7 @@ public class RunService {
               Json.write(state),
               System.currentTimeMillis(), Json.write(world));
           db.update("INSERT INTO simulation_snapshot VALUES (?,?,?)", id, 0, Json.write(state));
+          db.update("INSERT INTO simulation_usage(run_id) VALUES (?)", id);
           append(id, "RUN_STARTED", 0, null, Map.of("mode", "EVENT_DRIVEN", "status", "PAUSED"));
         });
     return get(id);
@@ -124,7 +145,7 @@ public class RunService {
    */
   public synchronized void delete(String id) {
     var run = get(id);
-    if (run.status().equals("RUNNING"))
+    if (run.status().equals("RUNNING") || invocations.containsKey(id))
       throw new DeletionConflict("RUN_ACTIVE", "Pause or stop this run before deleting it.");
     tx.executeWithoutResult(t -> {
       if (db.queryForObject("SELECT COUNT(*) FROM simulation_branch WHERE parent_run_id=?",
@@ -135,6 +156,8 @@ public class RunService {
       db.update("DELETE FROM simulation_command WHERE run_id=?", id);
       db.update("DELETE FROM simulation_snapshot WHERE run_id=?", id);
       db.update("DELETE FROM simulation_event WHERE run_id=?", id);
+      db.update("DELETE FROM simulation_task WHERE run_id=?", id);
+      db.update("DELETE FROM simulation_usage WHERE run_id=?", id);
       db.update("DELETE FROM simulation_run WHERE id=?", id);
     });
     active.remove(id);
@@ -152,6 +175,9 @@ public class RunService {
   public List<AgentDefinition> agents(String id) {
     return scenario(id).agents();
   }
+
+  /** Seeds a configured example input using this run's frozen world and an idempotent key. @author czhcc-trsdsj\codexsandboxoffline */
+  public synchronized void seedInput(String id, ScenarioProfiles profiles) { inject(id, "demo-initial", profiles.initialInput(frozenWorld(id))); }
 
   /** Lists current object capabilities for manual decisions without invoking a model. @author czhcc-trsdsj\codexsandboxoffline */
   public ActionCatalog actionCapabilities(String id) {
@@ -225,7 +251,7 @@ public class RunService {
         || key.length() > 100
         || event == null
         || event.eventType() == null
-        || !List.of("POTENTIAL_LEAK", "USER_NOTE", "BANK_TRANSFER").contains(event.eventType())
+        || !(List.of("POTENTIAL_LEAK", "USER_NOTE", "BANK_TRANSFER").contains(event.eventType()) || scenario(id).team() != null && scenario(id).team().inputActions().containsKey(event.eventType()))
         || event.parameters() == null
         || event.simulationTime() < state(id).simulationTime()
         || event.simulationTime()
@@ -281,27 +307,61 @@ public class RunService {
    * Executes one event-driven round with ordered fresh observations and bounded budgets. @author
    * agent
    */
-  public synchronized State step(String id, String command) {
+  public State step(String id, String command) {
+    return step(id, command, null);
+  }
+
+  private State step(String id, String command, UUID workerToken) {
     if (command == null || command.isBlank() || command.length() > 100)
       throw new IllegalArgumentException("Idempotency-Key required, max 100 characters");
-    if (db.queryForObject("SELECT COUNT(*) FROM simulation_command WHERE run_id=? AND command_id=?", Integer.class, id, command) > 0)
-      return state(id);
-    if (!List.of("PAUSED", "RUNNING").contains(get(id).status()))
-      throw new IllegalStateException("Run is terminal");
-    activeStarts.put(id, nanoClock.getAsLong());
+    var lease = new Lease();
+    synchronized (this) {
+      if (workerToken != null && (!workerToken.equals(active.get(id)) || !get(id).status().equals("RUNNING"))) return state(id);
+      if (db.queryForObject("SELECT COUNT(*) FROM simulation_command WHERE run_id=? AND command_id=?", Integer.class, id, command) > 0) return state(id);
+      if (!List.of("PAUSED", "RUNNING").contains(get(id).status())) throw new IllegalStateException("Run is terminal");
+      if (invocations.containsKey(id)) throw new IllegalStateException("Run is already computing a round");
+      invocations.put(id, lease);
+      activeStarts.put(id, nanoClock.getAsLong());
+    }
     try {
+      if (scenario(id).team() == null) { synchronized (this) { return stepRound(id, command); } }
       return stepRound(id, command);
     } finally {
-      long elapsed = currentIntervalMs(id);
-      activeStarts.remove(id);
-      db.update("UPDATE simulation_run SET active_runtime_ms=active_runtime_ms+? WHERE id=?", elapsed, id);
+      synchronized (this) {
+        long elapsed = currentIntervalMs(id);
+        activeStarts.remove(id);
+        db.update("UPDATE simulation_run SET active_runtime_ms=active_runtime_ms+? WHERE id=?", elapsed, id);
+        invocations.remove(id, lease);
+      }
     }
   }
 
   private State stepRound(String id, String command) {
+    synchronized (this) { prepareRound(id, command); }
+    var scenario = scenario(id);
+    if (!List.of("PAUSED", "RUNNING").contains(get(id).status())) return state(id);
+    if (scenario.team() != null) {
+      var host = new RuntimeHost(id, invocations.get(id));
+      try { hierarchy.run(host); }
+      catch (CancellationException ex) { /* Pause, stop and shared budgets preserve their authoritative lifecycle status. */ }
+      catch (RuntimeException ex) {
+        synchronized (this) {
+          if (List.of("PAUSED", "RUNNING").contains(get(id).status()) && !host.lease.cancelled) {
+            db.update("UPDATE simulation_run SET status='FAILED',termination_reason='MODEL_DECISION_FAILED' WHERE id=?", id);
+            append(id, "RUN_FAILED", state(id).simulationTime(), null, Map.of("reasonCode", "MODEL_DECISION_FAILED", "reason", "Model planning or child task failed; inspect model configuration and task receipts"));
+          }
+        }
+      }
+      synchronized (this) { if (!host.lease.cancelled) checkTermination(id, scenario, true); return state(id); }
+    }
+    long clock = db.queryForObject("SELECT base_time FROM simulation_run WHERE id=?", Long.class, id) + get(id).step();
+    return legacyRound(id, scenario, clock);
+  }
+
+  private void prepareRound(String id, String command) {
     var run = get(id);
     var scenario = scenario(id);
-    if (checkTermination(id, scenario, true)) return state(id);
+    if (checkTermination(id, scenario, true)) return;
     long clock =
         db.queryForObject("SELECT base_time FROM simulation_run WHERE id=?", Long.class, id)
             + run.step()
@@ -333,6 +393,11 @@ public class RunService {
                 event.get("event_id"));
           }
         });
+    var current = state(id);
+    db.update("UPDATE simulation_run SET state_json=? WHERE id=?", Json.write(new State(id, clock, current.version(), current.entities(), current.relations())), id);
+  }
+
+  private State legacyRound(String id, Scenario scenario, long clock) {
     var world = frozenWorld(id);
     var plugin = domains.get(world.domainCode());
     if (plugin == null) throw new IllegalStateException("Domain plugin unavailable");
@@ -436,6 +501,7 @@ public class RunService {
     var run = get(id);
     if (!run.status().equals("PAUSED"))
       throw new IllegalStateException("Interventions require a paused run");
+    if (invocations.containsKey(id)) throw new IllegalStateException("Wait for the active round to finish cancelling");
     var current = state(id);
     if (current.version() != expectedVersion)
       throw new IllegalStateException("World version conflict");
@@ -466,6 +532,10 @@ public class RunService {
 
   private void commit(
       String id, String agent, Decision d, State current, Outcome outcome, String origin) {
+    commit(id, agent, d, current, outcome, origin, Map.of());
+  }
+
+  private void commit(String id, String agent, Decision d, State current, Outcome outcome, String origin, Map<String,Object> taskContext) {
     tx.executeWithoutResult(
         t -> {
           append(
@@ -498,20 +568,14 @@ public class RunService {
                 id,
                 next.version(),
                 Json.write(next));
+            var changes = new LinkedHashMap<String,Object>(Map.of("before", current, "after", next, "version", next.version(), "evidence", "SIMULATED"));
+            changes.putAll(taskContext);
             append(
                 id,
                 "WORLD_STATE_CHANGED",
                 current.simulationTime(),
                 agent,
-                Map.of(
-                    "before",
-                    current,
-                    "after",
-                    next,
-                    "version",
-                    next.version(),
-                    "evidence",
-                    "SIMULATED"));
+                changes);
           }
         });
   }
@@ -519,6 +583,8 @@ public class RunService {
   /** Pauses automatic computation; historical replay is unaffected. @author agent */
   public synchronized Run pause(String id) {
     var r = get(id);
+    var lease = invocations.get(id);
+    if (lease != null) { lease.cancel(); accumulateInterval(id); }
     if (r.status().equals("PAUSED")) return r;
     if (!r.status().equals("RUNNING"))
       throw new IllegalStateException("Only running simulations can pause");
@@ -534,6 +600,7 @@ public class RunService {
     if (r.status().equals("RUNNING")) return r;
     if (!r.status().equals("PAUSED"))
       throw new IllegalStateException("Only paused simulations can resume");
+    if (invocations.containsKey(id)) throw new IllegalStateException("A round is still active; wait for it to finish");
     db.update("UPDATE simulation_run SET status='RUNNING' WHERE id=?", id);
     append(id, "RUN_RESUMED", r.step(), null, Map.of());
     UUID workerToken = UUID.randomUUID();
@@ -548,8 +615,8 @@ public class RunService {
                     active.remove(id, workerToken);
                     break;
                   }
-                  step(id, UUID.randomUUID().toString());
                 }
+                step(id, UUID.randomUUID().toString(), workerToken);
                 try {
                   Thread.sleep(100);
                 } catch (InterruptedException e) {
@@ -570,6 +637,8 @@ public class RunService {
     if (r.status().equals("STOPPED")) return r;
     if (List.of("FAILED", "COMPLETED", "BUDGET_EXHAUSTED").contains(r.status()))
       throw new IllegalStateException("Run is terminal");
+    active.remove(id);
+    var lease = invocations.get(id); if (lease != null) { lease.cancel(); accumulateInterval(id); }
     db.update("UPDATE simulation_run SET status='STOPPED',termination_reason='USER_STOPPED' WHERE id=?", id);
     append(id, "RUN_STOPPED", r.step(), null, Map.of("reasonCode", "USER_STOPPED", "reason", "Stopped by user", "activeRuntimeMs", r.activeRuntimeMs()));
     return get(id);
@@ -585,29 +654,36 @@ public class RunService {
     return start == null ? 0 : Math.max(0, (nanoClock.getAsLong() - start) / 1_000_000L);
   }
 
+  private void accumulateInterval(String id) {
+    long elapsed = currentIntervalMs(id); activeStarts.remove(id);
+    db.update("UPDATE simulation_run SET active_runtime_ms=active_runtime_ms+? WHERE id=?", elapsed, id);
+  }
+
   private boolean checkTermination(String id, Scenario scenario, boolean checkSteps) {
     var run = get(id);
     if (!List.of("PAUSED", "RUNNING").contains(run.status())) return true;
-    if (scenario.agents().stream().allMatch(a -> hasEnded(id, a.id())))
+    if (scenario.team() == null && scenario.agents().stream().allMatch(a -> hasEnded(id, a.id())))
       return finish(id, "ALL_AGENTS_ENDED", scenario.agents().size(), scenario.agents().size(), "All agents submitted accepted END decisions", "");
-    if (checkSteps && run.step() >= scenario.maxSteps())
+    if (checkSteps && run.step() >= scenario.maxSteps()) {
+      if (scenario.team() != null) return evaluateHorizon(id, scenario);
       return finish(id, "MAX_STEPS", run.step(), scenario.maxSteps(), "Maximum simulation rounds reached", "");
+    }
     int events = eventCount(id);
     if (events > scenario.maxEvents() - 10)
       return finish(id, "MAX_EVENTS", events, scenario.maxEvents(), "Event budget reached (10 events reserved for audit)", "");
     long timeLimit = Math.max(1, timeBudget) * 1000L;
     if (run.activeRuntimeMs() >= timeLimit)
       return finish(id, "MAX_RUNTIME", run.activeRuntimeMs(), timeLimit, "Active computation time budget reached", "");
-    if (scenario.agents().stream().allMatch(a -> hasEnded(id, a.id()) || decisionCount(id, a.id()) >= a.maxDecisions())) {
+    if (scenario.team() == null && scenario.agents().stream().allMatch(a -> hasEnded(id, a.id()) || decisionCount(id, a.id()) >= a.maxDecisions())) {
       var exhausted = scenario.agents().stream().filter(a -> !hasEnded(id, a.id())).findFirst().orElseThrow();
       return finish(id, "MAX_AGENT_DECISIONS", decisionCount(id, exhausted.id()), exhausted.maxDecisions(), "All remaining agents exhausted their decision budgets", exhausted.id());
     }
     int total = db.queryForObject("SELECT COUNT(*) FROM simulation_event WHERE run_id=? AND event_type='AGENT_STARTED'", Integer.class, id);
     if (total >= Math.min(50, decisionBudget))
       return finish(id, "MAX_DECISIONS", total, Math.min(50, decisionBudget), "Global decision budget reached", "");
-    if ((total + 1) * 6L > requestBudget)
+    if (scenario.team() == null && (total + 1) * 6L > requestBudget)
       return finish(id, "MODEL_REQUEST_BUDGET", (total + 1) * 6L, requestBudget, "Insufficient model request budget for the next decision (reserved estimate)", "");
-    if ((total + 1) * 6144L > tokenBudget)
+    if (scenario.team() == null && (total + 1) * 6144L > tokenBudget)
       return finish(id, "TOKEN_BUDGET", (total + 1) * 6144L, tokenBudget, "Insufficient generated token budget for the next decision (reserved estimate)", "");
     long changes = state(id).version() - db.queryForObject("SELECT MIN(version) FROM simulation_snapshot WHERE run_id=?", Long.class, id);
     if (changes >= changeBudget)
@@ -627,6 +703,133 @@ public class RunService {
               "activeRuntimeMs", run.activeRuntimeMs(), "agentId", agentId));
     });
     return true;
+  }
+
+  /** Lists durable tasks in creation order, retaining parent/child relationships. @author czhcc-trsdsj\codexsandboxoffline */
+  public List<TaskRecord> tasks(String id) {
+    get(id);
+    return db.query("SELECT * FROM simulation_task WHERE run_id=? ORDER BY created_sequence", (r,n) -> new TaskRecord(id, r.getString("task_id"), r.getString("parent_task_id"), r.getString("agent_id"), r.getInt("round"), r.getString("status"), r.getLong("input_version"), r.getLong("output_version"), Json.read(r.getString("request_json"), TaskRequest.class), Json.read(r.getString("result_json"), Map.class), r.getLong("created_sequence"), r.getObject("completed_sequence") == null ? null : r.getLong("completed_sequence")), id);
+  }
+
+  /** Returns the independent business outcome; ongoing and legacy runs remain unevaluated. @author czhcc-trsdsj\codexsandboxoffline */
+  public BusinessOutcome outcome(String id) {
+    get(id);
+    var values = db.queryForList("SELECT outcome_json FROM simulation_usage WHERE run_id=?", String.class, id);
+    return values.isEmpty() || values.getFirst() == null ? new BusinessOutcome("NOT_EVALUATED", get(id).step(), state(id).version(), List.of()) : Json.read(values.getFirst(), BusinessOutcome.class);
+  }
+
+  /** Returns actual shared request and conservative output-token reservations. @author czhcc-trsdsj\codexsandboxoffline */
+  public Map<String,Object> usage(String id) {
+    get(id); var rows = db.queryForList("SELECT requests,reserved_tokens FROM simulation_usage WHERE run_id=?", id);
+    return rows.isEmpty() ? Map.of("requests", 0, "reserved_tokens", 0) : rows.getFirst();
+  }
+
+  private State initialState(String id) { var world = frozenWorld(id); return new State(id, 0, 0, world.entities(), world.relations()); }
+  private long pendingEvents(String id) { return db.queryForObject("SELECT COUNT(*) FROM simulation_scheduled_event WHERE run_id=? AND delivered=0", Long.class, id); }
+  private long unhandledInputs(String id, Scenario scene) {
+    var types = scene.team().inputActions().keySet();
+    var handled = TaskEvidence.handledInputs(events(id, 0));
+    return events(id, 0).stream().filter(e -> e.eventType().equals("SIMULATION_EVENT_CREATED") && types.contains(e.payload().get("eventType")) && !handled.contains(String.valueOf(e.payload().get("scheduledEventId")))).count();
+  }
+  private boolean evaluateHorizon(String id, Scenario scene) {
+    var result = BusinessEvaluation.evaluate(scene, initialState(id), state(id), get(id).step(), pendingEvents(id), unhandledInputs(id, scene));
+    String reason = result.result().equals("ERROR") ? "OBJECTIVE_EVALUATION_FAILED" : result.result().equals("SUCCEEDED") ? "OBJECTIVE_MET" : "OBJECTIVE_NOT_MET";
+    tx.executeWithoutResult(t -> {
+      db.update("INSERT INTO simulation_usage(run_id,outcome_json) VALUES (?,?) ON CONFLICT(run_id) DO UPDATE SET outcome_json=excluded.outcome_json", id, Json.write(result));
+      db.update("UPDATE simulation_run SET status=?,termination_reason=? WHERE id=?", result.result().equals("ERROR") ? "FAILED" : "COMPLETED", reason, id);
+      append(id, "SCENARIO_EVALUATED", state(id).simulationTime(), null, Map.of("outcome", result));
+      append(id, result.result().equals("ERROR") ? "RUN_FAILED" : "RUN_COMPLETED", state(id).simulationTime(), null, Map.of("reasonCode", reason, "reason", "Configured evaluation horizon reached", "activeRuntimeMs", get(id).activeRuntimeMs()));
+    }); return true;
+  }
+
+  /** One invocation's short-lock gateway; no network call holds the runtime monitor or a transaction. @author czhcc-trsdsj\codexsandboxoffline */
+  private final class RuntimeHost implements HierarchyHost {
+    private final String id;
+    private final Lease lease;
+    private final Map<String,Map<String,Object>> receipts = new HashMap<>();
+    private RuntimeHost(String id, Lease lease) { this.id = id; this.lease = lease; }
+    /** Frozen configuration. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public Scenario scenario() { return RunService.this.scenario(id); }
+    /** Latest committed state. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public State state() { return RunService.this.state(id); }
+    /** Initial template snapshot. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public State initial() { return initialState(id); }
+    /** Current planning round. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public int round() { return get(id).step(); }
+    /** Fresh object-bound capabilities. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public List<ActionCapability> capabilities(AgentDefinition agent) { synchronized (RunService.this) { check(); var world = frozenWorld(id); return domains.get(world.domainCode()).capabilities(world, agent, state()); } }
+    /** Uses the same scope policy as observations and capabilities. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public Set<String> visibleIds(AgentDefinition agent) { var world = frozenWorld(id); return domains.get(world.domainCode()).observationScope(agent, state()); }
+    /** Durable receipts and delivered inputs. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public List<Event> history() { return events(id, 0); }
+    /** Enforces cancellation and shared run budgets before every external or stateful operation. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public void check() { synchronized (RunService.this) {
+      if (lease.cancelled || invocations.get(id) != lease || !List.of("PAUSED", "RUNNING").contains(get(id).status())) throw new CancellationException("Invocation is no longer active");
+      if (checkTermination(id, scenario(), false)) throw new CancellationException("Shared run budget exhausted");
+    } }
+    /** Propagates pause/stop to the SDK subscription. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public reactor.core.publisher.Mono<Void> cancelled() { return lease.cancellation.asMono(); }
+    /** Reserves each model request across master and all workers. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public void beforeModel(AgentDefinition agent, String taskId, int tokens) { synchronized (RunService.this) {
+      check(); db.update("INSERT OR IGNORE INTO simulation_usage(run_id) VALUES (?)", id);
+      var usage = usage(id); long requests = ((Number) usage.get("requests")).longValue(), reserved = ((Number) usage.get("reserved_tokens")).longValue();
+      if (requests + 1 > requestBudget) { finish(id, "MODEL_REQUEST_BUDGET", requests, requestBudget, "Shared model request budget exhausted", agent.id()); throw new CancellationException("Request budget exhausted"); }
+      if (reserved + tokens > tokenBudget) { finish(id, "TOKEN_BUDGET", reserved, tokenBudget, "Shared output-token reservation budget exhausted", agent.id()); throw new CancellationException("Token budget exhausted"); }
+      db.update("UPDATE simulation_usage SET requests=requests+1,reserved_tokens=reserved_tokens+? WHERE run_id=?", tokens, id);
+      record("MODEL_REQUESTED", agent.id(), Map.of("taskId", taskId, "modelMode", models.get(agent.modelId()).baseUrl().startsWith("mock:") ? "SIMULATED" : "LLM", "modelId", agent.modelId(), "requestNumber", requests + 1, "reservedOutputTokens", tokens));
+    } }
+    /** Creates an authorized task once; child retries reuse its durable identity. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public TaskRecord startTask(String taskId, String parentId, AgentDefinition agent, TaskRequest request) { synchronized (RunService.this) {
+      check(); var existing = tasks(id).stream().filter(t -> t.taskId().equals(taskId)).findFirst(); if (existing.isPresent()) return existing.get();
+      if (decisionCount(id, agent.id()) >= agent.maxDecisions()) throw new IllegalStateException("Agent task budget exhausted");
+      if (parentId != null && tasks(id).stream().noneMatch(t -> t.taskId().equals(parentId) && t.parentTaskId() == null && t.status().equals("RUNNING"))) throw new IllegalArgumentException("Active parent task required");
+      if (request.inputEventId() != null && history().stream().noneMatch(e -> e.eventType().equals("SIMULATION_EVENT_CREATED") && request.inputEventId().equals(e.payload().get("scheduledEventId")) && agent.visibleEntityIds().contains(e.payload().get("targetId")))) throw new IllegalArgumentException("Task input event is outside the authorized scope");
+      tx.executeWithoutResult(t -> {
+        append(id, "AGENT_STARTED", state().simulationTime(), agent.id(), Map.of("taskId", taskId, "role", agent.runtime().role(), "modelMode", models.get(agent.modelId()).baseUrl().startsWith("mock:") ? "SIMULATED" : "LLM"));
+        append(id, parentId == null ? "MASTER_TASK_STARTED" : "SUBTASK_DISPATCHED", state().simulationTime(), agent.id(), Map.of("taskId", taskId, "parentTaskId", parentId == null ? "" : parentId, "request", request, "inputVersion", state().version()));
+        db.update("INSERT INTO simulation_task VALUES (?,?,?,?,?,'RUNNING',?,?,?,'{}',?,NULL)", id, taskId, parentId, agent.id(), round(), state().version(), state().version(), Json.write(request), eventCount(id));
+      }); return tasks(id).stream().filter(t -> t.taskId().equals(taskId)).findFirst().orElseThrow();
+    } }
+    /** Persists terminal task results even during cancellation, without changing graph state. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public void completeTask(String taskId, String status, Map<String,Object> result) { synchronized (RunService.this) {
+      var task = tasks(id).stream().filter(t -> t.taskId().equals(taskId)).findFirst().orElse(null);
+      if (task == null || !task.status().equals("RUNNING")) return;
+      var actual = new LinkedHashMap<>(result);
+      if (receipts.containsKey(taskId)) { actual.put("receipts", List.of(receipts.get(taskId))); actual.put("inputEventId", task.request().inputEventId() == null ? "" : task.request().inputEventId()); }
+      tx.executeWithoutResult(t -> {
+        append(id, task.parentTaskId() == null ? "MASTER_TASK_COMPLETED" : "SUBTASK_COMPLETED", state().simulationTime(), task.agentId(), Map.of("taskId", taskId, "parentTaskId", task.parentTaskId() == null ? "" : task.parentTaskId(), "status", status, "result", actual));
+        db.update("UPDATE simulation_task SET status=?,output_version=?,result_json=?,completed_sequence=? WHERE run_id=? AND task_id=?", status, state().version(), Json.write(actual), eventCount(id), id, taskId);
+      });
+    } }
+    /** Serializes engine validation, optimistic concurrency and idempotent task receipts. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public Map<String,Object> execute(TaskRecord task, AgentDefinition agent, Decision decision, long expectedVersion) { synchronized (RunService.this) {
+      check(); if (receipts.containsKey(task.taskId())) return receipts.get(task.taskId());
+      var current = state();
+      if (!agent.runtime().role().equals("ACTION") || !task.agentId().equals(agent.id()) || !task.runId().equals(id) || tasks(id).stream().noneMatch(t -> t.taskId().equals(task.taskId()) && t.status().equals("RUNNING")) || "END".equals(decision.actionType())) throw new IllegalArgumentException("Task lacks mutation authority");
+      if (decision.reason() == null || decision.reason().length() > 1000 || Json.write(decision).length() > 6000) throw new IllegalArgumentException("Invalid Action request");
+      var world = frozenWorld(id); var plugin = domains.get(world.domainCode());
+      Outcome result;
+      if (expectedVersion != current.version()) result = new Outcome(false, "State changed; query current capabilities and create a new task", current, false, "VERSION_CONFLICT", List.of());
+      else if (task.request().inputEventId() == null && scenario().team().inputActions().values().stream().anyMatch(actions -> actions.contains(decision.actionType()))) result = new Outcome(false, "Input-bound Action requires an inputEventId", current, false, "INPUT_REQUIRED", List.of());
+      else if (task.request().inputEventId() != null && TaskEvidence.handledInputs(history()).contains(task.request().inputEventId())) result = new Outcome(false, "Input already has an accepted Action receipt", current, false, "INPUT_ALREADY_HANDLED", List.of());
+      else if (task.request().inputEventId() != null && !inputMatches(task.request().inputEventId(), decision)) result = new Outcome(false, "Action does not match the bound input request", current, false, "INPUT_ACTION_MISMATCH", List.of());
+      else if (receipts.size() >= scenario().team().maxActionsPerRound()) result = new Outcome(false, "Round Action attempt limit reached", current, false, "ROUND_ACTION_LIMIT", List.of());
+      else result = plugin.execute(world, agent, plugin.normalizeDecision(decision, current), current);
+      var receipt = Map.<String,Object>of("taskId", task.taskId(), "accepted", result.accepted(), "code", result.code(), "message", result.message(), "actionType", decision.actionType(), "targetId", decision.targetId(), "parameters", decision.parameters() == null ? Map.of() : decision.parameters(), "inputVersion", current.version(), "outputVersion", result.state().version(), "affectedRelationIds", result.affectedRelationIds());
+      Outcome outcome = result;
+      tx.executeWithoutResult(t -> {
+        commit(id, agent.id(), decision, current, outcome, "AGENT", Map.of("taskId", task.taskId(), "inputEventId", task.request().inputEventId() == null ? "" : task.request().inputEventId()));
+        append(id, "ACTION_TASK_RECEIPT", current.simulationTime(), agent.id(), receipt);
+        if (outcome.accepted() && task.request().inputEventId() != null) append(id, "ACTION_INPUT_HANDLED", current.simulationTime(), agent.id(), Map.of("taskId", task.taskId(), "inputEventId", task.request().inputEventId(), "outputVersion", outcome.state().version()));
+      }); receipts.put(task.taskId(), receipt); return receipt;
+    } }
+    private boolean inputMatches(String inputId, Decision decision) {
+      return history().stream().anyMatch(e -> e.eventType().equals("SIMULATION_EVENT_CREATED") && inputId.equals(e.payload().get("scheduledEventId"))
+          && scenario().team().inputActions().getOrDefault(String.valueOf(e.payload().get("eventType")), List.of()).contains(decision.actionType())
+          && Objects.equals(e.payload().get("targetId"), decision.targetId()) && Objects.equals(e.payload().get("parameters"), decision.parameters()));
+    }
+    /** Writes public evidence with stable ordering and a bounded payload. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public void record(String type, String agentId, Map<String,Object> payload) { synchronized (RunService.this) { check(); if (Json.write(payload).length() > 40000) throw new IllegalArgumentException("Event payload too large"); append(id, type, state().simulationTime(), agentId, payload); } }
   }
 
   private int decisionCount(String id, String agent) {

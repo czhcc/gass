@@ -15,7 +15,8 @@ public final class CelExpressions {
       .setStandardMacros(CelStandardMacro.STANDARD_MACROS)
       .addVar("target", SimpleType.DYN).addVar("params", SimpleType.DYN)
       .addVar("entities", ListType.create(SimpleType.DYN)).addVar("relations", ListType.create(SimpleType.DYN))
-      .addVar("version", SimpleType.INT).build();
+      .addVar("version", SimpleType.INT).addVar("initial", SimpleType.DYN)
+      .addVar("metrics", SimpleType.DYN).addVar("pendingEvents", SimpleType.INT).build();
   private static final CelRuntime RUNTIME = CelRuntimeFactory.standardCelRuntimeBuilder().setOptions(OPTIONS).build();
   private static final Map<String, CelRuntime.Program> CACHE = new LinkedHashMap<>(256, .75f, true);
   private CelExpressions() {}
