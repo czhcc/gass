@@ -11,6 +11,9 @@ import { api, ApiError } from "../api";
 import { mergeEvents } from "../playback";
 import ObjectActions from "./ObjectActions.vue";
 import EntityDetails from "./EntityDetails.vue";
+import EventDetails from './EventDetails.vue';
+import { describeEvent, isKeyEvent, terminationMessages } from '../eventPresentation';
+import { agentDisplayName, agentGoalDescription, modelModeLabel } from '../agentPresentation';
 import type {
   Agent,
   ActionCatalog,
@@ -160,6 +163,10 @@ const shownEvents = computed(() =>
   events.value.filter((e) => e.sequence <= cursor.value),
 );
 const latest = computed(() => shownEvents.value.at(-1));
+const eventScope = ref('key');
+const eventContext = computed(() => ({ events: events.value, agents: agents.value, entities: state.value?.entities ?? [], relations: state.value?.relations ?? [], catalog: actionCatalog.value }));
+const eventDescriptions = computed(() => new Map(events.value.map(event => [event.sequence, describeEvent(event, eventContext.value, props.lang)])));
+const timelineEvents = computed(() => eventScope.value === 'all' ? events.value : events.value.filter(isKeyEvent));
 const highlight = computed(() => {
   const p = [...shownEvents.value]
     .reverse()
@@ -195,19 +202,6 @@ const terminal = computed(
     info.value &&
     ["COMPLETED", "BUDGET_EXHAUSTED", "STOPPED", "FAILED"].includes(info.value.status),
 );
-const terminationMessages: Record<string, [string, string]> = {
-  ALL_AGENTS_ENDED: ['所有 Agent 均已成功结束任务', 'All agents submitted accepted END decisions'],
-  MAX_STEPS: ['推演轮数达到上限', 'Simulation round limit reached'],
-  MAX_EVENTS: ['事件数量达到预算限制（预留 10 条审计事件）', 'Event limit reached (10 audit events reserved)'],
-  MAX_RUNTIME: ['实际推演耗时达到上限', 'Active computation time limit reached'],
-  MAX_AGENT_DECISIONS: ['尚未结束的 Agent 均已耗尽各自的决策次数', 'All remaining agents exhausted their decision limits'],
-  MAX_DECISIONS: ['运行总决策次数达到上限', 'Global decision limit reached'],
-  MODEL_REQUEST_BUDGET: ['模型请求预算不足以预留下一次决策（按预估请求数计算）', 'Insufficient request budget for the next decision (reserved estimate)'],
-  TOKEN_BUDGET: ['输出 Token 预算不足以预留下一次决策（按预估用量计算）', 'Insufficient token budget for the next decision (reserved estimate)'],
-  MAX_STATE_CHANGES: ['状态变更次数达到上限', 'State change limit reached'],
-  USER_STOPPED: ['用户手动停止运行', 'Stopped by user'],
-  MODEL_DECISION_FAILED: ['模型决策失败或超时，请检查模型配置', 'Model decision failed or timed out; verify model configuration'],
-};
 function runStatus(run: Run) {
   if (run.status === 'COMPLETED') return run.terminationReason === 'ALL_AGENTS_ENDED'
     ? (props.lang === 'zh' ? '任务完成' : 'Task completed') : (props.lang === 'zh' ? '历史已结束' : 'Ended (legacy)');
@@ -458,9 +452,6 @@ async function executeObjectAction(input: ObjectActionInput) {
 function selectEntity(id: string) {
   selectedEntityId.value = id;
 }
-function pretty(value: unknown) {
-  return JSON.stringify(value, null, 2);
-}
 async function openDeletion(event: MouseEvent) {
   if (!selected.value || busy.value) return;
   deletionTrigger = event.currentTarget as HTMLElement;
@@ -599,8 +590,8 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <template v-if="state && info"
-      ><div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <article class="panel min-w-0">
+      ><div class="min-w-0">
+        <article class="panel min-w-0" :aria-label="lang === 'zh' ? '关联图' : 'Relationship graph'">
           <div class="flex flex-wrap justify-between gap-3 text-sm">
             <span data-testid="world-version"
               >{{ t.version }}: {{ state.version }}</span
@@ -623,59 +614,9 @@ onBeforeUnmount(() => {
             <p v-else class="mt-2 text-sm text-slate-500">{{ t.noObject }}</p>
           </div>
         </article>
-        <aside class="panel max-h-[780px] overflow-auto">
-          <h3 class="mb-4 font-semibold">{{ t.agents }}</h3>
-          <article
-            v-for="agent in agents"
-            :key="agent.id"
-            class="mb-5 border-b border-slate-100 pb-4"
-          >
-            <h4 class="font-medium">{{ agent.name }}</h4>
-            <span class="text-xs text-amber-700">{{
-              [...shownEvents]
-                .reverse()
-                .find(
-                  (e) =>
-                    e.agentId === agent.id && e.eventType === "AGENT_STARTED",
-                )?.payload.modelMode ?? ""
-            }}</span>
-            <p class="my-2 text-xs text-slate-500">{{ agent.goal }}</p>
-            <details
-              v-for="event in shownEvents
-                .filter(
-                  (e) =>
-                    e.agentId === agent.id &&
-                    [
-                      'AGENT_OBSERVATION',
-                      'AGENT_DECISION',
-                      'AGENT_TOOL_CALL',
-                      'ACTION_ACCEPTED',
-                      'ACTION_REJECTED',
-                    ].includes(e.eventType),
-                )
-                .slice(-5)"
-              :key="event.sequence"
-              class="my-2"
-            >
-              <summary
-                class="cursor-pointer text-xs"
-                :class="
-                  event.eventType === 'ACTION_REJECTED'
-                    ? 'text-red-700'
-                    : 'text-slate-700'
-                "
-              >
-                #{{ event.sequence }} {{ event.eventType }}
-              </summary>
-              <pre
-                class="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-all text-xs"
-                >{{ pretty(event.payload) }}</pre
-              >
-            </details>
-          </article>
-        </aside>
       </div>
-      <article class="panel">
+      <div class="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <article class="panel min-w-0" :aria-label="t.events">
         <h3 class="mb-4 font-semibold">{{ t.events }}</h3>
         <div class="flex flex-wrap items-center gap-3">
           <button
@@ -710,11 +651,14 @@ onBeforeUnmount(() => {
             :value="cursor"
             @input="seek(Number(($event.target as HTMLInputElement).value))"
         /></label>
-        <div class="mt-4 flex max-h-40 flex-wrap gap-2 overflow-auto">
+        <label class="mt-4 block text-sm">{{ lang === 'zh' ? '事件范围' : 'Event scope' }}<select v-model="eventScope"><option value="key">{{ lang === 'zh' ? '关键事件（行动结果、状态变化与运行状态）' : 'Key events (outcomes, changes and lifecycle)' }}</option><option value="all">{{ lang === 'zh' ? '全部事件（含观察、决策和工具查询）' : 'All events (including observations, decisions and queries)' }}</option></select></label>
+        <p class="mt-2 text-xs text-slate-500">{{ lang === 'zh' ? '列表筛选不改变回放位置；上一事件、下一事件仍按原始事件顺序浏览。' : 'Filtering does not change the playback position. Previous/next still follow the original event order.' }}</p>
+        <div class="mt-4 grid max-h-96 gap-2 overflow-auto" :aria-label="lang === 'zh' ? '事件列表' : 'Event list'">
           <button
-            v-for="event in events"
+            v-for="event in timelineEvents"
             :key="event.sequence"
-            class="rounded border px-2 py-1 text-xs"
+            class="rounded-lg border px-3 py-3 text-left text-sm"
+            :aria-pressed="event.sequence === cursor"
             :class="
               event.sequence === cursor
                 ? 'border-blue-600 bg-blue-50'
@@ -722,13 +666,63 @@ onBeforeUnmount(() => {
             "
             @click="seek(event.sequence)"
           >
-            #{{ event.sequence }} {{ event.eventType }}
+            <span class="flex flex-wrap items-center gap-2 font-medium"><span>#{{ event.sequence }} {{ eventDescriptions.get(event.sequence)?.title }}</span><span class="text-xs font-normal text-slate-500">{{ lang === 'zh' ? '模拟时间' : 'Simulation time' }} {{ event.simulationTime }} · {{ eventDescriptions.get(event.sequence)?.actor }}</span></span>
+            <span class="mt-1 block break-words text-xs text-slate-600">{{ eventDescriptions.get(event.sequence)?.summary }}</span>
           </button>
+          <p v-if="!timelineEvents.length" class="text-sm text-slate-500">{{ lang === 'zh' ? '当前筛选下暂无事件。' : 'No events match this filter.' }}</p>
         </div>
-        <pre v-if="latest" class="mt-4 max-h-64 overflow-auto text-xs">{{
-          pretty(latest)
-        }}</pre>
+        <EventDetails v-if="latest" data-testid="selected-event-details" class="mt-4" :event="latest" :context="eventContext" :lang="lang" />
       </article>
+        <aside class="panel min-w-0 self-start xl:max-h-[780px] xl:overflow-auto" :aria-label="t.agents">
+          <h3 class="mb-4 font-semibold">{{ t.agents }}</h3>
+          <article
+            v-for="agent in agents"
+            :key="agent.id"
+            class="mb-5 border-b border-slate-100 pb-4"
+          >
+            <h4 class="font-medium">{{ agentDisplayName(agent, lang) }}</h4>
+            <span class="text-xs text-amber-700">{{
+              modelModeLabel([...shownEvents]
+                .reverse()
+                .find(
+                  (e) =>
+                    e.agentId === agent.id && e.eventType === "AGENT_STARTED",
+                )?.payload.modelMode, lang)
+            }}</span>
+            <p class="my-2 text-xs text-slate-500">{{ agentGoalDescription(agent.goal, lang) }}</p>
+            <details v-if="agentDisplayName(agent, lang) !== agent.name || agentGoalDescription(agent.goal, lang) !== agent.goal" class="mb-3 text-xs text-slate-500"><summary class="cursor-pointer">{{ lang === 'zh' ? '原始名称与任务目标' : 'Original name and goal' }}</summary><p class="mt-2 break-words">{{ agent.name }}</p><p class="mt-1 whitespace-pre-wrap break-words">{{ agent.goal }}</p></details>
+            <details
+              v-for="event in shownEvents
+                .filter(
+                  (e) =>
+                    e.agentId === agent.id &&
+                    [
+                      'AGENT_OBSERVATION',
+                      'AGENT_DECISION',
+                      'AGENT_TOOL_CALL',
+                      'ACTION_ACCEPTED',
+                      'ACTION_REJECTED',
+                    ].includes(e.eventType),
+                )
+                .slice(-5)"
+              :key="event.sequence"
+              class="my-2"
+            >
+              <summary
+                class="cursor-pointer text-xs"
+                :class="
+                  event.eventType === 'ACTION_REJECTED'
+                    ? 'text-red-700'
+                    : 'text-slate-700'
+                "
+              >
+                #{{ event.sequence }} {{ eventDescriptions.get(event.sequence)?.title }}
+              </summary>
+              <EventDetails class="mt-2" :event="event" :context="eventContext" :lang="lang" />
+            </details>
+          </article>
+        </aside>
+      </div>
       <div class="grid gap-5 lg:grid-cols-2">
         <form class="panel grid gap-4" @submit.prevent="fork">
           <h3 class="font-semibold">{{ t.branch }}</h3>
@@ -774,7 +768,7 @@ onBeforeUnmount(() => {
               @change="intervention.actionType = allowed[0] ?? ''"
             >
               <option v-for="agent in agents" :key="agent.id" :value="agent.id">
-                {{ agent.name }}
+                {{ agentDisplayName(agent, lang) }}
               </option>
             </select></label
           ><label

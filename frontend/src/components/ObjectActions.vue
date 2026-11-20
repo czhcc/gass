@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import type { ActionCapability, ActionCatalog, Agent, Lang, ObjectActionInput } from "../types";
+import { agentDisplayName } from '../agentPresentation';
 
 const props = defineProps<{ catalog: ActionCatalog; agents: Agent[]; lang: Lang; busy: boolean; targetId?: string }>();
 const emit = defineEmits<{ submit: [input: ObjectActionInput] }>();
@@ -101,7 +102,7 @@ function submit(end = false) {
     <h3 class="font-semibold">{{ t.title }}</h3>
     <p class="text-sm text-slate-500">{{ t.help }}</p>
     <fieldset :disabled="busy" class="grid gap-4 md:grid-cols-3">
-      <label>{{ t.agent }}<select v-model="agentId" :aria-label="t.agent"><option v-for="agent in agents" :key="agent.id" :value="agent.id">{{ agent.name }}</option></select></label>
+      <label>{{ t.agent }}<select v-model="agentId" :aria-label="t.agent"><option v-for="agent in agents" :key="agent.id" :value="agent.id">{{ agentDisplayName(agent, lang) }}</option></select></label>
       <label>{{ t.target }}<select v-model="target" :aria-label="t.target"><option v-for="item in targets" :key="key(item)" :value="key(item)">{{ item.targetName }} · {{ item.type }}</option></select></label>
       <label>{{ t.action }}<select v-model="actionId" :aria-label="t.action"><option v-for="item in actions" :key="item.action.actionType" :value="item.action.actionType">{{ lang === 'zh' ? item.action.nameZh : item.action.nameEn }} · {{ item.action.actionType }}</option></select></label>
     </fieldset>
