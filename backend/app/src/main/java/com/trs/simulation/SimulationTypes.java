@@ -89,7 +89,46 @@ public final class SimulationTypes {
       String modelId,
       List<String> allowedActions,
       List<String> visibleEntityIds,
-      int maxDecisions) {}
+      int maxDecisions, AgentRuntime runtime) {
+    /** Preserves frozen legacy agent definitions. @author czhcc-trsdsj\codexsandboxoffline */
+    public AgentDefinition(String id, String name, String goal, String modelId, List<String> allowedActions,
+        List<String> visibleEntityIds, int maxDecisions) {
+      this(id, name, goal, modelId, allowedActions, visibleEntityIds, maxDecisions, null);
+    }
+  }
+
+  /** Configurable SDK role, delegation tool description and allowed query tools. @author czhcc-trsdsj\codexsandboxoffline */
+  public record AgentRuntime(String role, String toolName, String description, List<String> tools) {}
+
+  /** Bounded hierarchy and declarative outcome rules, frozen in each run. @author czhcc-trsdsj\codexsandboxoffline */
+  public record TeamConfig(String rootAgentId, int maxDelegationsPerRound, int maxActionsPerRound,
+      List<MockActionRule> mockRules, List<GoalCondition> conditions, Map<String,List<String>> inputActions) {
+    /** Supports profiles without action-bound external inputs. @author czhcc-trsdsj\codexsandboxoffline */
+    public TeamConfig(String rootAgentId, int maxDelegationsPerRound, int maxActionsPerRound, List<MockActionRule> mockRules, List<GoalCondition> conditions) { this(rootAgentId, maxDelegationsPerRound, maxActionsPerRound, mockRules, conditions, Map.of()); }
+  }
+
+  /** Explicit mock-only policy; real models choose tasks from prompts and capabilities. @author czhcc-trsdsj\codexsandboxoffline */
+  public record MockActionRule(String actionType, String eventType, String whenExpression) {}
+
+  /** Pure CEL success condition and user-visible explanation. @author czhcc-trsdsj\codexsandboxoffline */
+  public record GoalCondition(String id, String nameZh, String nameEn, String expression) {}
+
+  /** Structured delegation request; authorization is independently checked by the runtime. @author czhcc-trsdsj\codexsandboxoffline */
+  public record TaskRequest(String goal, List<String> scopeIds, List<String> allowedActions, String inputEventId) {}
+
+  /** Durable parent/child task record with exact audit boundaries. @author czhcc-trsdsj\codexsandboxoffline */
+  public record TaskRecord(String runId, String taskId, String parentTaskId, String agentId, int round,
+      String status, long inputVersion, long outputVersion, TaskRequest request,
+      Map<String, Object> result, long createdSequence, Long completedSequence) {}
+
+  /** Public master report; model prose cannot declare business success. @author czhcc-trsdsj\codexsandboxoffline */
+  public record RoundReport(String summary, List<String> findings, List<String> nextTasks) {}
+
+  /** One evaluated business condition; expression errors are explicit. @author czhcc-trsdsj\codexsandboxoffline */
+  public record ConditionResult(String id, String nameZh, String nameEn, boolean satisfied, String error) {}
+
+  /** Business outcome is distinct from execution status and termination reason. @author czhcc-trsdsj\codexsandboxoffline */
+  public record BusinessOutcome(String result, int evaluatedRound, long version, List<ConditionResult> conditions) {}
 
   /** Scenario configuration; independent from mutable execution state. @author agent */
   public record Scenario(
@@ -98,7 +137,12 @@ public final class SimulationTypes {
       String worldId,
       List<AgentDefinition> agents,
       int maxSteps,
-      int maxEvents) {}
+      int maxEvents, TeamConfig team) {
+    /** Keeps the original scene protocol and legacy execution mode. @author czhcc-trsdsj\codexsandboxoffline */
+    public Scenario(String id, String name, String worldId, List<AgentDefinition> agents, int maxSteps, int maxEvents) {
+      this(id, name, worldId, agents, maxSteps, maxEvents, null);
+    }
+  }
 
   /** An action proposal is untrusted until the world engine validates it. @author agent */
   public record Decision(

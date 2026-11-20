@@ -1,6 +1,8 @@
 import type { Lang } from './types';
 
 const roles = [
+  { id: 'lead', zh: '主研判 Agent', en: 'Lead Agent', aliases: ['主研判 / Lead Agent'] },
+  { id: 'research', zh: '查询分析 Agent', en: 'Research Agent', aliases: ['查询分析 / Research Agent'] },
   { id: 'investigation', zh: '调查 Agent', en: 'Investigation Agent', aliases: ['Investigator', '调查 / Investigation Agent', '调查 Agent'] },
   { id: 'propagation', zh: '传播 Agent', en: 'Propagation Agent', aliases: ['传播 / Propagation Agent', '传播 Agent'] },
   { id: 'response', zh: '响应 Agent', en: 'Response Agent', aliases: ['响应 / Response Agent', '响应 Agent'] },
@@ -34,6 +36,6 @@ export function agentGoalDescription(goal: string | undefined, lang: Lang): stri
 
 export function modelModeLabel(mode: unknown, lang: Lang): string {
   if (mode === 'LLM') return lang === 'zh' ? '真实模型（LLM）' : 'Configured model (LLM)';
-  if (mode === 'MOCK') return lang === 'zh' ? '模拟模型（MOCK）' : 'Mock model (MOCK)';
+  if (mode === 'MOCK' || mode === 'SIMULATED') return lang === 'zh' ? '模拟模型（MOCK）' : 'Mock model (MOCK)';
   return typeof mode === 'string' ? mode : '';
 }

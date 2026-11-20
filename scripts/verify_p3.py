@@ -44,44 +44,39 @@ def main():
         raise RuntimeError('Model not found; configure it in the Models page first')
     world = request('/examples/information-leak', 'POST', {})
     visible = [entity['id'] for entity in world['entities']]
+    profile = next(profile for profile in request('/scenario-profiles') if profile['domainCode'] == world['domainCode'])
     scenario = request('/scenarios', 'POST', {
         'name': 'P3 real-model acceptance', 'worldId': world['id'],
-        'maxSteps': 5, 'maxEvents': 500,
-        'agents': [
-            {'id': 'investigator', 'name': 'Investigator',
-             'goal': 'Use graph tools to investigate the potential leak. Review currently unreviewed entities. Re-observe current state before every decision. Never assume propagation is a fact.',
-             'modelId': args.model_id, 'allowedActions': ['ANALYZE_RELATIONS', 'MARK_REVIEWED'],
-             'visibleEntityIds': visible, 'maxDecisions': 5},
-            {'id': 'response', 'name': 'Response Agent',
-             'goal': 'Reduce risk by disabling active sync and sharing channels; review remaining unreviewed systems when appropriate. Adapt decisions to the current graph and action feedback.',
-             'modelId': args.model_id, 'allowedActions': ['DISABLE_SYNC', 'REVOKE_SHARING', 'MARK_REVIEWED'],
-             'visibleEntityIds': visible, 'maxDecisions': 5},
-        ],
+        'maxSteps': 5, 'maxEvents': 2000,
+        'team': profile['team'],
+        'agents': [{**agent, 'modelId': args.model_id, 'visibleEntityIds': visible, 'maxDecisions': 20}
+                   for agent in profile['agents']],
     })
     run = request('/scenarios/' + scenario['id'] + '/runs', 'POST', {})
     run_id = run['id']
-    request('/runs/' + run_id + '/inject', 'POST', {
-        'eventType': 'POTENTIAL_LEAK', 'targetId': 'document_f',
-        'simulationTime': 0, 'parameters': {'confidence': 0.8},
-    }, str(uuid.uuid4()))
+    request('/runs/' + run_id + '/initial-input', 'POST', {})
     for _ in range(5):
+        if request('/runs/' + run_id)['status'] not in ('PAUSED', 'RUNNING'):
+            break
         request('/runs/' + run_id + '/step', 'POST', {}, str(uuid.uuid4()))
     events = request('/runs/' + run_id + '/events')
     state = request('/runs/' + run_id + '/state')
     counts = collections.Counter(event['eventType'] for event in events)
     actors = collections.Counter(event['agentId'] for event in events if event['eventType'] == 'AGENT_DECISION')
     checks = {
-        'two_agents_five_decisions_each': len(actors) == 2 and all(n >= 5 for n in actors.values()),
+        'master_review': counts['MASTER_REVIEW'] >= 1,
+        'delegated_subtask': counts['SUBTASK_COMPLETED'] >= 1,
+        'configured_llm_provenance': all(event['payload']['modelMode'] == 'LLM' for event in events if event['eventType'] == 'MODEL_REQUESTED'),
         'three_world_changes': counts['WORLD_STATE_CHANGED'] >= 3,
         'accepted_action': counts['ACTION_ACCEPTED'] >= 1,
-        'rejected_action': counts['ACTION_REJECTED'] >= 1,
-        'autonomous_tool_call': counts['AGENT_TOOL_CALL'] >= 1,
+        'autonomous_tool_call': counts['GRAPH_QUERY_RESULT'] >= 1,
         'persisted_version_matches_changes': state['version'] == counts['WORLD_STATE_CHANGED'],
-        'observed_updated_state': any(event['payload']['observation']['version'] > 0 for event in events if event['eventType'] == 'AGENT_OBSERVATION'),
+        'observed_updated_state': any(event['payload']['result']['version'] > 0 for event in events if event['eventType'] == 'GRAPH_QUERY_RESULT'),
     }
-    print(json.dumps({'runId': run_id, 'eventCounts': counts, 'checks': checks}, indent=2))
-    # Actual model decisions are not scripted. A model that never proposes an invalid action
-    # may fail the rejection criterion; this is reported honestly, not replaced with fake events.
+    print(json.dumps({'runId': run_id, 'eventCounts': counts, 'actionActors': actors,
+                      'outcome': request('/runs/' + run_id + '/outcome'),
+                      'usage': request('/runs/' + run_id + '/usage'), 'checks': checks}, indent=2))
+    # Actual model decisions and failed effects are reported as recorded by the engine.
     return 0 if all(checks.values()) else 1
 
 

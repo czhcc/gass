@@ -79,7 +79,7 @@ Entry 包含 id、domainCode、ownerType、revision（同编码修订号）、st
 | --- | --- | --- |
 | POST | /api/models/mock | 创建/复用无需密钥的 mock://local 模型 |
 | POST | /api/examples/information/demo | 请求体 `{"worldId":"已有泄密世界ID","maxSteps":8}`；maxSteps 必填，范围 1～20 轮；复用所选世界，创建模拟模型、四角色场景和暂停运行，注入初始事件，不新增世界 |
-| POST | /api/examples/bank/demo | 请求体 `{"worldId":"已有银行世界ID","maxSteps":8}`；maxSteps 必填，范围 1～20 轮；复用所选世界，创建银行/风险 Agent 和暂停运行，注入不超过源账户余额及500万元的初始请求，不新增世界 |
+| POST | /api/examples/bank/demo | 请求体 `{"worldId":"已有银行世界ID","maxSteps":8}`；maxSteps 必填，范围 1～20 轮；复用所选世界，创建主研判、查询分析、银行操作、风控四角色和暂停运行，注入不超过源账户余额及500万元的初始请求，不新增世界 |
 
 世界目录启动时补齐 `demo-information` 与 `demo-bank` 两份初始世界。新建、复制和导入的世界仅支持 `information`、`bank` 两类。导入复用 `POST /api/worlds`，由服务端校验完整图结构；编辑不得更换世界类型或移除仍被场景 Agent 引用的对象。
 
@@ -107,9 +107,27 @@ Fork 请求：`{"sequence":12,"label":"限制传播方案"}`。子分支拥有�
 
 银行 TRANSFER 参数：`{"sourceId":"account_a","amount":"5000000.00","currency":"CNY"}`，targetId 为 account_b。初始账户 A=1000000000分、B=200000000分；成功后 A=500000000分、B=700000000分，合计不变。非正数、三位小数、越权或不足余额均拒绝。
 
-模拟模型输出在 Agent 事件中标记 MOCK。它可以验证完整功能闭环，但不能证明真实 LLM 自主性。
+模拟模型输出在 Agent 事件中标记 MOCK（旧协议）或 SIMULATED（主从协议），界面均显示为模拟模型。它可以验证完整功能闭环，但不能证明真实 LLM 自主性。
 
-## 运行结束与实际耗时
+## 主从场景与任务
+
+新建场景和两个演示均使用配置的 MASTER / QUERY / ACTION 角色。`GET /api/scenario-profiles` 返回对应领域的 `agents` 角色模板、提示词、委派描述和 `team`；普通 `POST /api/scenarios` 同时保存 agents 和 team。每个 Agent 的 `runtime` 包含 role、toolName、description、tools；场景校验主角色无业务 Action、查询角色只读及可见范围不得扩大。旧场景 team 为 null 时保留旧执行协议。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | /api/scenario-profiles | 场景主从模板；不会选择模型或创建世界 |
+| POST | /api/runs/{id}/initial-input | 根据运行冻结世界生成初始事件；相同初始化幂等，与演示初始化不会重复 |
+| GET | /api/runs/{id}/tasks | 父子任务、轮次、版本、请求、查询与引擎回执、创建/完成事件序号 |
+| GET | /api/runs/{id}/outcome | NOT_EVALUATED / SUCCEEDED / FAILED / ERROR，评价轮次与逐项条件 |
+| GET | /api/runs/{id}/usage | requests（实际 SDK 请求数）、reserved_tokens（按模型最大输出保守预留） |
+
+泄密与银行演示各包含一个主 Agent、一个查询分析子 Agent和两个操作子 Agent；银行操作与风控均保留。新事件包含 MASTER_TASK_STARTED、SUBTASK_DISPATCHED、SUBTASK_COMPLETED、GRAPH_QUERY_RESULT、ACTION_TASK_RECEIPT、MASTER_REVIEW、MODEL_REQUESTED、SCENARIO_EVALUATED。以查询证据和实际引擎回执为准，任务摘要不能替代状态提交。
+
+新模式中一轮指主 Agent 的一次有限委派闭环，不要求全部子 Agent 都执行。到指定轮数后，生命周期为 COMPLETED，terminationReason 为 OBJECTIVE_MET 或 OBJECTIVE_NOT_MET，业务效果另由 outcome 表达；条件计算错误为 FAILED / OBJECTIVE_EVALUATION_FAILED。其他资源耗尽提前终止时 outcome 为 NOT_EVALUATED。每个 SDK 模型请求计入主从共享预算；并发名额在嵌套工具前释放。暂停/停止会取消整棵任务树并拒绝后续状态提交，已提交 Action 保留。
+
+V9 增加 simulation_task 和 simulation_usage，不清理原数据。完整协议、配置、分支继承和限制见 [主从推演框架](HIERARCHICAL_RUNTIME.md)。
+
+## 原平级协议的运行结束与实际耗时
 
 `GET /api/runs` 和 `GET /api/runs/{id}` 增加 `activeRuntimeMs`（累计实际推演毫秒数）及 `terminationReason`（结束原因编码，未结束或旧记录为 null）。
 

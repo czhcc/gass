@@ -5,6 +5,8 @@ import { createMemoryHistory, createRouter } from "vue-router";
 import Workspace from "./components/Workspace.vue";
 import type { World } from "./types";
 import { useWorkspaceStore } from './stores/workspace';
+import { readFileSync } from 'node:fs';
+const profiles = JSON.parse(readFileSync('../backend/app/src/main/resources/scenario-profiles.json', 'utf8'));
 
 vi.mock("./components/RunStudio.vue", () => ({
   __esModule: true,
@@ -27,7 +29,7 @@ async function setup(lang: "zh" | "en" = "en", deletion?: Promise<unknown>, worl
       ok: true,
       json: async () => url === "/api/scenarios"
         ? [{ id: "s1", name: "First scenario" }, { id: "s2", name: "Other scenario" }]
-        : url === "/api/worlds" ? worlds : [],
+        : url === '/api/scenario-profiles' ? profiles : url === "/api/worlds" ? worlds : [],
     };
   });
   vi.stubGlobal("fetch", fetcher);
@@ -53,12 +55,37 @@ it('explicitly grants selected custom world Actions to the primary default agent
   await fireEvent.update(screen.getByLabelText('Model'), 'm');
   await fireEvent.update(screen.getByLabelText('Maximum simulation rounds'), '13');
   await fireEvent.click(screen.getByLabelText('CUSTOM_SCORE · Custom score'));
-  await fireEvent.click(screen.getByRole('button', { name: 'Create two-agent scenario' }));
+  await fireEvent.click(screen.getByRole('button', { name: 'Create hierarchical scenario' }));
   await waitFor(() => expect(fetcher.mock.calls.some(([url, init]) => url === '/api/scenarios' && init?.method === 'POST')).toBe(true));
   const body = JSON.parse(String(fetcher.mock.calls.find(([url, init]) => url === '/api/scenarios' && init?.method === 'POST')![1]!.body));
-  expect(body.agents[0].allowedActions).toContain('CUSTOM_SCORE');
+  expect(body.agents.find((a: {id:string}) => a.id === 'bank').allowedActions).toContain('CUSTOM_SCORE');
+  expect(body.agents[0].runtime.role).toBe('MASTER');
+  expect(body.agents[0].allowedActions).toEqual([]);
+  expect(body.team.rootAgentId).toBe('lead');
+  expect(body.team.conditions.length).toBeGreaterThan(0);
   expect(body.maxSteps).toBe(13);
   expect(body.agents[1].allowedActions).not.toContain('CUSTOM_SCORE');
+});
+
+it('loads editable roles and outcome rules without losing the selected model or hierarchy',async()=>{
+  const world:World={id:'bank-world',name:'Bank world',domainCode:'bank',version:1,entities:[{id:'a',type:'BANK_ACCOUNT',name:'A',properties:{}}],relations:[],entityTypes:['BANK_ACCOUNT'],relationTypes:[]};
+  const {fetcher,store}=await setup('en',undefined,[world]);
+  store.models=[{id:'chosen',name:'Chosen model',modelName:'Model',baseUrl:'mock://local',keyConfigured:false,apiKeyEnv:null,temperature:0,maxTokens:1024,timeoutSeconds:10,concurrency:1}];
+  await fireEvent.update(screen.getByLabelText('Scenario name'),'Edited framework');
+  await fireEvent.update(screen.getByLabelText('World'),world.id);
+  const load=screen.getByRole('button',{name:'Load template for editing'}) as HTMLButtonElement; expect(load.disabled).toBe(true);
+  await fireEvent.update(screen.getByLabelText('Model'),'chosen');await fireEvent.click(load);
+  const roleEditor=screen.getByLabelText('Roles and prompts JSON (optional template override)');
+  const configured=JSON.parse((roleEditor as HTMLTextAreaElement).value);configured[0].goal='Custom planning prompt';
+  await fireEvent.update(roleEditor,JSON.stringify(configured));
+  const teamEditor=screen.getByLabelText('Delegation and outcome conditions JSON (optional template override)');
+  const team=JSON.parse((teamEditor as HTMLTextAreaElement).value);team.maxDelegationsPerRound=3;
+  await fireEvent.update(teamEditor,JSON.stringify(team));
+  await fireEvent.click(screen.getByRole('button',{name:'Create hierarchical scenario'}));
+  await waitFor(()=>expect(fetcher.mock.calls.some(([url,init])=>url==='/api/scenarios'&&init?.method==='POST')).toBe(true));
+  const saved=JSON.parse(String(fetcher.mock.calls.find(([url,init])=>url==='/api/scenarios'&&init?.method==='POST')![1]!.body));
+  expect(saved.agents[0].goal).toBe('Custom planning prompt');expect(saved.agents.every((a:{modelId:string})=>a.modelId==='chosen')).toBe(true);
+  expect(saved.team.maxDelegationsPerRound).toBe(3);expect(saved.agents.find((a:{id:string})=>a.id==='risk').allowedActions).toContain('ASSESS_RISK_CEL');
 });
 
 describe("demos use existing worlds", () => {
@@ -115,11 +142,11 @@ it.each(['zh', 'en'] as const)('validates integer round limits in both creation 
   const label = lang === 'zh' ? '推演最大轮数' : 'Maximum simulation rounds';
   for (const value of ['0', '21', '1.5', '']) {
     await fireEvent.update(screen.getByLabelText(label), value);
-    expect((screen.getByRole('button', { name: lang === 'zh' ? '创建双 Agent 场景' : 'Create two-agent scenario' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: lang === 'zh' ? '创建主从 Agent 场景' : 'Create hierarchical scenario' }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByRole('alert').textContent).toContain(lang === 'zh' ? '1～20 的整数' : 'integer from 1 to 20');
   }
   await fireEvent.update(screen.getByLabelText(label), '1');
-  expect((screen.getByRole('button', { name: lang === 'zh' ? '创建双 Agent 场景' : 'Create two-agent scenario' }) as HTMLButtonElement).disabled).toBe(false);
+  expect((screen.getByRole('button', { name: lang === 'zh' ? '创建主从 Agent 场景' : 'Create hierarchical scenario' }) as HTMLButtonElement).disabled).toBe(false);
   await fireEvent.click(screen.getByRole('link', { name: lang === 'zh' ? '演示世界' : 'Demo world' }));
   await screen.findByLabelText(lang === 'zh' ? '演示世界' : 'Demo world');
   await fireEvent.update(screen.getByLabelText(lang === 'zh' ? '演示世界' : 'Demo world'), 'w');
@@ -145,7 +172,7 @@ it('keeps six sidebar destinations and limits demo operations to their own page'
   await fireEvent.click(within(navigation).getByRole('link', { name: 'Demo world' }));
   await screen.findByLabelText('Demo world');
   expect(router.currentRoute.value.path).toBe('/demos');
-  expect(screen.queryByRole('button', { name: 'Create two-agent scenario' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Create hierarchical scenario' })).toBeNull();
   await fireEvent.click(within(navigation).getByRole('link', { name: 'Simulation & replay' }));
   await screen.findByText('Run viewer');
   expect(screen.queryByLabelText('Demo world')).toBeNull();

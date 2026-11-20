@@ -297,6 +297,7 @@ public class WorldService {
                   .toList().containsAll(a.allowedActions()),
           "Unknown action permission");
     }
+    ScenarioProfiles.validate(s);
     require(Json.write(s).length() < 200000, "Scenario configuration too large");
     if (s.id() != null) scenario(s.id());
     var result =
@@ -306,7 +307,7 @@ public class WorldService {
             s.worldId(),
             List.copyOf(s.agents()),
             s.maxSteps(),
-            s.maxEvents());
+            s.maxEvents(), s.team());
     db.update(
         "INSERT INTO scenario VALUES (?,?) ON CONFLICT(id) DO UPDATE SET"
             + " definition_json=excluded.definition_json",

@@ -1,0 +1,278 @@
+[
+  {
+    "domainCode": "information",
+    "nameZh": "泄密调查与处置",
+    "nameEn": "Leak investigation and response",
+    "agents": [
+      {
+        "id": "lead",
+        "name": "主研判 / Lead Agent",
+        "goal": "整体研判潜在泄密风险；按需委派查询、图算法分析、审查、通道处置及假设传播。根据子任务的可信查询结果与引擎回执调整下一步。可达性不是实际传播。先控制外传通道、审查初始影响对象，再进行允许的假设传播。每轮结束给出简短总结，业务成功由引擎在指定轮数判定。",
+        "allowedActions": [],
+        "runtime": {
+          "role": "MASTER",
+          "toolName": "lead",
+          "description": "负责整体研判、任务委派和反馈汇总。",
+          "tools": [
+            "research",
+            "response",
+            "propagation"
+          ]
+        }
+      },
+      {
+        "id": "research",
+        "name": "查询分析 / Research Agent",
+        "goal": "按主 Agent 的任务查询当前运行图谱，确认邻接对象、启用关系、可达路径和关键对象。通过图算法工具计算结果，返回证据和范围限制；不得修改对象，不把推断描述为真实泄密。",
+        "allowedActions": [],
+        "runtime": {
+          "role": "QUERY",
+          "toolName": "delegate_research",
+          "description": "查询对象和关联关系，计算路径、可达范围及中心性，返回带版本的证据。",
+          "tools": [
+            "graph_get_entity",
+            "graph_neighbors",
+            "graph_subgraph",
+            "graph_path",
+            "graph_metrics"
+          ]
+        }
+      },
+      {
+        "id": "response",
+        "name": "响应 / Response Agent",
+        "goal": "根据主 Agent 委派在对象上执行审查、撤销共享或禁用同步。先读取最新对象能力与候选关联对象，严格按参数规范提交。只报告引擎真实回执，不自行宣告整个业务完成。",
+        "allowedActions": [
+          "REVOKE_SHARING",
+          "DISABLE_SYNC",
+          "MARK_REVIEWED"
+        ],
+        "runtime": {
+          "role": "ACTION",
+          "toolName": "delegate_response",
+          "description": "对指定对象执行审查和风险处置，返回经过校验的 Action 回执。",
+          "tools": [
+            "graph_get_entity",
+            "graph_neighbors"
+          ]
+        }
+      },
+      {
+        "id": "propagation",
+        "name": "传播 / Propagation Agent",
+        "goal": "只在授权范围内，沿当前启用的直接关系模拟目标对象接收信息。使用引擎提供的来源对象候选，不制造真实泄密证据。",
+        "allowedActions": [
+          "SIMULATE_PROPAGATION"
+        ],
+        "runtime": {
+          "role": "ACTION",
+          "toolName": "delegate_propagation",
+          "description": "执行对象上的假设传播 Action，结果始终属于模拟。",
+          "tools": [
+            "graph_get_entity",
+            "graph_neighbors"
+          ]
+        }
+      }
+    ],
+    "team": {
+      "rootAgentId": "lead",
+      "maxDelegationsPerRound": 4,
+      "maxActionsPerRound": 2,
+      "mockRules": [
+        {
+          "actionType": "REVOKE_SHARING",
+          "eventType": null,
+          "whenExpression": "true"
+        },
+        {
+          "actionType": "DISABLE_SYNC",
+          "eventType": null,
+          "whenExpression": "true"
+        },
+        {
+          "actionType": "MARK_REVIEWED",
+          "eventType": null,
+          "whenExpression": "true"
+        },
+        {
+          "actionType": "SIMULATE_PROPAGATION",
+          "eventType": null,
+          "whenExpression": "true"
+        }
+      ],
+      "conditions": [
+        {
+          "id": "review_scope",
+          "nameZh": "初始对象全部完成模拟审查",
+          "nameEn": "Initial objects reviewed",
+          "expression": "initial.entities.all(e, entities.exists(n, n.id == e.id && has(n.properties.reviewed) && n.properties.reviewed == true))"
+        },
+        {
+          "id": "channels",
+          "nameZh": "初始可控共享与同步通道已关闭",
+          "nameEn": "Controllable channels disabled",
+          "expression": "initial.relations.filter(r, r.enabled && r.relationType in ['SHARED_WITH','SYNCS_TO']).all(r, relations.exists(n, n.id == r.id && !n.enabled))"
+        },
+        {
+          "id": "events",
+          "nameZh": "没有待处理事件",
+          "nameEn": "No pending events",
+          "expression": "pendingEvents == 0"
+        }
+      ],
+      "inputActions": {}
+    },
+    "initialInput": {
+      "eventType": "POTENTIAL_LEAK",
+      "bindings": {},
+      "target": "entities.filter(e, e.type == 'DOCUMENT')[0].id",
+      "parameters": {
+        "confidence": "0.8",
+        "source": "entities.filter(e, e.type == 'SYSTEM')[0].id"
+      }
+    }
+  },
+  {
+    "domainCode": "bank",
+    "nameZh": "模拟转账与风控",
+    "nameEn": "Simulated transfer and risk review",
+    "agents": [
+      {
+        "id": "lead",
+        "name": "主研判 / Lead Agent",
+        "goal": "整体研判模拟转账请求，先委派查询账户、币种、余额和请求，再委派转账操作，最后安排 CEL 风险评分和风险标记。通过执行回执避免同一请求重复转账。资金必须守恒，不能通过普通属性修改金额。每轮汇总任务结果，业务成功由引擎在指定轮数判定。",
+        "allowedActions": [],
+        "runtime": {
+          "role": "MASTER",
+          "toolName": "lead",
+          "description": "统筹模拟转账、账户查询、精确结算和风险检查。",
+          "tools": [
+            "research",
+            "bank",
+            "risk"
+          ]
+        }
+      },
+      {
+        "id": "research",
+        "name": "查询分析 / Research Agent",
+        "goal": "按任务查询账户、交易和可见关联对象，核对币种、余额、交易状态及图指标。使用当前运行状态并注明版本；只能查询，不执行转账或修改对象。",
+        "allowedActions": [],
+        "runtime": {
+          "role": "QUERY",
+          "toolName": "delegate_research",
+          "description": "查询当前账户和交易，分析运行图谱并返回真实工具结果。",
+          "tools": [
+            "graph_get_entity",
+            "graph_neighbors",
+            "graph_subgraph",
+            "graph_path",
+            "graph_metrics"
+          ]
+        }
+      },
+      {
+        "id": "bank",
+        "name": "银行 / Bank Agent",
+        "goal": "根据主 Agent 的任务处理一个明确的模拟转账请求。当前目标账户为接收方，sourceId 为转出方，金额使用元单位文本，最多两位小数。必须使用 TRANSFER，由引擎保证整数分结算和资金守恒；同一请求不得重复执行。",
+        "allowedActions": [
+          "TRANSFER"
+        ],
+        "runtime": {
+          "role": "ACTION",
+          "toolName": "delegate_bank",
+          "description": "处理明确的模拟转账请求，提交账户对象上的 TRANSFER 并返回引擎回执。",
+          "tools": [
+            "graph_get_entity",
+            "graph_neighbors"
+          ]
+        }
+      },
+      {
+        "id": "risk",
+        "name": "风控 / Risk Agent",
+        "goal": "对主 Agent 指定账户执行 CEL 模拟风险评分或风险标记，保持余额不变。不得执行转账；模拟风险结果不代表真实金融评估。",
+        "allowedActions": [
+          "ASSESS_RISK_CEL",
+          "FLAG_RISK"
+        ],
+        "runtime": {
+          "role": "ACTION",
+          "toolName": "delegate_risk",
+          "description": "在账户上执行 CEL 风险评分和模拟风险标记，不修改资金。",
+          "tools": [
+            "graph_get_entity",
+            "graph_neighbors"
+          ]
+        }
+      }
+    ],
+    "team": {
+      "rootAgentId": "lead",
+      "maxDelegationsPerRound": 4,
+      "maxActionsPerRound": 2,
+      "mockRules": [
+        {
+          "actionType": "TRANSFER",
+          "eventType": "BANK_TRANSFER",
+          "whenExpression": "true"
+        },
+        {
+          "actionType": "ASSESS_RISK_CEL",
+          "eventType": null,
+          "whenExpression": "entities.exists(e, e.type == 'TRANSACTION')"
+        },
+        {
+          "actionType": "FLAG_RISK",
+          "eventType": null,
+          "whenExpression": "entities.exists(e, e.type == 'TRANSACTION')"
+        }
+      ],
+      "conditions": [
+        {
+          "id": "requests",
+          "nameZh": "所有已送达的转账请求均已成功处理",
+          "nameEn": "Delivered transfer requests processed",
+          "expression": "metrics.unhandledInputs == 0"
+        },
+        {
+          "id": "money",
+          "nameZh": "账户资金总额守恒",
+          "nameEn": "Account money conserved",
+          "expression": "metrics.totals['BANK_ACCOUNT.balanceMinor'] == metrics.initialTotals['BANK_ACCOUNT.balanceMinor']"
+        },
+        {
+          "id": "risk",
+          "nameZh": "所有账户完成 CEL 模拟风险评分",
+          "nameEn": "Accounts have simulated CEL scores",
+          "expression": "entities.filter(e, e.type == 'BANK_ACCOUNT').all(e, has(e.properties.riskScore))"
+        },
+        {
+          "id": "events",
+          "nameZh": "没有待处理事件",
+          "nameEn": "No pending events",
+          "expression": "pendingEvents == 0"
+        }
+      ],
+      "inputActions": {
+        "BANK_TRANSFER": [
+          "TRANSFER"
+        ]
+      }
+    },
+    "initialInput": {
+      "eventType": "BANK_TRANSFER",
+      "bindings": {
+        "sourceId": "entities.filter(e, e.type == 'BANK_ACCOUNT' && e.properties.balanceMinor > 0 && entities.exists(t, t.type == 'BANK_ACCOUNT' && t.id != e.id && t.properties.currency == e.properties.currency))[0].id",
+        "amountMinor": "entities.filter(e, e.id == params.sourceId)[0].properties.balanceMinor >= 500000000 ? 500000000 : entities.filter(e, e.id == params.sourceId)[0].properties.balanceMinor"
+      },
+      "target": "entities.filter(e, e.type == 'BANK_ACCOUNT' && e.id != params.sourceId && e.properties.currency == entities.filter(s, s.id == params.sourceId)[0].properties.currency)[0].id",
+      "parameters": {
+        "sourceId": "params.sourceId",
+        "amount": "string(params.amountMinor / 100) + '.' + (params.amountMinor % 100 < 10 ? '0' : '') + string(params.amountMinor % 100)",
+        "currency": "entities.filter(e, e.id == params.sourceId)[0].properties.currency"
+      }
+    }
+  }
+]

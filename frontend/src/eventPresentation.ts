@@ -1,6 +1,7 @@
 import type { ActionCatalog, ActionDefinition, Agent, Entity, Lang, Relation, RunEvent } from './types';
 import { unavailableDescription } from './actionDescriptions';
 import { agentDisplayName, modelModeLabel } from './agentPresentation';
+import { executionSummary, publicNarrative } from './taskNarrative';
 
 export interface EventContext { events: RunEvent[]; agents?: Agent[]; entities?: Entity[]; relations?: Relation[]; catalog?: ActionCatalog }
 export interface EventDescription {
@@ -25,6 +26,9 @@ export const terminationMessages: Record<string, [string, string]> = {
   MAX_STATE_CHANGES: ['状态变更次数达到上限', 'State change limit reached'],
   USER_STOPPED: ['用户手动停止运行', 'Stopped by user'],
   MODEL_DECISION_FAILED: ['模型决策失败或超时，请检查模型配置', 'Model decision failed or timed out; verify model configuration'],
+  OBJECTIVE_MET: ['已到达设定轮数，场景效果已达成', 'Configured horizon reached; business effects achieved'],
+  OBJECTIVE_NOT_MET: ['已到达设定轮数，场景效果未达成', 'Configured horizon reached; business effects not achieved'],
+  OBJECTIVE_EVALUATION_FAILED: ['效果条件计算失败，请检查场景配置', 'Outcome conditions failed to evaluate; check the scenario configuration'],
 };
 const titles: Record<string, [string, string]> = {
   RUN_STARTED: ['运行已创建', 'Run created'], RUN_RESUMED: ['开始自动推演', 'Computation resumed'], RUN_PAUSED: ['推演已暂停', 'Computation paused'], RUN_STOPPED: ['运行已停止', 'Run stopped'],
@@ -34,6 +38,11 @@ const titles: Record<string, [string, string]> = {
   ACTION_ACCEPTED: ['行动已接受', 'Action accepted'], ACTION_REJECTED: ['行动被拒绝', 'Action rejected'], WORLD_STATE_CHANGED: ['图谱状态已更新', 'Graph state updated'],
   SIMULATION_EVENT_SCHEDULED: ['已安排输入事件', 'Input event scheduled'], SIMULATION_EVENT_CREATED: ['输入事件已送达', 'Input event delivered'],
   BRANCH_CREATED: ['已创建运行分支', 'Branch created'], AGENT_MEMORY_RESTORED: ['Agent 历史已恢复', 'Agent history restored'],
+  MASTER_TASK_STARTED: ['主 Agent 开始研判', 'Master started planning'], MASTER_TASK_COMPLETED: ['主 Agent 本轮任务结束', 'Master cycle ended'],
+  SUBTASK_DISPATCHED: ['已委派子任务', 'Subtask delegated'], SUBTASK_COMPLETED: ['子任务已返回', 'Subtask returned'],
+  MASTER_REVIEW: ['主 Agent 汇总研判', 'Master review'], GRAPH_QUERY_RESULT: ['子 Agent 查询证据', 'Worker query evidence'],
+  ACTION_TASK_RECEIPT: ['子任务执行回执', 'Task Action receipt'], ACTION_INPUT_HANDLED: ['输入请求已处理', 'Input request handled'],
+  TASK_MEMORY_RESTORED: ['已继承任务记忆', 'Task memory inherited'], SCENARIO_EVALUATED: ['场景效果判定', 'Business effects evaluated'], MODEL_REQUESTED: ['已请求模型', 'Model requested'],
 };
 const actions: Record<string, [string, string]> = {
   MARK_REVIEWED: ['标记审查', 'Mark reviewed'], ANALYZE_RELATIONS: ['分析关系', 'Analyze relations'], SIMULATE_PROPAGATION: ['模拟接收传播', 'Simulate exposure'],
@@ -55,7 +64,7 @@ const relations: Record<string, [string, string]> = { SHARED_WITH: ['共享', 'S
 const tools: Record<string, [string, string]> = { graph_search_entity: ['搜索可见对象', 'Search visible objects'], graph_get_entity: ['读取可见对象', 'Read a visible object'], graph_expand_relations: ['查询关系可达范围', 'Expand visible relationships'], graph_find_paths: ['查询图谱路径', 'Find graph paths'], graph_calculate_centrality: ['计算图谱中心性', 'Calculate centrality'], graph_get_subgraph: ['读取局部图谱', 'Read a subgraph'], graph_estimate_impact: ['估计潜在影响范围', 'Estimate potential impact'] };
 
 export function isKeyEvent(event: RunEvent) {
-  return event.eventType.startsWith('RUN_') || ['ACTION_ACCEPTED', 'ACTION_REJECTED', 'WORLD_STATE_CHANGED', 'SIMULATION_EVENT_CREATED', 'SIMULATION_EVENT_SCHEDULED', 'BRANCH_CREATED'].includes(event.eventType);
+  return event.eventType.startsWith('RUN_') || ['ACTION_ACCEPTED', 'ACTION_REJECTED', 'WORLD_STATE_CHANGED', 'SIMULATION_EVENT_CREATED', 'SIMULATION_EVENT_SCHEDULED', 'BRANCH_CREATED', 'MASTER_REVIEW', 'SUBTASK_DISPATCHED', 'SUBTASK_COMPLETED', 'SCENARIO_EVALUATED'].includes(event.eventType);
 }
 
 /** Uses persisted proposals and snapshots only; it never translates by calling a model. */
@@ -170,6 +179,30 @@ export function describeEvent(event: RunEvent, context: EventContext, lang: Lang
     if (input.targetId) fact(t('关联对象', 'Related object'), name(input.targetId));
     result.summary = t('输入事件为 Agent 提供后续决策信息，本身不直接改变对象状态。', 'The input informs later agent decisions; it does not directly change object state.');
   }
+  if (['MASTER_TASK_STARTED','SUBTASK_DISPATCHED'].includes(event.eventType)) {
+    result.summary = publicNarrative(object(p.request).goal, lang)||t('已安排授权范围内的任务，具体目标见原始事件。','An authorized task was arranged; see its original request for the goal.'); fact(t('读取版本','Input version'), p.inputVersion);
+    fact(t('允许的行动','Allowed Actions'), object(p.request).allowedActions);
+  } else if (event.eventType === 'MASTER_REVIEW') {
+    const report = object(p.report); result.summary = publicNarrative(report.summary, lang)||t('主 Agent 已完成本轮研判；请结合子任务的查询证据和执行回执查看，原始研判可展开阅读。','The master completed this review; inspect worker evidence and engine receipts, or expand the original report.'); result.changes = [...(Array.isArray(report.findings) ? report.findings.map(v=>publicNarrative(v,lang)).filter(Boolean) : []), ...(Array.isArray(report.nextTasks) ? report.nextTasks.map(v=>publicNarrative(v,lang)).filter(Boolean).map(v => t('下一步：','Next: ') + v) : [])];
+  } else if (['SUBTASK_COMPLETED','MASTER_TASK_COMPLETED'].includes(event.eventType)) {
+    result.summary = publicNarrative(object(p.result).summary,lang) || executionSummary([object(p.result)],lang);
+    fact(t('任务状态','Task status'), ({SUCCEEDED:t('已完成','Completed'),FAILED:t('执行失败','Failed'),REJECTED:t('被拒绝','Rejected'),CANCELLED:t('已取消','Cancelled'),NO_ACTION:t('未执行操作','No Action submitted'),NO_EVIDENCE:t('未返回查询证据','No query evidence')} as Record<string,string>)[str(p.status)] ?? p.status);
+  } else if (event.eventType === 'GRAPH_QUERY_RESULT') {
+    const evidence=object(p.result); result.summary=t(`从当前授权图谱查询得到 ${str(evidence.totalObjects)} 个对象、${str(evidence.totalRelations)} 条关系；查询不修改状态。`,`Queried ${str(evidence.totalObjects)} objects and ${str(evidence.totalRelations)} relationships in the authorized runtime; no state changes.`);
+    fact(t('状态版本','State version'),evidence.version); fact(t('结果已分页','Paged result'),evidence.truncated===true?t('是','Yes'):t('否','No'));
+    fact(t('查询工具','Query tool'),p.tool);
+  } else if(event.eventType==='SCENARIO_EVALUATED') {
+    const outcome=object(p.outcome); result.tone=outcome.result==='SUCCEEDED'?'success':'warning';
+    result.summary=outcome.result==='SUCCEEDED'?t('达到指定轮数，所有场景效果条件均满足。','At the configured horizon, all business conditions were met.'):outcome.result==='ERROR'?t('效果条件计算出错，请检查定义及数据依赖。','An outcome condition failed to evaluate; check its definition and data dependencies.'):t('达到指定轮数，仍有场景效果条件未满足。','At the configured horizon, some business conditions were not met.');
+    result.changes=objects(outcome.conditions).map(c=>`${c.satisfied?'✓':'✗'} ${str(lang==='zh'?c.nameZh:c.nameEn)}`);
+  } else if(event.eventType==='ACTION_TASK_RECEIPT') {
+    result.summary=p.accepted===true?t('执行引擎已接受子任务的对象操作。','The engine accepted the worker’s object Action.'):t('执行引擎已拒绝该操作，图谱未改变。','The engine rejected the Action; the graph was unchanged.');
+    fact(t('输入 / 输出版本','Input / output version'),`${str(p.inputVersion)} → ${str(p.outputVersion)}`);
+  } else if(event.eventType==='MODEL_REQUESTED') {
+    result.summary=t('主从调用共用模型请求和输出预算。','Master and workers share model-request and output budgets.'); fact(t('模型模式','Model mode'),modelModeLabel(p.modelMode,lang)); fact(t('请求序号','Request number'),p.requestNumber);
+  }
+  if(p.taskId) fact(t('任务标识','Task ID'),p.taskId);
+  if(p.parentTaskId) fact(t('父任务','Parent task'),p.parentTaskId);
   if (p.evidence) fact(t('证据性质', 'Evidence'), ({ FACT: t('输入事实', 'Input fact'), INFERRED: t('推断', 'Inferred'), HYPOTHESIS: t('假设 / 行动提案', 'Hypothesis / proposal'), SIMULATED: t('模拟结果', 'Simulated result') } as Record<string, string>)[str(p.evidence)] ?? p.evidence);
   if (!result.summary) result.summary = t('该记录已保存；详细数据可在原始事件中查看。', 'This record was persisted; see the original event for its data.');
   return result;

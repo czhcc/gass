@@ -30,6 +30,21 @@ class ScenarioDeletionIntegrationTest {
   @Autowired WorldService worlds;
 
   @Test
+  void hierarchyEndpointsRequireLoginAndExposeTaskAndOutcomeRecords() throws Exception {
+    var client=HttpClient.newBuilder().cookieHandler(new CookieManager()).build();
+    assertEquals(401,send(client,"GET","/api/scenario-profiles",null).statusCode());
+    assertEquals(200,send(client,"POST","/api/auth/login",Map.of("username","admin","password","123456")).statusCode());
+    assertTrue(send(client,"GET","/api/scenario-profiles",null).body().contains("rootAgentId"));
+    var run=demos.create("bank",worlds.create(Examples.bankTransfer()).id(),3);
+    assertEquals(200,send(client,"GET","/api/runs/"+run.id()+"/tasks",null).statusCode());
+    assertEquals(204,send(client,"POST","/api/runs/"+run.id()+"/initial-input",Map.of()).statusCode());
+    runs.step(run.id(),"trace");
+    assertTrue(send(client,"GET","/api/runs/"+run.id()+"/tasks",null).body().contains("parentTaskId"));
+    assertTrue(send(client,"GET","/api/runs/"+run.id()+"/outcome",null).body().contains("NOT_EVALUATED"));
+    assertTrue(send(client,"GET","/api/runs/"+run.id()+"/usage",null).body().contains("reserved_tokens"));
+  }
+
+  @Test
   void demoRoundLimitsAreRequiredValidatedPersistedAndEnforcedForBothDomains() throws Exception {
     var client = HttpClient.newBuilder().cookieHandler(new CookieManager()).build();
     assertEquals(200, send(client, "POST", "/api/auth/login", Map.of("username", "admin", "password", "123456")).statusCode());
@@ -51,8 +66,8 @@ class ScenarioDeletionIntegrationTest {
         assertEquals(limit, runs.get(run.id()).maxSteps());
         if (limit == 1) {
           runs.step(run.id(), "only-round");
-          assertEquals("BUDGET_EXHAUSTED", runs.get(run.id()).status());
-          assertEquals("MAX_STEPS", runs.get(run.id()).terminationReason());
+          assertEquals("COMPLETED", runs.get(run.id()).status());
+          assertEquals("OBJECTIVE_NOT_MET", runs.get(run.id()).terminationReason());
           assertEquals(1, runs.get(run.id()).step());
         }
       }
@@ -118,7 +133,7 @@ class ScenarioDeletionIntegrationTest {
     assertEquals(200, bankResponse.statusCode());
     var bankRun = Json.read(bankResponse.body(), com.trs.simulation.SimulationTypes.Run.class);
     assertEquals(bank.id(), worlds.scenario(bankRun.scenarioId()).worldId());
-    assertEquals(2, runs.agents(bankRun.id()).size());
+    assertEquals(4, runs.agents(bankRun.id()).size());
     assertEquals(worldCount, worlds.list().size());
   }
 

@@ -12,6 +12,7 @@ import { mergeEvents } from "../playback";
 import ObjectActions from "./ObjectActions.vue";
 import EntityDetails from "./EntityDetails.vue";
 import EventDetails from './EventDetails.vue';
+import HierarchyTrace from './HierarchyTrace.vue';
 import { describeEvent, isKeyEvent, terminationMessages } from '../eventPresentation';
 import { agentDisplayName, agentGoalDescription, modelModeLabel } from '../agentPresentation';
 import type {
@@ -23,11 +24,13 @@ import type {
   Run,
   RunEvent,
   RunState,
+  TaskRecord,
 } from "../types";
 const Graph = defineAsyncComponent(() => import("./Graph.vue"));
 const Comparison = defineAsyncComponent(() => import("./Comparison.vue"));
 const props = defineProps<{ lang: Lang; initialId?: string }>();
 const actionCatalog = ref<ActionCatalog>();
+const tasks = ref<TaskRecord[]>([]);
 const runs = ref<Run[]>([]),
   selected = ref(props.initialId ?? ""),
   info = ref<Run>(),
@@ -60,6 +63,7 @@ let deletionTrigger: HTMLElement | undefined;
 let source: EventSource | undefined,
   timer: ReturnType<typeof setTimeout> | undefined,
   revision = 0,
+  taskRevision = 0,
   disposed = false;
 const t = computed(() =>
   props.lang === "zh"
@@ -203,6 +207,8 @@ const terminal = computed(
     ["COMPLETED", "BUDGET_EXHAUSTED", "STOPPED", "FAILED"].includes(info.value.status),
 );
 function runStatus(run: Run) {
+  if (run.terminationReason === 'OBJECTIVE_MET') return props.lang === 'zh' ? '效果已达成' : 'Effects achieved';
+  if (run.terminationReason === 'OBJECTIVE_NOT_MET') return props.lang === 'zh' ? '效果未达成' : 'Effects not achieved';
   if (run.status === 'COMPLETED') return run.terminationReason === 'ALL_AGENTS_ENDED'
     ? (props.lang === 'zh' ? '任务完成' : 'Task completed') : (props.lang === 'zh' ? '历史已结束' : 'Ended (legacy)');
   if (run.status === 'BUDGET_EXHAUSTED') return props.lang === 'zh' ? '预算耗尽' : 'Budget exhausted';
@@ -235,6 +241,7 @@ async function listRuns() {
 }
 async function loadRun() {
   const generation = ++revision;
+  taskRevision++;
   seekRevision++;
   source?.close();
   stopPlayback();
@@ -246,6 +253,7 @@ async function loadRun() {
     info.value = undefined;
     state.value = undefined;
     agents.value = [];
+    tasks.value = [];
     events.value = [];
     baselineIds.value = [];
     connection.value = "";
@@ -253,18 +261,20 @@ async function loadRun() {
     return;
   }
   try {
-    const [r, a, e, s, baseline, catalog] = await Promise.all([
+    const [r, a, e, s, baseline, catalog, taskList] = await Promise.all([
       api<Run>("/runs/" + selected.value),
       api<Agent[]>("/runs/" + selected.value + "/agents"),
       api<RunEvent[]>("/runs/" + selected.value + "/events"),
       api<RunState>("/runs/" + selected.value + "/state"),
       api<RunState>("/runs/" + selected.value + "/replay?sequence=0"),
       api<ActionCatalog>("/runs/" + selected.value + "/action-capabilities"),
+      api<TaskRecord[]>("/runs/" + selected.value + "/tasks"),
     ]);
     if (generation !== revision || disposed) return;
     info.value = r;
     actionCatalog.value = catalog;
     agents.value = a;
+    tasks.value = Array.isArray(taskList) ? taskList : [];
     events.value = e;
     state.value = s;
     baselineIds.value = baseline.entities.map((e) => e.id);
@@ -283,6 +293,10 @@ async function loadRun() {
         if (generation !== revision || disposed) return;
         const event = JSON.parse((message as MessageEvent).data) as RunEvent;
         events.value = mergeEvents(events.value, [event]);
+        if (['MASTER_TASK_STARTED','SUBTASK_DISPATCHED','MASTER_TASK_COMPLETED','SUBTASK_COMPLETED'].includes(event.eventType)) {
+          const taskGeneration = ++taskRevision;
+          void api<TaskRecord[]>('/runs/' + selected.value + '/tasks').then(value => { if (generation === revision && taskGeneration === taskRevision) tasks.value = value; }).catch(() => {});
+        }
         connection.value = t.value.connected;
         if (live.value) {
           cursor.value = maxSequence.value;
@@ -615,6 +629,7 @@ onBeforeUnmount(() => {
           </div>
         </article>
       </div>
+      <HierarchyTrace :tasks="tasks" :events="events" :agents="agents" :cursor="cursor" :lang="lang" :entities="state.entities" :catalog="actionCatalog" />
       <div class="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
       <article class="panel min-w-0" :aria-label="t.events">
         <h3 class="mb-4 font-semibold">{{ t.events }}</h3>
