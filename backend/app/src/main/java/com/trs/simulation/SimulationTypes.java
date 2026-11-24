@@ -111,7 +111,16 @@ public final class SimulationTypes {
   public record MockActionRule(String actionType, String eventType, String whenExpression) {}
 
   /** Pure CEL success condition and user-visible explanation. @author czhcc-trsdsj\codexsandboxoffline */
-  public record GoalCondition(String id, String nameZh, String nameEn, String expression) {}
+  public record GoalCondition(String id, String nameZh, String nameEn, String expression, String evidenceExpression) {
+    /** Keeps existing conditions valid without an evidence expression. @author czhcc-trsdsj\codexsandboxoffline */
+    public GoalCondition(String id, String nameZh, String nameEn, String expression) { this(id, nameZh, nameEn, expression, null); }
+  }
+
+  /** Editable condition draft and requirements that need clarification or data. @author czhcc-trsdsj\codexsandboxoffline */
+  public record ObjectiveDraft(List<GoalCondition> conditions, List<String> unresolved, String mode) {}
+
+  /** Master conclusion with server-validated references to persisted evidence. @author czhcc-trsdsj\codexsandboxoffline */
+  public record ObjectiveReview(String conclusion, List<Long> evidenceSequences, String limitations) {}
 
   /** Structured delegation request; authorization is independently checked by the runtime. @author czhcc-trsdsj\codexsandboxoffline */
   public record TaskRequest(String goal, List<String> scopeIds, List<String> allowedActions, String inputEventId) {}
@@ -125,7 +134,13 @@ public final class SimulationTypes {
   public record RoundReport(String summary, List<String> findings, List<String> nextTasks) {}
 
   /** One evaluated business condition; expression errors are explicit. @author czhcc-trsdsj\codexsandboxoffline */
-  public record ConditionResult(String id, String nameZh, String nameEn, boolean satisfied, String error) {}
+  public record ConditionResult(String id, String nameZh, String nameEn, boolean satisfied, String error,
+      Object evidence, String evidenceError) {
+    /** Keeps callers that report only the verdict and condition error. @author czhcc-trsdsj\codexsandboxoffline */
+    public ConditionResult(String id, String nameZh, String nameEn, boolean satisfied, String error) {
+      this(id, nameZh, nameEn, satisfied, error, null, null);
+    }
+  }
 
   /** Business outcome is distinct from execution status and termination reason. @author czhcc-trsdsj\codexsandboxoffline */
   public record BusinessOutcome(String result, int evaluatedRound, long version, List<ConditionResult> conditions) {}
@@ -137,7 +152,11 @@ public final class SimulationTypes {
       String worldId,
       List<AgentDefinition> agents,
       int maxSteps,
-      int maxEvents, TeamConfig team) {
+      int maxEvents, TeamConfig team, String objective) {
+    /** Preserves the original hierarchy scenario protocol. @author czhcc-trsdsj\codexsandboxoffline */
+    public Scenario(String id, String name, String worldId, List<AgentDefinition> agents, int maxSteps, int maxEvents, TeamConfig team) {
+      this(id, name, worldId, agents, maxSteps, maxEvents, team, null);
+    }
     /** Keeps the original scene protocol and legacy execution mode. @author czhcc-trsdsj\codexsandboxoffline */
     public Scenario(String id, String name, String worldId, List<AgentDefinition> agents, int maxSteps, int maxEvents) {
       this(id, name, worldId, agents, maxSteps, maxEvents, null);
@@ -204,7 +223,11 @@ public final class SimulationTypes {
   /** Persisted lifecycle metadata. @author agent */
   public record Run(
       String id, String scenarioId, String status, int step, int maxSteps, long version,
-      long activeRuntimeMs, String terminationReason) {
+      long activeRuntimeMs, String terminationReason, String objective) {
+    /** Keeps run listings and callers that predate configured objectives. @author czhcc-trsdsj\codexsandboxoffline */
+    public Run(String id, String scenarioId, String status, int step, int maxSteps, long version, long activeRuntimeMs, String terminationReason) {
+      this(id, scenarioId, status, step, maxSteps, version, activeRuntimeMs, terminationReason, null);
+    }
     /** Accepts metadata created before active timing and explicit termination. @author czhcc-trsdsj\czhcc */
     public Run(String id, String scenarioId, String status, int step, int maxSteps, long version) {
       this(id, scenarioId, status, step, maxSteps, version, 0, null);

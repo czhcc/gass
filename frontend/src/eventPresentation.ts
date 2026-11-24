@@ -29,6 +29,13 @@ export const terminationMessages: Record<string, [string, string]> = {
   OBJECTIVE_MET: ['已到达设定轮数，场景效果已达成', 'Configured horizon reached; business effects achieved'],
   OBJECTIVE_NOT_MET: ['已到达设定轮数，场景效果未达成', 'Configured horizon reached; business effects not achieved'],
   OBJECTIVE_EVALUATION_FAILED: ['效果条件计算失败，请检查场景配置', 'Outcome conditions failed to evaluate; check the scenario configuration'],
+  OBJECTIVE_NOT_VERIFIABLE: ['已到达设定轮数，未配置可判定条件', 'Configured horizon reached without engine conditions'],
+  OBJECTIVE_HORIZON_INTERRUPTED: ['截止轮次中断，未完成目标判定', 'The final round was interrupted before evaluation'],
+};
+export const failureDiagnosticMessages: Record<string, [string, string]> = {
+  MODEL_REQUEST_TIMEOUT: ['模型请求超时', 'Model request timed out'],
+  MASTER_REPORT_INVALID: ['主 Agent 的结构化报告无效或缺失', 'Master Agent returned an invalid or missing structured report'],
+  HIERARCHICAL_EXECUTION_ERROR: ['主从推演执行异常，请查看任务记录', 'Hierarchical execution failed; inspect the task records'],
 };
 const titles: Record<string, [string, string]> = {
   RUN_STARTED: ['运行已创建', 'Run created'], RUN_RESUMED: ['开始自动推演', 'Computation resumed'], RUN_PAUSED: ['推演已暂停', 'Computation paused'], RUN_STOPPED: ['运行已停止', 'Run stopped'],
@@ -43,6 +50,7 @@ const titles: Record<string, [string, string]> = {
   MASTER_REVIEW: ['主 Agent 汇总研判', 'Master review'], GRAPH_QUERY_RESULT: ['子 Agent 查询证据', 'Worker query evidence'],
   ACTION_TASK_RECEIPT: ['子任务执行回执', 'Task Action receipt'], ACTION_INPUT_HANDLED: ['输入请求已处理', 'Input request handled'],
   TASK_MEMORY_RESTORED: ['已继承任务记忆', 'Task memory inherited'], SCENARIO_EVALUATED: ['场景效果判定', 'Business effects evaluated'], MODEL_REQUESTED: ['已请求模型', 'Model requested'],
+  OBJECTIVE_REVIEWED: ['主研判目标结论', 'Master objective review'],
 };
 const actions: Record<string, [string, string]> = {
   MARK_REVIEWED: ['标记审查', 'Mark reviewed'], ANALYZE_RELATIONS: ['分析关系', 'Analyze relations'], SIMULATE_PROPAGATION: ['模拟接收传播', 'Simulate exposure'],
@@ -64,7 +72,7 @@ const relations: Record<string, [string, string]> = { SHARED_WITH: ['共享', 'S
 const tools: Record<string, [string, string]> = { graph_search_entity: ['搜索可见对象', 'Search visible objects'], graph_get_entity: ['读取可见对象', 'Read a visible object'], graph_expand_relations: ['查询关系可达范围', 'Expand visible relationships'], graph_find_paths: ['查询图谱路径', 'Find graph paths'], graph_calculate_centrality: ['计算图谱中心性', 'Calculate centrality'], graph_get_subgraph: ['读取局部图谱', 'Read a subgraph'], graph_estimate_impact: ['估计潜在影响范围', 'Estimate potential impact'] };
 
 export function isKeyEvent(event: RunEvent) {
-  return event.eventType.startsWith('RUN_') || ['ACTION_ACCEPTED', 'ACTION_REJECTED', 'WORLD_STATE_CHANGED', 'SIMULATION_EVENT_CREATED', 'SIMULATION_EVENT_SCHEDULED', 'BRANCH_CREATED', 'MASTER_REVIEW', 'SUBTASK_DISPATCHED', 'SUBTASK_COMPLETED', 'SCENARIO_EVALUATED'].includes(event.eventType);
+  return event.eventType.startsWith('RUN_') || ['ACTION_ACCEPTED', 'ACTION_REJECTED', 'WORLD_STATE_CHANGED', 'SIMULATION_EVENT_CREATED', 'SIMULATION_EVENT_SCHEDULED', 'BRANCH_CREATED', 'MASTER_REVIEW', 'SUBTASK_DISPATCHED', 'SUBTASK_COMPLETED', 'SCENARIO_EVALUATED', 'OBJECTIVE_REVIEWED'].includes(event.eventType);
 }
 
 /** Uses persisted proposals and snapshots only; it never translates by calling a model. */
@@ -157,8 +165,13 @@ export function describeEvent(event: RunEvent, context: EventContext, lang: Lang
     const code = str(p.reasonCode);
     result.summary = code ? local(terminationMessages, code) : t('已记录运行状态变化。', 'Run lifecycle transition recorded.');
     if (event.eventType === 'RUN_BUDGET_EXHAUSTED') result.tone = 'warning';
-    if (event.eventType === 'RUN_FAILED') result.tone = 'danger';
-    if (event.eventType === 'RUN_COMPLETED') result.summary = code === 'ALL_AGENTS_ENDED' ? local(terminationMessages, code) : t('历史记录显示运行已结束，未记录可核实的业务完成原因。', 'The legacy record indicates an ended run without a verifiable business-completion reason.');
+    if (event.eventType === 'RUN_FAILED') {
+      result.tone = 'danger';
+      const diagnostic = str(p.diagnosticCode);
+      if (failureDiagnosticMessages[diagnostic]) result.summary = local(failureDiagnosticMessages, diagnostic);
+      fact(t('异常类型', 'Exception type'), p.exceptionType);
+    }
+    if (event.eventType === 'RUN_COMPLETED' && !code) result.summary = t('历史记录显示运行已结束，未记录可核实的业务完成原因。', 'The legacy record indicates an ended run without a verifiable business-completion reason.');
     if (p.actual !== undefined || p.limit !== undefined) fact(t('触发值 / 限额', 'Trigger value / limit'), `${p.actual ?? '—'} / ${p.limit ?? '—'}`);
     if (typeof p.activeRuntimeMs === 'number') fact(t('实际推演耗时', 'Active computation time'), `${(p.activeRuntimeMs / 1000).toFixed(2)} ${t('秒', 's')}`);
   } else if (event.eventType === 'AGENT_STARTED') {
@@ -183,7 +196,18 @@ export function describeEvent(event: RunEvent, context: EventContext, lang: Lang
     result.summary = publicNarrative(object(p.request).goal, lang)||t('已安排授权范围内的任务，具体目标见原始事件。','An authorized task was arranged; see its original request for the goal.'); fact(t('读取版本','Input version'), p.inputVersion);
     fact(t('允许的行动','Allowed Actions'), object(p.request).allowedActions);
   } else if (event.eventType === 'MASTER_REVIEW') {
-    const report = object(p.report); result.summary = publicNarrative(report.summary, lang)||t('主 Agent 已完成本轮研判；请结合子任务的查询证据和执行回执查看，原始研判可展开阅读。','The master completed this review; inspect worker evidence and engine receipts, or expand the original report.'); result.changes = [...(Array.isArray(report.findings) ? report.findings.map(v=>publicNarrative(v,lang)).filter(Boolean) : []), ...(Array.isArray(report.nextTasks) ? report.nextTasks.map(v=>publicNarrative(v,lang)).filter(Boolean).map(v => t('下一步：','Next: ') + v) : [])];
+    const report = object(p.report);
+    if (p.reportSource === 'ENGINE_FALLBACK') {
+      result.title = t('本轮执行摘要', 'Round execution summary');
+      result.summary = t('主 Agent 的结构化报告缺失或无效，系统已按执行记录汇总本轮。', 'The master report was missing or invalid. The system summarized the round from execution records.');
+      result.tone = 'warning';
+      fact(t('已结束子任务', 'Finished subtasks'), report.completedTasks);
+      fact(t('已接受行动', 'Accepted Actions'), report.acceptedActions);
+      fact(t('图谱查询', 'Graph queries'), report.queryCount);
+    } else {
+      result.summary = publicNarrative(report.summary, lang)||t('主 Agent 已完成本轮研判；请结合子任务的查询证据和执行回执查看，原始研判可展开阅读。','The master completed this review; inspect worker evidence and engine receipts, or expand the original report.');
+      result.changes = [...(Array.isArray(report.findings) ? report.findings.map(v=>publicNarrative(v,lang)).filter(Boolean) : []), ...(Array.isArray(report.nextTasks) ? report.nextTasks.map(v=>publicNarrative(v,lang)).filter(Boolean).map(v => t('下一步：','Next: ') + v) : [])];
+    }
   } else if (['SUBTASK_COMPLETED','MASTER_TASK_COMPLETED'].includes(event.eventType)) {
     result.summary = publicNarrative(object(p.result).summary,lang) || executionSummary([object(p.result)],lang);
     fact(t('任务状态','Task status'), ({SUCCEEDED:t('已完成','Completed'),FAILED:t('执行失败','Failed'),REJECTED:t('被拒绝','Rejected'),CANCELLED:t('已取消','Cancelled'),NO_ACTION:t('未执行操作','No Action submitted'),NO_EVIDENCE:t('未返回查询证据','No query evidence')} as Record<string,string>)[str(p.status)] ?? p.status);
@@ -195,6 +219,9 @@ export function describeEvent(event: RunEvent, context: EventContext, lang: Lang
     const outcome=object(p.outcome); result.tone=outcome.result==='SUCCEEDED'?'success':'warning';
     result.summary=outcome.result==='SUCCEEDED'?t('达到指定轮数，所有场景效果条件均满足。','At the configured horizon, all business conditions were met.'):outcome.result==='ERROR'?t('效果条件计算出错，请检查定义及数据依赖。','An outcome condition failed to evaluate; check its definition and data dependencies.'):t('达到指定轮数，仍有场景效果条件未满足。','At the configured horizon, some business conditions were not met.');
     result.changes=objects(outcome.conditions).map(c=>`${c.satisfied?'✓':'✗'} ${str(lang==='zh'?c.nameZh:c.nameEn)}`);
+    if (outcome.result === 'NO_CONDITIONS') result.summary = local(terminationMessages, 'OBJECTIVE_NOT_VERIFIABLE');
+  } else if (event.eventType === 'OBJECTIVE_REVIEWED') {
+    result.summary = str(object(p.review).conclusion) || t('未能生成有可核验依据的结论。', 'A conclusion with verifiable references could not be generated.');
   } else if(event.eventType==='ACTION_TASK_RECEIPT') {
     result.summary=p.accepted===true?t('执行引擎已接受子任务的对象操作。','The engine accepted the worker’s object Action.'):t('执行引擎已拒绝该操作，图谱未改变。','The engine rejected the Action; the graph was unchanged.');
     fact(t('输入 / 输出版本','Input / output version'),`${str(p.inputVersion)} → ${str(p.outputVersion)}`);

@@ -88,6 +88,28 @@ it('loads editable roles and outcome rules without losing the selected model or 
   expect(saved.team.maxDelegationsPerRound).toBe(3);expect(saved.agents.find((a:{id:string})=>a.id==='risk').allowedActions).toContain('ASSESS_RISK_CEL');
 });
 
+it('generates editable objective conditions and saves the edited rules with the natural-language goal', async () => {
+  const world: World = { id: 'leak', name: 'Leak world', domainCode: 'information', version: 1, entityTypes: ['DOCUMENT'], relationTypes: [], relations: [], entities: [{ id: 'f', type: 'DOCUMENT', name: 'File F', properties: {} }] };
+  const { fetcher, store } = await setup('en', undefined, [world]);
+  const original = fetcher.getMockImplementation()!;
+  fetcher.mockImplementation(async (url, options) => url === '/api/scenario-objectives/draft'
+    ? { ok: true, json: async () => ({ mode: 'MOCK', unresolved: [], conditions: [{ id: 'check', nameZh: '文件已审查', nameEn: 'File reviewed', expression: 'false' }] }) }
+    : original(url, options));
+  store.models = [{ id: 'm', name: 'Model', modelName: 'Model', baseUrl: 'mock://local', keyConfigured: false, apiKeyEnv: null, temperature: 0, maxTokens: 1024, timeoutSeconds: 10, concurrency: 1 }];
+  await fireEvent.update(screen.getByLabelText('Scenario name'), 'Assessment');
+  await fireEvent.update(screen.getByLabelText('World'), world.id);
+  await fireEvent.update(screen.getByLabelText('Model'), 'm');
+  await fireEvent.update(screen.getByLabelText('Simulation objective'), 'Review file F by the deadline');
+  await fireEvent.click(screen.getByRole('button', { name: 'Draft conditions' }));
+  const expression = await screen.findByLabelText('Boolean condition (CEL)');
+  await fireEvent.update(expression, 'entities.exists(e, e.id == "f" && has(e.properties.reviewed) && e.properties.reviewed)');
+  await fireEvent.click(screen.getByRole('button', { name: 'Create hierarchical scenario' }));
+  await waitFor(() => expect(fetcher.mock.calls.some(([url, init]) => url === '/api/scenarios' && init?.method === 'POST')).toBe(true));
+  const saved = JSON.parse(String(fetcher.mock.calls.find(([url, init]) => url === '/api/scenarios' && init?.method === 'POST')![1]!.body));
+  expect(saved.objective).toBe('Review file F by the deadline');
+  expect(saved.team.conditions[0].expression).toContain('e.properties.reviewed');
+});
+
 describe("demos use existing worlds", () => {
   const worlds: World[] = [
     { id: "leak-selected", name: "Selected leak world", domainCode: "information", entities: [], relations: [], entityTypes: [], relationTypes: [], version: 1 },

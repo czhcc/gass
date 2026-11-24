@@ -87,6 +87,7 @@ export interface Scenario {
   id: string;
   name: string;
   worldId: string;
+  objective?: string | null;
 }
 
 export interface Run {
@@ -98,6 +99,7 @@ export interface Run {
   version: number;
   activeRuntimeMs?: number;
   terminationReason?: string | null;
+  objective?: string | null;
 }
 export interface RunState {
   runId: string;
@@ -127,8 +129,25 @@ export interface Agent {
 export interface TeamConfig {
   rootAgentId:string; maxDelegationsPerRound:number; maxActionsPerRound:number;
   mockRules:{actionType:string;eventType:string|null;whenExpression:string}[];
-  conditions:{id:string;nameZh:string;nameEn:string;expression:string}[];
+  conditions:GoalCondition[];
   inputActions:Record<string,string[]>;
+}
+export interface GoalCondition {
+  id: string;
+  nameZh: string;
+  nameEn: string;
+  expression: string;
+  evidenceExpression?: string | null;
+}
+export interface ObjectiveDraft {
+  conditions: GoalCondition[];
+  unresolved: string[];
+  mode: 'MOCK' | 'LLM';
+}
+export interface ObjectiveReview {
+  conclusion: string;
+  evidenceSequences: number[];
+  limitations: string;
 }
 export interface ScenarioProfile {
   domainCode:string;nameZh:string;nameEn:string;
@@ -142,7 +161,7 @@ export interface TaskRecord {
 }
 export interface BusinessOutcome {
   result:string;evaluatedRound:number;version:number;
-  conditions:{id:string;nameZh:string;nameEn:string;satisfied:boolean;error:string}[];
+  conditions:{id:string;nameZh:string;nameEn:string;satisfied:boolean;error:string;evidence?:unknown;evidenceError?:string|null}[];
 }
 export interface Difference {
   id: string;

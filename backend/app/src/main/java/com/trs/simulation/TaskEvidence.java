@@ -6,6 +6,14 @@ import java.util.*;
 /** Interprets durable engine receipts independently of any real or simulated model. @author czhcc-trsdsj\codexsandboxoffline */
 public final class TaskEvidence {
   private TaskEvidence() {}
+
+  static boolean requiresInput(TeamConfig team, String action) {
+    return team.inputActions().values().stream().anyMatch(actions -> actions.contains(action));
+  }
+
+  static boolean matchesInputType(TeamConfig team, String action, Event event) {
+    return team.inputActions().getOrDefault(String.valueOf(event.payload().get("eventType")), List.of()).contains(action);
+  }
   /** Includes checkpoint commits even when the child summary has not yet returned. @author czhcc-trsdsj\codexsandboxoffline */
   public static Set<String> handledInputs(List<Event> events) {
     var result = new HashSet<String>();

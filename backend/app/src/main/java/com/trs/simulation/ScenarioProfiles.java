@@ -46,6 +46,10 @@ public class ScenarioProfiles {
 
   /** Rejects invalid roles, delegation widening and effect expressions before a run can be created. @author czhcc-trsdsj\codexsandboxoffline */
   public static void validate(Scenario scenario) {
+    if (scenario.objective() != null) {
+      validateObjective(scenario.objective());
+      require(scenario.team() != null, "An objective requires a hierarchical scenario");
+    }
     var team = scenario.team(); if (team == null) return;
     require(team.rootAgentId() != null && team.maxDelegationsPerRound() >= 1 && team.maxDelegationsPerRound() <= 8 && team.maxActionsPerRound() >= 1 && team.maxActionsPerRound() <= 4 && team.maxActionsPerRound() <= team.maxDelegationsPerRound(), "Invalid hierarchy limits");
     var root = scenario.agents().stream().filter(a -> a.id().equals(team.rootAgentId())).findFirst().orElseThrow(() -> new IllegalArgumentException("Master agent missing"));
@@ -60,11 +64,26 @@ public class ScenarioProfiles {
       if (r.role().equals("QUERY")) require(!r.tools().isEmpty(), "Query roles require at least one read tool");
     }
     require(ids.equals(new HashSet<>(root.runtime().tools())) && root.runtime().tools().size() == ids.size(), "Master delegates must reference every child agent exactly once");
-    require(team.conditions() != null && !team.conditions().isEmpty() && team.conditions().size() <= 10 && team.mockRules() != null && team.mockRules().size() <= 30, "Outcome conditions and bounded mock rules required");
-    var conditionIds = new HashSet<String>();
-    for (var c : team.conditions()) { require(c != null && c.id() != null && conditionIds.add(c.id()) && c.nameZh() != null && c.nameEn() != null, "Invalid outcome condition"); CelExpressions.validateBoolean(c.expression()); }
+    require(team.conditions() != null && (!team.conditions().isEmpty() || scenario.objective() != null) && team.mockRules() != null && team.mockRules().size() <= 30, "Outcome conditions and bounded mock rules required");
+    validateConditions(team.conditions());
     for (var rule : team.mockRules()) { require(rule != null && rule.actionType() != null, "Invalid mock policy"); CelExpressions.validateBoolean(rule.whenExpression()); }
     require(team.inputActions() != null && team.inputActions().size() <= 20 && team.inputActions().entrySet().stream().allMatch(e -> e.getKey() != null && e.getKey().matches("[A-Z][A-Z0-9_]{0,59}") && e.getValue() != null && !e.getValue().isEmpty() && e.getValue().size() <= 20 && e.getValue().stream().allMatch(action -> scenario.agents().stream().anyMatch(a -> a.allowedActions().contains(action)))), "Invalid input/Action bindings");
+  }
+
+  static void validateObjective(String objective) {
+    require(objective != null && !objective.isBlank() && objective.length() <= 2000, "Objective must contain 1 to 2000 characters");
+  }
+
+  static void validateConditions(List<GoalCondition> conditions) {
+    require(conditions != null && conditions.size() <= 10, "At most ten outcome conditions are supported");
+    var ids = new HashSet<String>();
+    for (var condition : conditions) {
+      require(condition != null && condition.id() != null && !condition.id().isBlank() && condition.id().length() <= 100 && ids.add(condition.id())
+          && condition.nameZh() != null && !condition.nameZh().isBlank() && condition.nameZh().length() <= 200
+          && condition.nameEn() != null && !condition.nameEn().isBlank() && condition.nameEn().length() <= 200, "Outcome conditions require unique IDs and labels");
+      CelExpressions.validateBoolean(condition.expression());
+      if (condition.evidenceExpression() != null && !condition.evidenceExpression().isBlank()) CelExpressions.validate(condition.evidenceExpression());
+    }
   }
   private static void require(boolean test, String message) { if (!test) throw new IllegalArgumentException(message); }
 }

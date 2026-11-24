@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from "vue";
 import { api } from "../api";
-import type { Lang, Scenario, ScenarioProfile } from "../types";
+import type { GoalCondition, Lang, Scenario, ScenarioProfile, TeamConfig } from "../types";
 import Models from "./Models.vue";
 import Worlds from "./Worlds.vue";
 import Actions from "./Actions.vue";
+import ObjectiveFields from './ObjectiveFields.vue';
 import { defineAsyncComponent } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
@@ -19,6 +20,11 @@ const tab = computed(() => String(route.params.tab || "worlds"));
 const error = ref(""),
   busy = ref(false);
 const scenarioForm = ref({ name: "", worldId: "", modelId: "", maxSteps: 5 });
+const objective = ref('');
+const objectiveConditions = ref<GoalCondition[]>([]);
+const draftingObjective = ref(false);
+const validObjectiveConditions = computed(() => !objective.value.trim() || objectiveConditions.value.every(condition =>
+  (condition.nameZh.trim() || condition.nameEn.trim()) && condition.expression.trim()));
 const demoMaxSteps = ref<number | string>(8);
 const validRounds = (value: unknown) => typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 20;
 const extraPermissions = ref<string[]>([]);
@@ -30,7 +36,7 @@ const customActions = computed(() => {
   const w = worlds.value.find(w => w.id === scenarioForm.value.worldId);
   return [...new Map((w?.ontology?.types ?? []).flatMap(t => t.actions).filter(a => !known.has(a.actionType)).map(a => [a.actionType, a])).values()];
 });
-watch(() => scenarioForm.value.worldId, () => { extraPermissions.value = []; agentsJson.value = ''; teamJson.value = ''; });
+watch(() => scenarioForm.value.worldId, () => { extraPermissions.value = []; agentsJson.value = ''; teamJson.value = ''; objectiveConditions.value = []; });
 const demoWorldId = ref("");
 const demoWorld = computed(() => worlds.value.find((world) => world.id === demoWorldId.value));
 watch(() => worlds.value.map(world => world.id), ids => {
@@ -126,7 +132,7 @@ async function load() {
 }
 onMounted(load);
 async function createScenario() {
-  if (busy.value || !validRounds(scenarioForm.value.maxSteps)) return;
+  if (busy.value || draftingObjective.value || !validRounds(scenarioForm.value.maxSteps) || !validObjectiveConditions.value) return;
   busy.value = true;
   error.value = "";
   try {
@@ -138,13 +144,20 @@ async function createScenario() {
       ...a, modelId: scenarioForm.value.modelId, visibleEntityIds: visible, maxDecisions: 20,
       allowedActions: a.runtime?.role === 'ACTION' && a.id === profile.agents.find(role => role.runtime?.role === 'ACTION')?.id ? [...a.allowedActions, ...extraPermissions.value] : a.allowedActions,
     }));
+    const team: TeamConfig = teamJson.value.trim() ? JSON.parse(teamJson.value) : profile.team;
+    const description = objective.value.trim();
+    const conditions = objectiveConditions.value.map(condition => ({
+      ...condition, nameZh: condition.nameZh.trim() || condition.nameEn.trim(), nameEn: condition.nameEn.trim() || condition.nameZh.trim(),
+      expression: condition.expression.trim(), evidenceExpression: condition.evidenceExpression?.trim() || null,
+    }));
     const s = await api<Scenario>("/scenarios", "POST", {
       name: scenarioForm.value.name,
       worldId: w.id,
       maxSteps: scenarioForm.value.maxSteps,
       maxEvents: 2000,
       agents: configuredAgents,
-      team: teamJson.value.trim() ? JSON.parse(teamJson.value) : profile.team,
+      team: description ? { ...team, conditions } : team,
+      ...(description ? { objective: description } : {}),
     });
     scenarios.value.push(s);
   } catch (e) {
@@ -318,18 +331,23 @@ async function demo(domain: string) {
         <label>{{ t.maxSteps }}<input v-model.number="scenarioForm.maxSteps" type="number" min="1" max="20" step="1" required :disabled="busy" aria-describedby="scenario-rounds-help" :aria-invalid="!validRounds(scenarioForm.maxSteps)" /></label>
         <p id="scenario-rounds-help" class="text-xs text-slate-500">{{ t.roundsHelp }}</p>
         <p v-if="!validRounds(scenarioForm.maxSteps)" role="alert" class="text-sm text-red-700">{{ t.roundsInvalid }}</p>
+        <ObjectiveFields v-model:objective="objective" v-model:conditions="objectiveConditions" v-model:generating="draftingObjective"
+          :lang="lang" :world-id="scenarioForm.worldId" :model-id="scenarioForm.modelId" :max-steps="scenarioForm.maxSteps"
+          :busy="busy" :valid-rounds="validRounds(scenarioForm.maxSteps)" />
         <fieldset v-if="customActions.length && !agentsJson.trim()" :disabled="busy" class="grid gap-2 rounded border border-slate-200 p-3">
           <legend class="text-sm">{{ lang === 'zh' ? '额外授权给首个对象操作子 Agent 的自定义 Action' : 'Custom Actions for the first Action worker' }}</legend>
           <label v-for="action in customActions" :key="action.actionType" class="flex items-center gap-2 text-sm"><input v-model="extraPermissions" type="checkbox" :value="action.actionType" class="w-auto" />{{ action.actionType }} · {{ lang === 'zh' ? action.nameZh : action.nameEn }}</label>
         </fieldset>
         <label
           >{{ t.agentsJson }}<textarea v-model="agentsJson" rows="5" /></label>
-        <label>{{ lang === 'zh' ? '调度与效果条件 JSON（可选，覆盖模板）' : 'Delegation and outcome conditions JSON (optional template override)' }}<textarea v-model="teamJson" rows="5" /></label>
-        <button class="primary" :disabled="busy || !validRounds(scenarioForm.maxSteps)">{{ t.create }}</button>
+        <label>{{ objective.trim() ? (lang === 'zh' ? '调度 JSON（判定条件使用上方表单）' : 'Delegation JSON (conditions use the fields above)')
+          : (lang === 'zh' ? '调度与效果条件 JSON（可选，覆盖模板）' : 'Delegation and outcome conditions JSON (optional template override)') }}<textarea v-model="teamJson" rows="5" /></label>
+        <button class="primary" :disabled="busy || draftingObjective || !validRounds(scenarioForm.maxSteps) || !validObjectiveConditions">{{ t.create }}</button>
       </form>
       <div ref="scenarioList" class="space-y-4" tabindex="-1">
         <article v-for="scenario in scenarios" :key="scenario.id" class="panel">
           <h3 class="font-semibold">{{ scenario.name }}</h3>
+          <p v-if="scenario.objective" class="mt-1 whitespace-pre-line break-words text-sm text-slate-600">{{ scenario.objective }}</p>
           <button
             class="secondary mt-3"
             :disabled="busy"

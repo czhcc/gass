@@ -17,6 +17,46 @@ class HierarchicalFrameworkIntegrationTest {
   @Autowired ModelService models;
   @Autowired DemoService demos;
   @Autowired HistoryService history;
+  @Autowired ObjectiveDraftService drafts;
+
+  @Test
+  void configuredLeakObjectiveFreezesEditedRulesAndRecordsAnEvidenceBackedMasterReview() {
+    var world = worlds.create(Examples.informationLeak());
+    var model = models.mock().id();
+    String objective = "第 1 轮结束时，禁用所有同步通道并说明执行依据。";
+    var draft = drafts.generate(world.id(), model, objective, 1);
+    assertEquals("MOCK", draft.mode());
+    assertFalse(draft.conditions().isEmpty());
+    var template = profiles.scenario("information", world, model, "Leak objective", 1);
+    var team = template.team();
+    var edited = new GoalCondition("sync", "同步通道全部关闭", "All sync channels closed",
+        "!relations.exists(r, r.relationType == 'SYNCS_TO' && r.enabled)",
+        "relations.filter(r, r.relationType == 'SYNCS_TO' && r.enabled).map(r, r.id)");
+    var configured = new TeamConfig(team.rootAgentId(), team.maxDelegationsPerRound(), team.maxActionsPerRound(), team.mockRules(), List.of(edited), team.inputActions());
+    var scene = worlds.scenario(new Scenario(null, template.name(), world.id(), template.agents(), 1, 2000, configured, objective));
+    var run = runs.create(scene.id());
+    assertEquals(objective, runs.get(run.id()).objective());
+    runs.seedInput(run.id(), profiles);
+    worlds.scenario(new Scenario(scene.id(), template.name(), world.id(), template.agents(), 1, 2000, configured, "另一项目标"));
+    assertEquals("NOT_EVALUATED", runs.outcome(run.id()).result());
+    runs.step(run.id(), "objective-check");
+
+    var outcome = runs.outcome(run.id());
+    assertEquals("SUCCEEDED", outcome.result());
+    assertEquals("sync", outcome.conditions().getFirst().id());
+    assertEquals(List.of(), outcome.conditions().getFirst().evidence());
+    var events = runs.events(run.id(), 0);
+    var assessment = events.stream().filter(e -> e.eventType().equals("SCENARIO_EVALUATED")).findFirst().orElseThrow();
+    var reviewEvent = events.stream().filter(e -> e.eventType().equals("OBJECTIVE_REVIEWED")).findFirst().orElseThrow();
+    assertEquals("lead", reviewEvent.agentId());
+    assertEquals("MOCK", reviewEvent.payload().get("mode"));
+    assertEquals("AVAILABLE", reviewEvent.payload().get("status"));
+    var review = Json.read(Json.write(reviewEvent.payload().get("review")), ObjectiveReview.class);
+    assertFalse(review.conclusion().isBlank());
+    assertTrue(review.evidenceSequences().contains(assessment.sequence()));
+    assertTrue(review.evidenceSequences().stream().allMatch(sequence -> events.stream().anyMatch(e -> e.sequence() == sequence && sequence < reviewEvent.sequence())));
+    assertEquals(objective, runs.get(run.id()).objective());
+  }
 
   @Test
   void bankDemoUsesRealSdkSubagentsWithConcurrencyOneAndPreservesMoney() {
@@ -32,6 +72,9 @@ class HierarchicalFrameworkIntegrationTest {
     assertTrue(runs.events(run.id(), 0).stream().anyMatch(e -> e.eventType().equals("SUBTASK_COMPLETED")));
     assertTrue(runs.events(run.id(), 0).stream().anyMatch(e -> e.eventType().equals("GRAPH_QUERY_RESULT")));
     assertTrue(runs.tasks(run.id()).stream().anyMatch(t -> t.parentTaskId() != null));
+    var transferReceipt = runs.events(run.id(), 0).stream().filter(e -> e.eventType().equals("ACTION_TASK_RECEIPT")
+        && "TRANSFER".equals(e.payload().get("actionType"))).findFirst().orElseThrow();
+    assertEquals("demo-initial", transferReceipt.payload().get("inputEventId"));
     assertEquals(first, runs.step(run.id(), "first"));
     for (int i = 1; i < 4; i++) runs.step(run.id(), "round-" + i);
     assertEquals(1, runs.state(run.id()).entities().stream().filter(e -> e.type().equals("TRANSACTION")).count());
