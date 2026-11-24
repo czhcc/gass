@@ -13,7 +13,8 @@ import ObjectActions from "./ObjectActions.vue";
 import EntityDetails from "./EntityDetails.vue";
 import EventDetails from './EventDetails.vue';
 import HierarchyTrace from './HierarchyTrace.vue';
-import { describeEvent, isKeyEvent, terminationMessages } from '../eventPresentation';
+import ObjectiveResult from './ObjectiveResult.vue';
+import { describeEvent, failureDiagnosticMessages, isKeyEvent, terminationMessages } from '../eventPresentation';
 import { agentDisplayName, agentGoalDescription, modelModeLabel } from '../agentPresentation';
 import type {
   Agent,
@@ -31,6 +32,7 @@ const Comparison = defineAsyncComponent(() => import("./Comparison.vue"));
 const props = defineProps<{ lang: Lang; initialId?: string }>();
 const actionCatalog = ref<ActionCatalog>();
 const tasks = ref<TaskRecord[]>([]);
+const eventDetailsTarget = ref<HTMLElement>();
 const runs = ref<Run[]>([]),
   selected = ref(props.initialId ?? ""),
   info = ref<Run>(),
@@ -207,6 +209,7 @@ const terminal = computed(
     ["COMPLETED", "BUDGET_EXHAUSTED", "STOPPED", "FAILED"].includes(info.value.status),
 );
 function runStatus(run: Run) {
+  if (run.terminationReason === 'OBJECTIVE_NOT_VERIFIABLE') return props.lang === 'zh' ? '无可判定条件' : 'No engine conditions';
   if (run.terminationReason === 'OBJECTIVE_MET') return props.lang === 'zh' ? '效果已达成' : 'Effects achieved';
   if (run.terminationReason === 'OBJECTIVE_NOT_MET') return props.lang === 'zh' ? '效果未达成' : 'Effects not achieved';
   if (run.status === 'COMPLETED') return run.terminationReason === 'ALL_AGENTS_ENDED'
@@ -216,6 +219,9 @@ function runStatus(run: Run) {
 }
 const terminationSummary = computed(() => {
   if (!info.value || !terminal.value) return '';
+  const diagnostic = terminationEvent.value?.payload.diagnosticCode;
+  if (typeof diagnostic === 'string' && failureDiagnosticMessages[diagnostic])
+    return failureDiagnosticMessages[diagnostic][props.lang === 'zh' ? 0 : 1];
   const code = info.value.terminationReason;
   return code ? terminationMessages[code]?.[props.lang === 'zh' ? 0 : 1] ?? code
     : props.lang === 'zh' ? '旧记录未区分任务完成与预算耗尽，无法确定具体结束原因' : 'This legacy record did not distinguish completion from budget exhaustion; the exact reason is unknown.';
@@ -353,6 +359,11 @@ async function seek(sequence: number, stop = true) {
   } catch (e) {
     error.value = String(e);
   }
+}
+async function showObjectiveEvidence(sequence: number) {
+  await seek(sequence);
+  await nextTick();
+  eventDetailsTarget.value?.scrollIntoView?.({ block: 'start' });
 }
 async function play() {
   if (playing.value) {
@@ -603,8 +614,10 @@ onBeforeUnmount(() => {
         </p>
       </div>
     </div>
-    <template v-if="state && info"
-      ><div class="min-w-0">
+    <template v-if="state && info">
+      <ObjectiveResult v-if="info.objective && info.id === selected" :objective="info.objective" :max-steps="info.maxSteps"
+        :events="shownEvents" :titles="eventDescriptions" :lang="lang" @evidence="showObjectiveEvidence" />
+      <div class="min-w-0">
         <article class="panel min-w-0" :aria-label="lang === 'zh' ? '关联图' : 'Relationship graph'">
           <div class="flex flex-wrap justify-between gap-3 text-sm">
             <span data-testid="world-version"
@@ -629,7 +642,7 @@ onBeforeUnmount(() => {
           </div>
         </article>
       </div>
-      <HierarchyTrace :tasks="tasks" :events="events" :agents="agents" :cursor="cursor" :lang="lang" :entities="state.entities" :catalog="actionCatalog" />
+      <HierarchyTrace :tasks="tasks" :events="events" :agents="agents" :cursor="cursor" :lang="lang" :entities="state.entities" :catalog="actionCatalog" :hide-outcome="!!info.objective" />
       <div class="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
       <article class="panel min-w-0" :aria-label="t.events">
         <h3 class="mb-4 font-semibold">{{ t.events }}</h3>
@@ -686,7 +699,9 @@ onBeforeUnmount(() => {
           </button>
           <p v-if="!timelineEvents.length" class="text-sm text-slate-500">{{ lang === 'zh' ? '当前筛选下暂无事件。' : 'No events match this filter.' }}</p>
         </div>
-        <EventDetails v-if="latest" data-testid="selected-event-details" class="mt-4" :event="latest" :context="eventContext" :lang="lang" />
+        <div v-if="latest" ref="eventDetailsTarget" class="mt-4">
+          <EventDetails data-testid="selected-event-details" :event="latest" :context="eventContext" :lang="lang" />
+        </div>
       </article>
         <aside class="panel min-w-0 self-start xl:max-h-[780px] xl:overflow-auto" :aria-label="t.agents">
           <h3 class="mb-4 font-semibold">{{ t.agents }}</h3>

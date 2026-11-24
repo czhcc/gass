@@ -21,13 +21,21 @@ public final class BusinessEvaluation {
     var vars = HierarchyData.variables(initial, current, metrics(initial, current, unhandled), pending);
     var conditions = new ArrayList<ConditionResult>();
     for (var condition : scenario.team().conditions()) {
+      Object evidence = null;
+      String evidenceError = null;
+      if (condition.evidenceExpression() != null && !condition.evidenceExpression().isBlank()) {
+        try {
+          evidence = CelExpressions.evaluate(condition.evidenceExpression(), vars);
+          if (Json.write(evidence).length() > 3000) throw new IllegalArgumentException("Evidence limit exceeded");
+        } catch (IllegalArgumentException e) { evidence = null; evidenceError = "Evidence calculation failed or returned too much data"; }
+      }
       try {
         Object value = CelExpressions.evaluate(condition.expression(), vars);
         if (!(value instanceof Boolean)) throw new IllegalArgumentException("Condition did not return boolean");
-        conditions.add(new ConditionResult(condition.id(), condition.nameZh(), condition.nameEn(), Boolean.TRUE.equals(value), ""));
-      } catch (IllegalArgumentException e) { conditions.add(new ConditionResult(condition.id(), condition.nameZh(), condition.nameEn(), false, "CEL evaluation failed; check the condition and its data dependencies")); }
+        conditions.add(new ConditionResult(condition.id(), condition.nameZh(), condition.nameEn(), Boolean.TRUE.equals(value), "", evidence, evidenceError));
+      } catch (IllegalArgumentException e) { conditions.add(new ConditionResult(condition.id(), condition.nameZh(), condition.nameEn(), false, "CEL evaluation failed; check the condition and its data dependencies", evidence, evidenceError)); }
     }
-    String result = conditions.stream().anyMatch(c -> !c.error().isEmpty()) ? "ERROR" : conditions.stream().allMatch(ConditionResult::satisfied) ? "SUCCEEDED" : "FAILED";
+    String result = conditions.isEmpty() ? "NO_CONDITIONS" : conditions.stream().anyMatch(c -> !c.error().isEmpty()) ? "ERROR" : conditions.stream().allMatch(ConditionResult::satisfied) ? "SUCCEEDED" : "FAILED";
     return new BusinessOutcome(result, round, current.version(), List.copyOf(conditions));
   }
 }

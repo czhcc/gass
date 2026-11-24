@@ -307,7 +307,7 @@ public class WorldService {
             s.worldId(),
             List.copyOf(s.agents()),
             s.maxSteps(),
-            s.maxEvents(), s.team());
+            s.maxEvents(), s.team(), s.objective() == null ? null : s.objective().strip());
     db.update(
         "INSERT INTO scenario VALUES (?,?) ON CONFLICT(id) DO UPDATE SET"
             + " definition_json=excluded.definition_json",

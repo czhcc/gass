@@ -20,6 +20,9 @@ public class RunService {
   @org.springframework.beans.factory.annotation.Value("${studio.simulation.max-model-requests:300}")
   private int requestBudget;
 
+  @org.springframework.beans.factory.annotation.Value("${studio.simulation.enforce-output-token-budget:false}")
+  private boolean enforceOutputTokenBudget;
+
   @org.springframework.beans.factory.annotation.Value(
       "${studio.simulation.max-generated-tokens:307200}")
   private long tokenBudget;
@@ -73,7 +76,9 @@ public class RunService {
     var interrupted = db.queryForList("SELECT DISTINCT run_id FROM simulation_task WHERE status='RUNNING'", String.class);
     for (var id : interrupted) for (var task : tasks(id)) if (task.status().equals("RUNNING")) {
       var receipts = events(id, 0).stream().filter(e -> e.eventType().equals("ACTION_TASK_RECEIPT") && task.taskId().equals(e.payload().get("taskId"))).map(Event::payload).toList();
-      var result = Map.<String,Object>of("message", "Task cancelled after application restart", "receipts", receipts, "inputEventId", task.request().inputEventId() == null ? "" : task.request().inputEventId());
+      String originalInput = task.request().inputEventId() == null ? "" : task.request().inputEventId();
+      var inputId = receipts.isEmpty() ? originalInput : receipts.getFirst().getOrDefault("inputEventId", originalInput);
+      var result = Map.<String,Object>of("message", "Task cancelled after application restart", "receipts", receipts, "inputEventId", inputId);
       tx.executeWithoutResult(t -> {
         append(id, task.parentTaskId() == null ? "MASTER_TASK_COMPLETED" : "SUBTASK_COMPLETED", state(id).simulationTime(), task.agentId(), Map.of("taskId", task.taskId(), "parentTaskId", task.parentTaskId() == null ? "" : task.parentTaskId(), "status", "CANCELLED", "result", result));
         db.update("UPDATE simulation_task SET status='CANCELLED',output_version=?,result_json=?,completed_sequence=? WHERE run_id=? AND task_id=?", state(id).version(), Json.write(result), eventCount(id), id, task.taskId());
@@ -204,7 +209,7 @@ public class RunService {
         ((Number) row.get("step")).intValue(),
         s.maxSteps(),
         state(id).version(), ((Number) row.get("active_runtime_ms")).longValue() + currentIntervalMs(id),
-        (String) row.get("termination_reason"));
+        (String) row.get("termination_reason"), s.objective());
   }
 
   /** Gets current immutable state. @author agent */
@@ -337,25 +342,47 @@ public class RunService {
   }
 
   private State stepRound(String id, String command) {
-    synchronized (this) { prepareRound(id, command); }
+    Lease lease;
+    synchronized (this) { prepareRound(id, command); lease = invocations.get(id); }
     var scenario = scenario(id);
-    if (!List.of("PAUSED", "RUNNING").contains(get(id).status())) return state(id);
+    if (!List.of("PAUSED", "RUNNING").contains(get(id).status())) {
+      reviewAtHorizon(id, scenario, lease);
+      return state(id);
+    }
     if (scenario.team() != null) {
-      var host = new RuntimeHost(id, invocations.get(id));
+      var host = new RuntimeHost(id, lease);
       try { hierarchy.run(host); }
       catch (CancellationException ex) { /* Pause, stop and shared budgets preserve their authoritative lifecycle status. */ }
       catch (RuntimeException ex) {
         synchronized (this) {
           if (List.of("PAUSED", "RUNNING").contains(get(id).status()) && !host.lease.cancelled) {
             db.update("UPDATE simulation_run SET status='FAILED',termination_reason='MODEL_DECISION_FAILED' WHERE id=?", id);
-            append(id, "RUN_FAILED", state(id).simulationTime(), null, Map.of("reasonCode", "MODEL_DECISION_FAILED", "reason", "Model planning or child task failed; inspect model configuration and task receipts"));
+            append(id, "RUN_FAILED", state(id).simulationTime(), null, hierarchyFailure(ex));
           }
         }
       }
-      synchronized (this) { if (!host.lease.cancelled) checkTermination(id, scenario, true); return state(id); }
+      synchronized (this) { if (!host.lease.cancelled) checkTermination(id, scenario, true); }
+      reviewAtHorizon(id, scenario, host.lease);
+      return state(id);
     }
     long clock = db.queryForObject("SELECT base_time FROM simulation_run WHERE id=?", Long.class, id) + get(id).step();
     return legacyRound(id, scenario, clock);
+  }
+
+  private Map<String, Object> hierarchyFailure(RuntimeException failure) {
+    Throwable detail = failure;
+    String diagnostic = "HIERARCHICAL_EXECUTION_ERROR";
+    for (int depth = 0; depth < 12; depth++) {
+      if (detail instanceof TimeoutException || detail instanceof java.net.SocketTimeoutException
+          || detail instanceof java.net.http.HttpTimeoutException) {
+        diagnostic = "MODEL_REQUEST_TIMEOUT";
+        break;
+      }
+      if (detail.getCause() == null) break;
+      detail = detail.getCause();
+    }
+    return Map.of("reasonCode", "MODEL_DECISION_FAILED", "reason", "Model planning or child task failed; inspect task receipts",
+        "diagnosticCode", diagnostic, "exceptionType", detail.getClass().getSimpleName());
   }
 
   private void prepareRound(String id, String command) {
@@ -410,9 +437,7 @@ public class RunService {
               id,
               agent.id());
       if (count >= agent.maxDecisions() || hasEnded(id, agent.id())) continue;
-      // Each SDK decision has <= 3 iterations plus structured response, <= 6 requests / 1024 output
-      // tokens each.
-      // At most 50 decisions: <=300 model requests, <=307200 generated tokens per run.
+      // Legacy budget estimates reserve six requests and 6144 output tokens per decision.
       if (checkTermination(id, scenario, false)) break;
       var before = state(id);
       var visible = plugin.observationScope(agent, before);
@@ -583,11 +608,11 @@ public class RunService {
   /** Pauses automatic computation; historical replay is unaffected. @author agent */
   public synchronized Run pause(String id) {
     var r = get(id);
+    if (!List.of("PAUSED", "RUNNING").contains(r.status()))
+      throw new IllegalStateException("Only running simulations can pause");
     var lease = invocations.get(id);
     if (lease != null) { lease.cancel(); accumulateInterval(id); }
     if (r.status().equals("PAUSED")) return r;
-    if (!r.status().equals("RUNNING"))
-      throw new IllegalStateException("Only running simulations can pause");
     db.update("UPDATE simulation_run SET status='PAUSED' WHERE id=?", id);
     active.remove(id);
     append(id, "RUN_PAUSED", r.step(), null, Map.of());
@@ -665,6 +690,15 @@ public class RunService {
     if (scenario.team() == null && scenario.agents().stream().allMatch(a -> hasEnded(id, a.id())))
       return finish(id, "ALL_AGENTS_ENDED", scenario.agents().size(), scenario.agents().size(), "All agents submitted accepted END decisions", "");
     if (checkSteps && run.step() >= scenario.maxSteps()) {
+      if (scenario.objective() != null && db.queryForObject(
+          "SELECT COUNT(*) FROM simulation_task WHERE run_id=? AND round=? AND parent_task_id IS NULL AND status='SUCCEEDED'",
+          Integer.class, id, run.step()) == 0) {
+        tx.executeWithoutResult(t -> {
+          db.update("UPDATE simulation_run SET status='STOPPED',termination_reason='OBJECTIVE_HORIZON_INTERRUPTED' WHERE id=?", id);
+          append(id, "RUN_STOPPED", state(id).simulationTime(), null, Map.of("reasonCode", "OBJECTIVE_HORIZON_INTERRUPTED"));
+        });
+        return true;
+      }
       if (scenario.team() != null) return evaluateHorizon(id, scenario);
       return finish(id, "MAX_STEPS", run.step(), scenario.maxSteps(), "Maximum simulation rounds reached", "");
     }
@@ -683,7 +717,7 @@ public class RunService {
       return finish(id, "MAX_DECISIONS", total, Math.min(50, decisionBudget), "Global decision budget reached", "");
     if (scenario.team() == null && (total + 1) * 6L > requestBudget)
       return finish(id, "MODEL_REQUEST_BUDGET", (total + 1) * 6L, requestBudget, "Insufficient model request budget for the next decision (reserved estimate)", "");
-    if (scenario.team() == null && (total + 1) * 6144L > tokenBudget)
+    if (enforceOutputTokenBudget && scenario.team() == null && (total + 1) * 6144L > tokenBudget)
       return finish(id, "TOKEN_BUDGET", (total + 1) * 6144L, tokenBudget, "Insufficient generated token budget for the next decision (reserved estimate)", "");
     long changes = state(id).version() - db.queryForObject("SELECT MIN(version) FROM simulation_snapshot WHERE run_id=?", Long.class, id);
     if (changes >= changeBudget)
@@ -733,7 +767,12 @@ public class RunService {
   }
   private boolean evaluateHorizon(String id, Scenario scene) {
     var result = BusinessEvaluation.evaluate(scene, initialState(id), state(id), get(id).step(), pendingEvents(id), unhandledInputs(id, scene));
-    String reason = result.result().equals("ERROR") ? "OBJECTIVE_EVALUATION_FAILED" : result.result().equals("SUCCEEDED") ? "OBJECTIVE_MET" : "OBJECTIVE_NOT_MET";
+    String reason = switch (result.result()) {
+      case "ERROR" -> "OBJECTIVE_EVALUATION_FAILED";
+      case "SUCCEEDED" -> "OBJECTIVE_MET";
+      case "NO_CONDITIONS" -> "OBJECTIVE_NOT_VERIFIABLE";
+      default -> "OBJECTIVE_NOT_MET";
+    };
     tx.executeWithoutResult(t -> {
       db.update("INSERT INTO simulation_usage(run_id,outcome_json) VALUES (?,?) ON CONFLICT(run_id) DO UPDATE SET outcome_json=excluded.outcome_json", id, Json.write(result));
       db.update("UPDATE simulation_run SET status=?,termination_reason=? WHERE id=?", result.result().equals("ERROR") ? "FAILED" : "COMPLETED", reason, id);
@@ -742,12 +781,36 @@ public class RunService {
     }); return true;
   }
 
+  private void reviewAtHorizon(String id, Scenario scene, Lease lease) {
+    if (scene.objective() == null || lease.cancelled || get(id).step() != scene.maxSteps()) return;
+    var outcome = outcome(id);
+    if ("NOT_EVALUATED".equals(outcome.result())) return;
+    var root = scene.agents().stream().filter(a -> a.id().equals(scene.team().rootAgentId())).findFirst().orElseThrow();
+    String mode = "UNKNOWN";
+    Map<String, Object> payload = new LinkedHashMap<>();
+    try {
+      mode = models.get(root.modelId()).baseUrl().startsWith("mock:") ? "MOCK" : "LLM";
+      var review = hierarchy.conclude(new RuntimeHost(id, lease, true), root, outcome, "MOCK".equals(mode));
+      payload.put("status", "AVAILABLE");
+      payload.put("review", review);
+    } catch (RuntimeException ex) {
+      payload.put("status", "UNAVAILABLE");
+      payload.put("reason", "MASTER_REVIEW_UNAVAILABLE");
+    }
+    payload.put("mode", mode);
+    payload.put("round", outcome.evaluatedRound());
+    payload.put("version", outcome.version());
+    synchronized (this) { append(id, "OBJECTIVE_REVIEWED", state(id).simulationTime(), root.id(), payload); }
+  }
+
   /** One invocation's short-lock gateway; no network call holds the runtime monitor or a transaction. @author czhcc-trsdsj\codexsandboxoffline */
   private final class RuntimeHost implements HierarchyHost {
     private final String id;
     private final Lease lease;
+    private final boolean reviewOnly;
     private final Map<String,Map<String,Object>> receipts = new HashMap<>();
-    private RuntimeHost(String id, Lease lease) { this.id = id; this.lease = lease; }
+    private RuntimeHost(String id, Lease lease) { this(id, lease, false); }
+    private RuntimeHost(String id, Lease lease, boolean reviewOnly) { this.id = id; this.lease = lease; this.reviewOnly = reviewOnly; }
     /** Frozen configuration. @author czhcc-trsdsj\codexsandboxoffline */
     @Override public Scenario scenario() { return RunService.this.scenario(id); }
     /** Latest committed state. @author czhcc-trsdsj\codexsandboxoffline */
@@ -764,7 +827,13 @@ public class RunService {
     @Override public List<Event> history() { return events(id, 0); }
     /** Enforces cancellation and shared run budgets before every external or stateful operation. @author czhcc-trsdsj\codexsandboxoffline */
     @Override public void check() { synchronized (RunService.this) {
-      if (lease.cancelled || invocations.get(id) != lease || !List.of("PAUSED", "RUNNING").contains(get(id).status())) throw new CancellationException("Invocation is no longer active");
+      if (lease.cancelled || invocations.get(id) != lease) throw new CancellationException("Invocation is no longer active");
+      if (reviewOnly) {
+        if (get(id).activeRuntimeMs() >= Math.max(1, timeBudget) * 1000L || eventCount(id) >= scenario().maxEvents() - 1)
+          throw new CancellationException("Review budget exhausted");
+        return;
+      }
+      if (!List.of("PAUSED", "RUNNING").contains(get(id).status())) throw new CancellationException("Invocation is no longer active");
       if (checkTermination(id, scenario(), false)) throw new CancellationException("Shared run budget exhausted");
     } }
     /** Propagates pause/stop to the SDK subscription. @author czhcc-trsdsj\codexsandboxoffline */
@@ -773,8 +842,11 @@ public class RunService {
     @Override public void beforeModel(AgentDefinition agent, String taskId, int tokens) { synchronized (RunService.this) {
       check(); db.update("INSERT OR IGNORE INTO simulation_usage(run_id) VALUES (?)", id);
       var usage = usage(id); long requests = ((Number) usage.get("requests")).longValue(), reserved = ((Number) usage.get("reserved_tokens")).longValue();
-      if (requests + 1 > requestBudget) { finish(id, "MODEL_REQUEST_BUDGET", requests, requestBudget, "Shared model request budget exhausted", agent.id()); throw new CancellationException("Request budget exhausted"); }
-      if (reserved + tokens > tokenBudget) { finish(id, "TOKEN_BUDGET", reserved, tokenBudget, "Shared output-token reservation budget exhausted", agent.id()); throw new CancellationException("Token budget exhausted"); }
+      if (requests + 1 > requestBudget) { if (!reviewOnly) finish(id, "MODEL_REQUEST_BUDGET", requests, requestBudget, "Shared model request budget exhausted", agent.id()); throw new CancellationException("Request budget exhausted"); }
+      if (enforceOutputTokenBudget && reserved + tokens > tokenBudget) {
+        if (!reviewOnly) finish(id, "TOKEN_BUDGET", reserved, tokenBudget, "Shared output-token reservation budget exhausted", agent.id());
+        throw new CancellationException("Token budget exhausted");
+      }
       db.update("UPDATE simulation_usage SET requests=requests+1,reserved_tokens=reserved_tokens+? WHERE run_id=?", tokens, id);
       record("MODEL_REQUESTED", agent.id(), Map.of("taskId", taskId, "modelMode", models.get(agent.modelId()).baseUrl().startsWith("mock:") ? "SIMULATED" : "LLM", "modelId", agent.modelId(), "requestNumber", requests + 1, "reservedOutputTokens", tokens));
     } }
@@ -795,37 +867,45 @@ public class RunService {
       var task = tasks(id).stream().filter(t -> t.taskId().equals(taskId)).findFirst().orElse(null);
       if (task == null || !task.status().equals("RUNNING")) return;
       var actual = new LinkedHashMap<>(result);
-      if (receipts.containsKey(taskId)) { actual.put("receipts", List.of(receipts.get(taskId))); actual.put("inputEventId", task.request().inputEventId() == null ? "" : task.request().inputEventId()); }
+      if (receipts.containsKey(taskId)) {
+        var receipt = receipts.get(taskId);
+        actual.put("receipts", List.of(receipt));
+        actual.put("inputEventId", receipt.getOrDefault("inputEventId", ""));
+      }
       tx.executeWithoutResult(t -> {
         append(id, task.parentTaskId() == null ? "MASTER_TASK_COMPLETED" : "SUBTASK_COMPLETED", state().simulationTime(), task.agentId(), Map.of("taskId", taskId, "parentTaskId", task.parentTaskId() == null ? "" : task.parentTaskId(), "status", status, "result", actual));
         db.update("UPDATE simulation_task SET status=?,output_version=?,result_json=?,completed_sequence=? WHERE run_id=? AND task_id=?", status, state().version(), Json.write(actual), eventCount(id), id, taskId);
       });
     } }
     /** Serializes engine validation, optimistic concurrency and idempotent task receipts. @author czhcc-trsdsj\codexsandboxoffline */
-    @Override public Map<String,Object> execute(TaskRecord task, AgentDefinition agent, Decision decision, long expectedVersion) { synchronized (RunService.this) {
+    @Override public Map<String,Object> execute(TaskRecord task, AgentDefinition agent, Decision decision, long expectedVersion, String inputEventId) { synchronized (RunService.this) {
       check(); if (receipts.containsKey(task.taskId())) return receipts.get(task.taskId());
       var current = state();
       if (!agent.runtime().role().equals("ACTION") || !task.agentId().equals(agent.id()) || !task.runId().equals(id) || tasks(id).stream().noneMatch(t -> t.taskId().equals(task.taskId()) && t.status().equals("RUNNING")) || "END".equals(decision.actionType())) throw new IllegalArgumentException("Task lacks mutation authority");
       if (decision.reason() == null || decision.reason().length() > 1000 || Json.write(decision).length() > 6000) throw new IllegalArgumentException("Invalid Action request");
       var world = frozenWorld(id); var plugin = domains.get(world.domainCode());
+      var team = scenario().team();
       Outcome result;
       if (expectedVersion != current.version()) result = new Outcome(false, "State changed; query current capabilities and create a new task", current, false, "VERSION_CONFLICT", List.of());
-      else if (task.request().inputEventId() == null && scenario().team().inputActions().values().stream().anyMatch(actions -> actions.contains(decision.actionType()))) result = new Outcome(false, "Input-bound Action requires an inputEventId", current, false, "INPUT_REQUIRED", List.of());
-      else if (task.request().inputEventId() != null && TaskEvidence.handledInputs(history()).contains(task.request().inputEventId())) result = new Outcome(false, "Input already has an accepted Action receipt", current, false, "INPUT_ALREADY_HANDLED", List.of());
-      else if (task.request().inputEventId() != null && !inputMatches(task.request().inputEventId(), decision)) result = new Outcome(false, "Action does not match the bound input request", current, false, "INPUT_ACTION_MISMATCH", List.of());
-      else if (receipts.size() >= scenario().team().maxActionsPerRound()) result = new Outcome(false, "Round Action attempt limit reached", current, false, "ROUND_ACTION_LIMIT", List.of());
+      else if (inputEventId == null && TaskEvidence.requiresInput(team, decision.actionType())) result = new Outcome(false, "Input-bound Action requires an inputEventId", current, false, "INPUT_REQUIRED", List.of());
+      else if ((task.request().inputEventId() != null && !task.request().inputEventId().equals(inputEventId))
+          || (inputEventId != null && !inputMatches(inputEventId, decision, team))) result = new Outcome(false, "Action does not match the bound input request", current, false, "INPUT_ACTION_MISMATCH", List.of());
+      else if (inputEventId != null && TaskEvidence.handledInputs(history()).contains(inputEventId)) result = new Outcome(false, "Input already has an accepted Action receipt", current, false, "INPUT_ALREADY_HANDLED", List.of());
+      else if (receipts.size() >= team.maxActionsPerRound()) result = new Outcome(false, "Round Action attempt limit reached", current, false, "ROUND_ACTION_LIMIT", List.of());
       else result = plugin.execute(world, agent, plugin.normalizeDecision(decision, current), current);
-      var receipt = Map.<String,Object>of("taskId", task.taskId(), "accepted", result.accepted(), "code", result.code(), "message", result.message(), "actionType", decision.actionType(), "targetId", decision.targetId(), "parameters", decision.parameters() == null ? Map.of() : decision.parameters(), "inputVersion", current.version(), "outputVersion", result.state().version(), "affectedRelationIds", result.affectedRelationIds());
+      var details = new LinkedHashMap<>(Map.<String,Object>of("taskId", task.taskId(), "accepted", result.accepted(), "code", result.code(), "message", result.message(), "actionType", decision.actionType(), "targetId", decision.targetId(), "parameters", decision.parameters() == null ? Map.of() : decision.parameters(), "inputVersion", current.version(), "outputVersion", result.state().version(), "affectedRelationIds", result.affectedRelationIds()));
+      if (inputEventId != null) details.put("inputEventId", inputEventId);
+      var receipt = Map.copyOf(details);
       Outcome outcome = result;
       tx.executeWithoutResult(t -> {
-        commit(id, agent.id(), decision, current, outcome, "AGENT", Map.of("taskId", task.taskId(), "inputEventId", task.request().inputEventId() == null ? "" : task.request().inputEventId()));
+        commit(id, agent.id(), decision, current, outcome, "AGENT", Map.of("taskId", task.taskId(), "inputEventId", inputEventId == null ? "" : inputEventId));
         append(id, "ACTION_TASK_RECEIPT", current.simulationTime(), agent.id(), receipt);
-        if (outcome.accepted() && task.request().inputEventId() != null) append(id, "ACTION_INPUT_HANDLED", current.simulationTime(), agent.id(), Map.of("taskId", task.taskId(), "inputEventId", task.request().inputEventId(), "outputVersion", outcome.state().version()));
+        if (outcome.accepted() && inputEventId != null) append(id, "ACTION_INPUT_HANDLED", current.simulationTime(), agent.id(), Map.of("taskId", task.taskId(), "inputEventId", inputEventId, "outputVersion", outcome.state().version()));
       }); receipts.put(task.taskId(), receipt); return receipt;
     } }
-    private boolean inputMatches(String inputId, Decision decision) {
+    private boolean inputMatches(String inputId, Decision decision, TeamConfig team) {
       return history().stream().anyMatch(e -> e.eventType().equals("SIMULATION_EVENT_CREATED") && inputId.equals(e.payload().get("scheduledEventId"))
-          && scenario().team().inputActions().getOrDefault(String.valueOf(e.payload().get("eventType")), List.of()).contains(decision.actionType())
+          && TaskEvidence.matchesInputType(team, decision.actionType(), e)
           && Objects.equals(e.payload().get("targetId"), decision.targetId()) && Objects.equals(e.payload().get("parameters"), decision.parameters()));
     }
     /** Writes public evidence with stable ordering and a bounded payload. @author czhcc-trsdsj\codexsandboxoffline */

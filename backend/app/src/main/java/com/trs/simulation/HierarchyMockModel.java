@@ -26,12 +26,12 @@ public final class HierarchyMockModel implements Model {
     if (master) {
       if (calls == 1) {
         var reader = children.stream().filter(a -> a.runtime().role().equals("QUERY")).findFirst();
-        if (reader.isPresent()) { delegations++; return tool(reader.get().runtime().toolName(), Map.of("message", Json.write(new TaskRequest("查询当前关联对象和图分析证据，向主 Agent 汇报", List.of(), List.of(), null)))); }
+        if (reader.isPresent()) { delegations++; return tool(reader.get().runtime().toolName(), Map.of("goal", "查询当前关联对象和图分析证据，向主 Agent 汇报")); }
       }
       if (delegations < host.scenario().team().maxDelegationsPerRound() && actionTasks < host.scenario().team().maxActionsPerRound()) {
         for (var child : children) {
           var next = candidate(child, null);
-          if (next != null) { delegations++; actionTasks++; return tool(child.runtime().toolName(), Map.of("message", Json.write(new TaskRequest("执行当前可用的对象 Action，并汇报执行引擎回执", List.of(), List.of(next.decision().actionType()), next.inputId())))); }
+          if (next != null) { delegations++; actionTasks++; return tool(child.runtime().toolName(), Map.of("goal", "执行当前可用的对象 Action，并汇报执行引擎回执", "allowedActions", List.of(next.decision().actionType()))); }
         }
       }
       return tool("generate_response", Map.of("response", new RoundReport("已依据当前图谱证据完成本轮任务分派，执行结果以引擎回执为准。", List.of("本轮已分派 " + delegations + " 项任务；当前状态版本为 " + host.state().version()), List.of("按场景配置的轮数继续研判，由执行引擎评价场景效果"))));
@@ -46,7 +46,13 @@ public final class HierarchyMockModel implements Model {
       if (calls == 1) return tool("action_capabilities", Map.of());
       if (calls == 2) {
         var next = candidate(agent, task);
-        if (next != null) return tool("submit_action", Map.of("actionType", next.decision().actionType(), "targetId", next.decision().targetId(), "parameters", next.decision().parameters(), "expectedVersion", host.state().version(), "reason", next.decision().reason()));
+        if (next != null) {
+          var decision = next.decision();
+          var arguments = new LinkedHashMap<String, Object>(Map.of("targetId", decision.targetId(), "parameters", decision.parameters(),
+              "expectedVersion", host.state().version(), "reason", decision.reason()));
+          if (next.inputId() != null) arguments.put("inputEventId", next.inputId());
+          return tool(ActionToolSchemas.toolName(decision.actionType()), arguments);
+        }
       }
     }
     return Flux.just(ChatResponse.builder().id("mock-" + calls).content(List.of(TextBlock.builder().text("子任务已结束；查询证据与 Action 结果见工具的实际回执。").build())).finishReason("stop").build());
@@ -55,20 +61,29 @@ public final class HierarchyMockModel implements Model {
   private record Candidate(Decision decision, String inputId) {}
   private Candidate candidate(AgentDefinition worker, TaskRequest request) {
     var state = host.state();
-    var handled = TaskEvidence.handledInputs(host.history());
-    for (var rule : host.scenario().team().mockRules()) {
+    var history = host.history();
+    var handled = TaskEvidence.handledInputs(history);
+    var team = host.scenario().team();
+    var capabilities = host.capabilities(worker);
+    for (var rule : team.mockRules()) {
       if (!worker.allowedActions().contains(rule.actionType()) || request != null && !request.allowedActions().isEmpty() && !request.allowedActions().contains(rule.actionType())) continue;
-      for (var capability : host.capabilities(worker)) {
+      boolean inputBound = TaskEvidence.requiresInput(team, rule.actionType());
+      for (var capability : capabilities) {
         if (!capability.available() || !capability.action().actionType().equals(rule.actionType())) continue;
         var parameters = new LinkedHashMap<String,Object>(); String inputId = null;
-        if (rule.eventType() != null) {
-          var input = host.history().stream().filter(e -> e.eventType().equals("SIMULATION_EVENT_CREATED") && rule.eventType().equals(e.payload().get("eventType")) && capability.targetId().equals(e.payload().get("targetId")))
+        if (inputBound || rule.eventType() != null) {
+          var input = history.stream().filter(e -> e.eventType().equals("SIMULATION_EVENT_CREATED") && capability.targetId().equals(e.payload().get("targetId")))
+              .filter(e -> rule.eventType() == null || rule.eventType().equals(e.payload().get("eventType")))
+              .filter(e -> !inputBound || TaskEvidence.matchesInputType(team, rule.actionType(), e))
               .filter(e -> !handled.contains(String.valueOf(e.payload().get("scheduledEventId"))))
               .filter(e -> request == null || request.inputEventId() == null || request.inputEventId().equals(e.payload().get("scheduledEventId"))).findFirst();
           if (input.isEmpty()) continue;
-          inputId = String.valueOf(input.get().payload().get("scheduledEventId"));
-          parameters.putAll(Json.read(Json.write(input.get().payload().get("parameters")), Map.class));
-        } else {
+          if (inputBound) {
+            inputId = String.valueOf(input.get().payload().get("scheduledEventId"));
+            parameters.putAll(Json.read(Json.write(input.get().payload().get("parameters")), Map.class));
+          }
+        }
+        if (!inputBound) {
           var required = (List<?>) capability.action().parametersSchema().getOrDefault("required", List.of());
           boolean ready = true;
           for (var key : required) { var choices = capability.parameterOptions().getOrDefault(String.valueOf(key), List.of()); if (choices.isEmpty()) { ready = false; break; } parameters.put(String.valueOf(key), choices.getFirst()); }

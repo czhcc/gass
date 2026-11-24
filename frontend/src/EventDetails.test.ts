@@ -12,6 +12,22 @@ const proposed = event(1, 'ACTION_PROPOSED', { action: { actionType: 'REVOKE_SHA
 const accepted = event(2, 'ACTION_ACCEPTED', { actionType: 'REVOKE_SHARING', targetId: 'a', affectedRelationIds: ['share'], reason: 'Declarative CEL action committed as SIMULATED' });
 const context = { events: [proposed, accepted], entities, agents, relations: [] };
 
+it('labels a fallback round review as an execution summary and shows its counts', () => {
+  const fallback = event(3, 'MASTER_REVIEW', { reportSource: 'ENGINE_FALLBACK', report: { completedTasks: 2, acceptedActions: 1, queryCount: 3 } }, 'lead');
+  const description = describeEvent(fallback, context, 'zh');
+  expect(description.title).toBe('本轮执行摘要');
+  expect(description.summary).toContain('结构化报告');
+  expect(description.facts).toContainEqual({ label: '已接受行动', value: '1' });
+});
+
+it('shows the specific runtime diagnosis for a recorded model timeout', () => {
+  const failure = event(3, 'RUN_FAILED', { reasonCode: 'MODEL_DECISION_FAILED',
+    diagnosticCode: 'MODEL_REQUEST_TIMEOUT', exceptionType: 'TimeoutException' }, null);
+  render(EventDetails, { props: { event: failure, context, lang: 'zh' } });
+  expect(screen.getByText('模型请求超时')).toBeTruthy();
+  expect(screen.getByText('TimeoutException')).toBeTruthy();
+});
+
 it('explains the actor, owner, related object and verdict while preserving raw data in a closed disclosure', async () => {
   render(EventDetails, { props: { event: accepted, context, lang: 'zh' } });
   expect(screen.getByRole('heading', { name: '行动已接受' })).toBeTruthy();

@@ -218,7 +218,7 @@ public class SimulationController {
   @PutMapping("/scenarios/{id}")
   public Scenario update(@PathVariable String id, @RequestBody Scenario s) {
     return worlds.scenario(
-        new Scenario(id, s.name(), s.worldId(), s.agents(), s.maxSteps(), s.maxEvents(), s.team()));
+        new Scenario(id, s.name(), s.worldId(), s.agents(), s.maxSteps(), s.maxEvents(), s.team(), s.objective()));
   }
 
   /** Creates a paused run for inspection or single-step. @author agent */

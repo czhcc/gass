@@ -62,11 +62,37 @@ class HierarchyGatewayIntegrationTest {
   }
 
   @Test void actualRequestsShareOneBudgetAcrossMasterAndChildren() {
-    ReflectionTestUtils.setField(runs,"requestBudget",1); var run=bank();
+    ReflectionTestUtils.setField(runs,"requestBudget",1);
+    ReflectionTestUtils.setField(runs,"tokenBudget",1L);
+    var run=bank();
     when(coordinator.run(any())).thenAnswer(call->{ HierarchyHost host=call.getArgument(0); var agents=host.scenario().agents(); host.beforeModel(agents.getFirst(),"root",1024); host.beforeModel(agents.get(1),"child",1024); return null; });
     runs.step(run.id(),"budget");
     assertEquals("BUDGET_EXHAUSTED",runs.get(run.id()).status()); assertEquals("MODEL_REQUEST_BUDGET",runs.get(run.id()).terminationReason());
     assertEquals(1,((Number)runs.usage(run.id()).get("requests")).intValue()); assertEquals("NOT_EVALUATED",runs.outcome(run.id()).result());
+    assertEquals(1024L, ((Number) runs.usage(run.id()).get("reserved_tokens")).longValue());
+  }
+
+  @Test void anEnabledOutputTokenBudgetIsSharedAcrossMasterAndChildren() {
+    ReflectionTestUtils.setField(runs, "tokenBudget", 1024L);
+    var previous = ReflectionTestUtils.getField(runs, "enforceOutputTokenBudget");
+    ReflectionTestUtils.setField(runs, "enforceOutputTokenBudget", true);
+    try {
+      var run = bank();
+      when(coordinator.run(any())).thenAnswer(call -> {
+        HierarchyHost host = call.getArgument(0);
+        var agents = host.scenario().agents();
+        host.beforeModel(agents.getFirst(), "root", 1024);
+        host.beforeModel(agents.get(1), "child", 1024);
+        return null;
+      });
+      runs.step(run.id(), "budget");
+      assertEquals("BUDGET_EXHAUSTED", runs.get(run.id()).status());
+      assertEquals("TOKEN_BUDGET", runs.get(run.id()).terminationReason());
+      assertEquals(1, ((Number) runs.usage(run.id()).get("requests")).intValue());
+      assertEquals(1024L, ((Number) runs.usage(run.id()).get("reserved_tokens")).longValue());
+    } finally {
+      ReflectionTestUtils.setField(runs, "enforceOutputTokenBudget", previous);
+    }
   }
 
   @Test void graphQueriesCannotReadHiddenObjectsAndObserveCurrentRelationState() {
@@ -77,6 +103,44 @@ class HierarchyGatewayIntegrationTest {
     assertThrows(IllegalArgumentException.class,()->graph.query(agent,state,"graph_metrics",Map.of()));
     assertEquals(7L,graph.query(agent,state,"graph_get_entity",Map.of("entityId",template.id())).get("version"));
     assertTrue(((List<?>)graph.query(agent,state,"graph_neighbors",Map.of("entityId",template.id())).get("relations")).isEmpty());
+  }
+
+  @Test void terminalFailureRecordsSafeDiagnosticFieldsWithoutProviderMessages() {
+    var run = bank();
+    when(coordinator.run(any())).thenThrow(new IllegalStateException("provider response body",
+        new TimeoutException("private provider details")));
+    runs.step(run.id(), "failed-request");
+
+    assertEquals("FAILED", runs.get(run.id()).status());
+    var event = runs.events(run.id(), 0).getLast();
+    assertEquals("RUN_FAILED", event.eventType());
+    assertEquals("MODEL_DECISION_FAILED", event.payload().get("reasonCode"));
+    assertEquals("MODEL_REQUEST_TIMEOUT", event.payload().get("diagnosticCode"));
+    assertEquals("TimeoutException", event.payload().get("exceptionType"));
+    assertFalse(Json.write(event.payload()).contains("private provider details"));
+    assertFalse(Json.write(event.payload()).contains("provider response body"));
+  }
+
+  @Test void anInputSelectedByTheActionStillRequiresTheOriginalTargetAndParameters() {
+    var run = bank();
+    when(coordinator.run(any())).thenAnswer(call -> {
+      HierarchyHost host = call.getArgument(0);
+      var master = host.scenario().agents().getFirst();
+      var worker = host.scenario().agents().stream().filter(a -> a.id().equals("bank")).findFirst().orElseThrow();
+      host.startTask("root", null, master, new TaskRequest("Plan", List.of(), List.of(), null));
+      var request = new TaskRequest("Transfer", List.of(), List.of("TRANSFER"), null);
+      var missing = host.startTask("missing", "root", worker, request);
+      var changedAmount = new Decision("TRANSFER", "account_b", Map.of("sourceId", "account_a", "amount", "1.00", "currency", "CNY"), "Transfer", "ENTITY");
+      assertEquals("INPUT_REQUIRED", host.execute(missing, worker, changedAmount, 0, null).get("code"));
+      var mismatch = host.startTask("mismatch", "root", worker, request);
+      var receipt = host.execute(mismatch, worker, changedAmount, 0, "demo-initial");
+      assertEquals("INPUT_ACTION_MISMATCH", receipt.get("code"));
+      assertEquals("demo-initial", receipt.get("inputEventId"));
+      return new RoundReport("Submitted", List.of(), List.of());
+    });
+    runs.step(run.id(), "bound-input");
+    assertEquals(0, runs.state(run.id()).version());
+    assertTrue(runs.events(run.id(), 0).stream().noneMatch(e -> e.eventType().equals("ACTION_INPUT_HANDLED")));
   }
 
   @Test void restartFinalizesInterruptedTasksAndPreservesCommittedReceipts() {

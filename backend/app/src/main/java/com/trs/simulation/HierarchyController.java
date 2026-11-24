@@ -10,8 +10,16 @@ import org.springframework.web.bind.annotation.*;
 public class HierarchyController {
   private final ScenarioProfiles profiles;
   private final RunService runs;
+  private final ObjectiveDraftService drafts;
   /** Injects declarative profiles and runtime readers. @author czhcc-trsdsj\codexsandboxoffline */
-  public HierarchyController(ScenarioProfiles profiles, RunService runs) { this.profiles = profiles; this.runs = runs; }
+  public HierarchyController(ScenarioProfiles profiles, RunService runs, ObjectiveDraftService drafts) { this.profiles = profiles; this.runs = runs; this.drafts = drafts; }
+
+  /** Input for generating editable goal conditions. @author czhcc-trsdsj\codexsandboxoffline */
+  public record DraftRequest(String worldId, String modelId, String objective, int maxSteps) {}
+
+  /** Generates a draft without saving it or invoking simulation actions. @author czhcc-trsdsj\codexsandboxoffline */
+  @PostMapping("/scenario-objectives/draft")
+  public ObjectiveDraft draft(@RequestBody DraftRequest request) { return drafts.generate(request.worldId(), request.modelId(), request.objective(), request.maxSteps()); }
   /** Lists reusable role, tool, prompt and outcome configurations. @author czhcc-trsdsj\codexsandboxoffline */
   @GetMapping("/scenario-profiles")
   public List<ScenarioProfiles.Profile> profiles() { return profiles.list(); }

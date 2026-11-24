@@ -106,19 +106,22 @@
           "id": "review_scope",
           "nameZh": "初始对象全部完成模拟审查",
           "nameEn": "Initial objects reviewed",
-          "expression": "initial.entities.all(e, entities.exists(n, n.id == e.id && has(n.properties.reviewed) && n.properties.reviewed == true))"
+          "expression": "initial.entities.all(e, entities.exists(n, n.id == e.id && has(n.properties.reviewed) && n.properties.reviewed == true))",
+          "evidenceExpression": "initial.entities.filter(e, !entities.exists(n, n.id == e.id && has(n.properties.reviewed) && n.properties.reviewed == true)).map(e, e.id)"
         },
         {
           "id": "channels",
           "nameZh": "初始可控共享与同步通道已关闭",
           "nameEn": "Controllable channels disabled",
-          "expression": "initial.relations.filter(r, r.enabled && r.relationType in ['SHARED_WITH','SYNCS_TO']).all(r, relations.exists(n, n.id == r.id && !n.enabled))"
+          "expression": "initial.relations.filter(r, r.enabled && r.relationType in ['SHARED_WITH','SYNCS_TO']).all(r, relations.exists(n, n.id == r.id && !n.enabled))",
+          "evidenceExpression": "relations.filter(r, r.enabled && r.relationType in ['SHARED_WITH','SYNCS_TO']).map(r, r.id)"
         },
         {
           "id": "events",
           "nameZh": "没有待处理事件",
           "nameEn": "No pending events",
-          "expression": "pendingEvents == 0"
+          "expression": "pendingEvents == 0",
+          "evidenceExpression": "pendingEvents"
         }
       ],
       "inputActions": {}

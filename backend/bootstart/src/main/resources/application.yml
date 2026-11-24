@@ -31,6 +31,7 @@ studio:
   simulation:
     max-decisions: 50
     max-model-requests: 300
+    enforce-output-token-budget: false
     max-generated-tokens: 307200
     max-runtime-seconds: 600
     max-state-changes: 50

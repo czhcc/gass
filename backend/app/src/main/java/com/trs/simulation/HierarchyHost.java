@@ -31,7 +31,11 @@ public interface HierarchyHost {
   /** Saves actual results separately from model narration. @author czhcc-trsdsj\codexsandboxoffline */
   void completeTask(String taskId, String status, Map<String,Object> result);
   /** Atomic, version-checked object Action gateway. @author czhcc-trsdsj\codexsandboxoffline */
-  Map<String,Object> execute(TaskRecord task, AgentDefinition agent, Decision decision, long expectedVersion);
+  default Map<String,Object> execute(TaskRecord task, AgentDefinition agent, Decision decision, long expectedVersion) {
+    return execute(task, agent, decision, expectedVersion, task.request().inputEventId());
+  }
+  /** Executes an Action with its optional, explicitly selected input event. @author czhcc-trsdsj\codexsandboxoffline */
+  Map<String,Object> execute(TaskRecord task, AgentDefinition agent, Decision decision, long expectedVersion, String inputEventId);
   /** Appends a bounded public task event. @author czhcc-trsdsj\codexsandboxoffline */
   void record(String type, String agentId, Map<String,Object> payload);
 }

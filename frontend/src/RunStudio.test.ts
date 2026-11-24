@@ -55,6 +55,27 @@ it('shows readable key events and related objects, retaining all-event playback 
   await waitFor(() => expect(within(screen.getByTestId('selected-event-details')).getByRole('heading', { name: '行动等待校验' })).toBeTruthy());
   expect(fetcher.mock.calls.every(([url, init]) => init?.method === 'GET' && !url.endsWith('/step'))).toBe(true);
 });
+it('shows the engine verdict and the master’s cited evidence only at their recorded replay positions', async () => {
+  const run = { id: 'goal', scenarioId: 's', objective: 'Verify file review', status: 'COMPLETED', terminationReason: 'OBJECTIVE_MET', step: 2, maxSteps: 2, version: 1 };
+  const state = { runId: run.id, entities: [], relations: [], simulationTime: 2, version: 1 };
+  const events = [
+    { runId: run.id, sequence: 1, simulationTime: 1, eventType: 'ACTION_ACCEPTED', payload: { actionType: 'MARK_REVIEWED', targetId: 'f' } },
+    { runId: run.id, sequence: 2, simulationTime: 2, eventType: 'SCENARIO_EVALUATED', payload: { outcome: { result: 'SUCCEEDED', evaluatedRound: 2, version: 1, conditions: [{ id: 'review', nameZh: '文件已审查', nameEn: 'File reviewed', satisfied: true, evidence: 1, error: '' }] } } },
+    { runId: run.id, sequence: 3, simulationTime: 2, eventType: 'OBJECTIVE_REVIEWED', payload: { status: 'AVAILABLE', mode: 'MOCK', review: { conclusion: 'The file was reviewed.', evidenceSequences: [1, 2], limitations: 'Simulation only.' } } },
+  ];
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => ({ ok: true, json: async () => url === '/api/runs' ? [run] : url.endsWith('/events') ? events
+    : /\/(branches|agents|tasks)$/.test(url) ? [] : url.endsWith('/state') || url.includes('/replay?') ? state : { ...run, agents: [] } })));
+  vi.stubGlobal('EventSource', class { addEventListener() {} close() {} });
+  render(RunStudio, { props: { lang: 'en', initialId: run.id } });
+  const panel = await screen.findByRole('region', { name: 'Objective results' });
+  expect(within(panel).getByText('Verify file review')).toBeTruthy();
+  expect(within(panel).getByText('File reviewed · Met')).toBeTruthy();
+  expect(within(panel).getByText('The file was reviewed.')).toBeTruthy();
+  await fireEvent.click(within(panel).getByRole('button', { name: /#1 Action accepted/ }));
+  expect(await within(panel).findByText('Not evaluated at this position')).toBeTruthy();
+  expect(within(panel).queryByText('The file was reviewed.')).toBeNull();
+});
+
 describe("historical playback", () => {
   it.each([
     ['BUDGET_EXHAUSTED', 'MAX_RUNTIME', '预算耗尽', '实际推演耗时达到上限'],

@@ -89,12 +89,32 @@ class RunTerminationIntegrationTest {
   @ParameterizedTest
   @CsvSource({"decisionBudget,0,MAX_DECISIONS", "requestBudget,5,MODEL_REQUEST_BUDGET", "tokenBudget,6143,TOKEN_BUDGET", "changeBudget,0,MAX_STATE_CHANGES"})
   void eachGlobalBudgetRecordsItsSpecificReason(String field, long limit, String reason) {
-    if (field.equals("tokenBudget")) ReflectionTestUtils.setField(runs, field, limit);
-    else ReflectionTestUtils.setField(runs, field, (int) limit);
+    if (field.equals("tokenBudget")) {
+      ReflectionTestUtils.setField(runs, field, limit);
+      var previous = ReflectionTestUtils.getField(runs, "enforceOutputTokenBudget");
+      ReflectionTestUtils.setField(runs, "enforceOutputTokenBudget", true);
+      try { assertBudgetBlocksLegacyDecision(reason); }
+      finally { ReflectionTestUtils.setField(runs, "enforceOutputTokenBudget", previous); }
+    } else {
+      ReflectionTestUtils.setField(runs, field, (int) limit);
+      assertBudgetBlocksLegacyDecision(reason);
+    }
+  }
+
+  private void assertBudgetBlocksLegacyDecision(String reason) {
     var run = create(5, 10);
     runs.step(run.id(), "limit");
     assertBudget(run.id(), reason);
     verify(provider, never()).decide(any(), any());
+  }
+
+  @Test
+  void legacyRunUsesItsRoundLimitWithTheOutputTokenBudgetDisabledByDefault() {
+    ReflectionTestUtils.setField(runs, "tokenBudget", 1L);
+    var run = create(1, 10);
+    runs.step(run.id(), "one");
+    assertBudget(run.id(), "MAX_STEPS");
+    verify(provider).decide(any(), any());
   }
 
   @Test

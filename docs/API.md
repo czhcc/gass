@@ -116,6 +116,7 @@ Fork 请求：`{"sequence":12,"label":"限制传播方案"}`。子分支拥有�
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | /api/scenario-profiles | 场景主从模板；不会选择模型或创建世界 |
+| POST | /api/scenario-objectives/draft | 提交 `worldId`、`modelId`、`objective`、`maxSteps`，返回可编辑的 `conditions`、待补充的 `unresolved` 和生成模式 `mode` |
 | POST | /api/runs/{id}/initial-input | 根据运行冻结世界生成初始事件；相同初始化幂等，与演示初始化不会重复 |
 | GET | /api/runs/{id}/tasks | 父子任务、轮次、版本、请求、查询与引擎回执、创建/完成事件序号 |
 | GET | /api/runs/{id}/outcome | NOT_EVALUATED / SUCCEEDED / FAILED / ERROR，评价轮次与逐项条件 |
@@ -138,7 +139,7 @@ V9 增加 simulation_task 和 simulation_usage，不清理原数据。完整协�
 | STOPPED | 用户手动停止 | RUN_STOPPED，reasonCode=USER_STOPPED |
 | FAILED | 模型决策失败或超时 | RUN_FAILED，reasonCode=MODEL_DECISION_FAILED |
 
-预算原因包括 `MAX_STEPS`（轮数）、`MAX_EVENTS`（事件数，预留 10 条审计事件）、`MAX_RUNTIME`（实际推演时间）、`MAX_AGENT_DECISIONS`（未结束 Agent 均达到各自决策上限）、`MAX_DECISIONS`（总决策数）、`MODEL_REQUEST_BUDGET`、`TOKEN_BUDGET`、`MAX_STATE_CHANGES`。请求和 Token 仍沿用现有的保守预留估算，不代表供应商实际计费。
+预算原因包括 `MAX_STEPS`（轮数）、`MAX_EVENTS`（事件数，预留 10 条审计事件）、`MAX_RUNTIME`（实际推演时间）、`MAX_AGENT_DECISIONS`（未结束 Agent 均达到各自决策上限）、`MAX_DECISIONS`（总决策数）、`MODEL_REQUEST_BUDGET`、`TOKEN_BUDGET`、`MAX_STATE_CHANGES`。整次运行的 Token 总额度检查默认关闭，开启 `studio.simulation.enforce-output-token-budget` 后可能触发 `TOKEN_BUDGET`。`reserved_tokens` 按请求的最大输出额度统计，供应商的实际计费以其记录为准。
 
 完成或预算结束事件保存 `reasonCode`、可读 `reason`、`actual`、`limit`、`activeRuntimeMs`、`agentId`。时间预算的触发值和限额均为毫秒；请求/Token 预算的触发值是包含下一次决策预留的估算需求。Agent 次数预算的 agentId 指出一个尚未结束且已耗尽次数的 Agent。多项条件同时成立时优先识别所有 Agent 主动结束，其次记录检查到的首个预算原因；终态不重复生成结束事件。
 
