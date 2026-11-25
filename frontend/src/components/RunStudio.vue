@@ -210,6 +210,7 @@ const terminal = computed(
 );
 function runStatus(run: Run) {
   if (run.terminationReason === 'OBJECTIVE_NOT_VERIFIABLE') return props.lang === 'zh' ? '无可判定条件' : 'No engine conditions';
+  if (run.terminationReason === 'OBJECTIVE_REVIEW_COMPLETED') return props.lang === 'zh' ? '目标研判完成' : 'Objective review completed';
   if (run.terminationReason === 'OBJECTIVE_MET') return props.lang === 'zh' ? '效果已达成' : 'Effects achieved';
   if (run.terminationReason === 'OBJECTIVE_NOT_MET') return props.lang === 'zh' ? '效果未达成' : 'Effects not achieved';
   if (run.status === 'COMPLETED') return run.terminationReason === 'ALL_AGENTS_ENDED'
@@ -616,7 +617,7 @@ onBeforeUnmount(() => {
     </div>
     <template v-if="state && info">
       <ObjectiveResult v-if="info.objective && info.id === selected" :objective="info.objective" :max-steps="info.maxSteps"
-        :events="shownEvents" :titles="eventDescriptions" :lang="lang" @evidence="showObjectiveEvidence" />
+        :events="shownEvents" :titles="eventDescriptions" :lang="lang" :context="eventContext" @evidence="showObjectiveEvidence" />
       <div class="min-w-0">
         <article class="panel min-w-0" :aria-label="lang === 'zh' ? '关联图' : 'Relationship graph'">
           <div class="flex flex-wrap justify-between gap-3 text-sm">
@@ -642,7 +643,7 @@ onBeforeUnmount(() => {
           </div>
         </article>
       </div>
-      <HierarchyTrace :tasks="tasks" :events="events" :agents="agents" :cursor="cursor" :lang="lang" :entities="state.entities" :catalog="actionCatalog" :hide-outcome="!!info.objective" />
+      <HierarchyTrace :tasks="tasks" :events="events" :agents="agents" :cursor="cursor" :lang="lang" :entities="state.entities" :relations="state.relations" :catalog="actionCatalog" :hide-outcome="!!info.objective" />
       <div class="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
       <article class="panel min-w-0" :aria-label="t.events">
         <h3 class="mb-4 font-semibold">{{ t.events }}</h3>

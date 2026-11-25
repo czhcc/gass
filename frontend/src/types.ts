@@ -148,6 +148,8 @@ export interface ObjectiveReview {
   conclusion: string;
   evidenceSequences: number[];
   limitations: string;
+  history?: string | null;
+  finalState?: string | null;
 }
 export interface ScenarioProfile {
   domainCode:string;nameZh:string;nameEn:string;

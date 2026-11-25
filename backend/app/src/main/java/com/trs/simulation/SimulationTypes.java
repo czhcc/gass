@@ -120,7 +120,12 @@ public final class SimulationTypes {
   public record ObjectiveDraft(List<GoalCondition> conditions, List<String> unresolved, String mode) {}
 
   /** Master conclusion with server-validated references to persisted evidence. @author czhcc-trsdsj\codexsandboxoffline */
-  public record ObjectiveReview(String conclusion, List<Long> evidenceSequences, String limitations) {}
+  public record ObjectiveReview(String conclusion, List<Long> evidenceSequences, String limitations, String history, String finalState) {
+    /** Preserves reports written before historical and final-state sections were introduced. @author czhcc-trsdsj\codexsandboxoffline */
+    public ObjectiveReview(String conclusion, List<Long> evidenceSequences, String limitations) {
+      this(conclusion, evidenceSequences, limitations, null, null);
+    }
+  }
 
   /** Structured delegation request; authorization is independently checked by the runtime. @author czhcc-trsdsj\codexsandboxoffline */
   public record TaskRequest(String goal, List<String> scopeIds, List<String> allowedActions, String inputEventId) {}

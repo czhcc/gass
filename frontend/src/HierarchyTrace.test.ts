@@ -17,6 +17,16 @@ it('hides future task results and outcome while replaying an earlier event',()=>
   expect(screen.queryByText('已核对转账回执')).toBeNull(); expect(screen.queryByText('已完成转账')).toBeNull();
   expect(screen.queryByText('Accounts reviewed')).toBeNull(); expect(screen.getAllByText(/Running/).length).toBe(2);
 });
+it('uses object names and business terms in findings and next steps',()=>{
+  const records=structuredClone(tasks);
+  records[0]!.result={report:{summary:'person_a：exposed=true，exposureSource=document_f。',findings:['证据标记为 SIMULATED。'],nextTasks:['对 person_a 执行 REVOKE_SHARING，检查 person_a → person_c。']}};
+  const entities=[{id:'person_a',type:'PERSON',name:'人员 A',properties:{}},{id:'person_c',type:'PERSON',name:'人员 C',properties:{}},{id:'document_f',type:'DOCUMENT',name:'文件 F',properties:{}}];
+  render(HierarchyTrace,{props:{tasks:records,events:[],agents,cursor:9,lang:'zh',entities}});
+  expect(screen.getByText('人员 A：已模拟暴露，模拟传播来源为文件 F。')).toBeTruthy();
+  expect(screen.getByText('证据标记为模拟结果。')).toBeTruthy();
+  expect(screen.getByText('对人员 A 执行撤销共享，检查人员 A 到人员 C。')).toBeTruthy();
+  expect(screen.getByText(/exposureSource=document_f/).closest('details')?.open).toBe(false);
+});
 it('uses Chinese execution-record summaries for older English reports and keeps original text collapsed',()=>{
   const older=structuredClone(tasks);
   older[0]!.result={report:{summary:'Round 1 established the structure but achieved no state changes.',findings:['The response worker returned a receipt.'],nextTasks:['Review the next account.']}};

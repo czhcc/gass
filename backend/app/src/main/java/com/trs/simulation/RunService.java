@@ -689,6 +689,11 @@ public class RunService {
     if (!List.of("PAUSED", "RUNNING").contains(run.status())) return true;
     if (scenario.team() == null && scenario.agents().stream().allMatch(a -> hasEnded(id, a.id())))
       return finish(id, "ALL_AGENTS_ENDED", scenario.agents().size(), scenario.agents().size(), "All agents submitted accepted END decisions", "");
+    if (checkSteps && scenario.objective() != null && scenario.team().conditions().isEmpty() && pendingEvents(id) == 0
+        && events(id, 0).reversed().stream().anyMatch(e -> ObjectiveEvidence.COMPLETION_EVENT.equals(e.eventType())
+            && e.payload().get("round") instanceof Number round && round.intValue() == run.step()
+            && e.payload().get("version") instanceof Number version && version.longValue() == run.version()))
+      return evaluateHorizon(id, scenario, true);
     if (checkSteps && run.step() >= scenario.maxSteps()) {
       if (scenario.objective() != null && db.queryForObject(
           "SELECT COUNT(*) FROM simulation_task WHERE run_id=? AND round=? AND parent_task_id IS NULL AND status='SUCCEEDED'",
@@ -699,7 +704,7 @@ public class RunService {
         });
         return true;
       }
-      if (scenario.team() != null) return evaluateHorizon(id, scenario);
+      if (scenario.team() != null) return evaluateHorizon(id, scenario, false);
       return finish(id, "MAX_STEPS", run.step(), scenario.maxSteps(), "Maximum simulation rounds reached", "");
     }
     int events = eventCount(id);
@@ -765,24 +770,27 @@ public class RunService {
     var handled = TaskEvidence.handledInputs(events(id, 0));
     return events(id, 0).stream().filter(e -> e.eventType().equals("SIMULATION_EVENT_CREATED") && types.contains(e.payload().get("eventType")) && !handled.contains(String.valueOf(e.payload().get("scheduledEventId")))).count();
   }
-  private boolean evaluateHorizon(String id, Scenario scene) {
+  private boolean evaluateHorizon(String id, Scenario scene, boolean reviewedEarly) {
     var result = BusinessEvaluation.evaluate(scene, initialState(id), state(id), get(id).step(), pendingEvents(id), unhandledInputs(id, scene));
     String reason = switch (result.result()) {
       case "ERROR" -> "OBJECTIVE_EVALUATION_FAILED";
       case "SUCCEEDED" -> "OBJECTIVE_MET";
-      case "NO_CONDITIONS" -> "OBJECTIVE_NOT_VERIFIABLE";
+      case "NO_CONDITIONS" -> reviewedEarly ? "OBJECTIVE_REVIEW_COMPLETED" : "OBJECTIVE_NOT_VERIFIABLE";
       default -> "OBJECTIVE_NOT_MET";
     };
     tx.executeWithoutResult(t -> {
       db.update("INSERT INTO simulation_usage(run_id,outcome_json) VALUES (?,?) ON CONFLICT(run_id) DO UPDATE SET outcome_json=excluded.outcome_json", id, Json.write(result));
       db.update("UPDATE simulation_run SET status=?,termination_reason=? WHERE id=?", result.result().equals("ERROR") ? "FAILED" : "COMPLETED", reason, id);
       append(id, "SCENARIO_EVALUATED", state(id).simulationTime(), null, Map.of("outcome", result));
-      append(id, result.result().equals("ERROR") ? "RUN_FAILED" : "RUN_COMPLETED", state(id).simulationTime(), null, Map.of("reasonCode", reason, "reason", "Configured evaluation horizon reached", "activeRuntimeMs", get(id).activeRuntimeMs()));
+      append(id, result.result().equals("ERROR") ? "RUN_FAILED" : "RUN_COMPLETED", state(id).simulationTime(), null, Map.of("reasonCode", reason,
+          "reason", reviewedEarly ? "Master finished the text objective with recorded evidence" : "Configured evaluation horizon reached", "activeRuntimeMs", get(id).activeRuntimeMs()));
     }); return true;
   }
 
   private void reviewAtHorizon(String id, Scenario scene, Lease lease) {
-    if (scene.objective() == null || lease.cancelled || get(id).step() != scene.maxSteps()) return;
+    if (scene.objective() == null || lease.cancelled) return;
+    var run = get(id);
+    if (run.step() != scene.maxSteps() && !"OBJECTIVE_REVIEW_COMPLETED".equals(run.terminationReason())) return;
     var outcome = outcome(id);
     if ("NOT_EVALUATED".equals(outcome.result())) return;
     var root = scene.agents().stream().filter(a -> a.id().equals(scene.team().rootAgentId())).findFirst().orElseThrow();
@@ -908,8 +916,13 @@ public class RunService {
           && TaskEvidence.matchesInputType(team, decision.actionType(), e)
           && Objects.equals(e.payload().get("targetId"), decision.targetId()) && Objects.equals(e.payload().get("parameters"), decision.parameters()));
     }
-    /** Writes public evidence with stable ordering and a bounded payload. @author czhcc-trsdsj\codexsandboxoffline */
-    @Override public void record(String type, String agentId, Map<String,Object> payload) { synchronized (RunService.this) { check(); if (Json.write(payload).length() > 40000) throw new IllegalArgumentException("Event payload too large"); append(id, type, state().simulationTime(), agentId, payload); } }
+    /** Writes public evidence with stable ordering and returns its sequence. @author czhcc-trsdsj\codexsandboxoffline */
+    @Override public long record(String type, String agentId, Map<String,Object> payload) { synchronized (RunService.this) {
+      check();
+      if (Json.write(payload).length() > 40000) throw new IllegalArgumentException("Event payload too large");
+      append(id, type, state().simulationTime(), agentId, payload);
+      return db.queryForObject("SELECT MAX(sequence_no) FROM simulation_event WHERE run_id=?", Long.class, id);
+    } }
   }
 
   private int decisionCount(String id, String agent) {

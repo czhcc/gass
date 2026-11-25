@@ -8,10 +8,57 @@ import org.springframework.stereotype.Service;
 @Service
 public class RunGraphReadService {
   public static final Set<String> TOOLS = Set.of("graph_get_entity", "graph_neighbors", "graph_subgraph", "graph_path", "graph_metrics");
-  /** Enforces role permissions, visibility, bounded projection and precise query provenance. @author czhcc-trsdsj\codexsandboxoffline */
-  public Map<String,Object> query(AgentDefinition agent, State state, String tool, Map<String,Object> args) {
+  private final LinkedHashMap<QueryKey, Map<String, Object>> cache = new LinkedHashMap<>(128, 0.75f, true);
+
+  /** Auditable read result and whether computation was reused. @author czhcc-trsdsj\codexsandboxoffline */
+  public record GraphRead(Map<String, Object> result, boolean reused) {}
+
+  /** Identifies the authorized projection and effective query arguments. @author czhcc-trsdsj\codexsandboxoffline */
+  private record QueryKey(String runId, long version, Set<String> scope, String tool, Map<String, Object> arguments) {}
+
+  /** Reads the graph without requesting cache provenance. @author czhcc-trsdsj\codexsandboxoffline */
+  public Map<String, Object> query(AgentDefinition agent, State state, String tool, Map<String, Object> arguments) {
+    return read(agent, state, tool, arguments).result();
+  }
+
+  /** Enforces read permissions and reuses bounded results for equivalent requests on the same snapshot. @author czhcc-trsdsj\codexsandboxoffline */
+  public synchronized GraphRead read(AgentDefinition agent, State state, String tool, Map<String,Object> arguments) {
     if (agent.runtime() == null || !agent.runtime().tools().contains(tool) || !TOOLS.contains(tool)) throw new IllegalArgumentException("Query tool is not permitted for this role");
-    var ids = new HashSet<>(agent.visibleEntityIds());
+    var ids = Set.copyOf(agent.visibleEntityIds());
+    var args = normalized(tool, arguments);
+    var key = new QueryKey(state.runId(), state.version(), ids, tool, args);
+    var previous = cache.get(key);
+    if (previous != null) return new GraphRead(previous, true);
+    var result = query(ids, state, tool, args);
+    cache.put(key, result);
+    if (cache.size() > 128) cache.pollFirstEntry();
+    return new GraphRead(result, false);
+  }
+
+  private Map<String, Object> normalized(String tool, Map<String, Object> args) {
+    var normalized = new LinkedHashMap<String, Object>();
+    normalized.put("offset", integer(args, "offset", 0, 0, 200));
+    normalized.put("limit", integer(args, "limit", 50, 1, 100));
+    switch (tool) {
+      case "graph_get_entity", "graph_neighbors", "graph_subgraph" -> normalized.put("entityId", text(args, "entityId"));
+      case "graph_path" -> {
+        normalized.put("from", text(args, "from"));
+        normalized.put("to", text(args, "to"));
+        normalized.put("rankByType", text(args, "rankByType"));
+        if (!normalized.get("rankByType").equals("")) normalized.put("maxDepth", integer(args, "maxDepth", 64, 1, 64));
+      }
+      default -> { }
+    }
+    if (tool.equals("graph_neighbors")) {
+      String direction = text(args, "direction");
+      normalized.put("direction", direction.isEmpty() ? "both" : direction);
+      normalized.put("relationType", text(args, "relationType"));
+    }
+    if (tool.equals("graph_subgraph")) normalized.put("depth", integer(args, "depth", 2, 0, 6));
+    return Map.copyOf(normalized);
+  }
+
+  private Map<String,Object> query(Set<String> ids, State state, String tool, Map<String,Object> args) {
     var entities = state.entities().stream().filter(e -> ids.contains(e.id())).toList();
     var edges = state.relations().stream().filter(r -> ids.contains(r.sourceId()) && ids.contains(r.targetId())).toList();
     String root = text(args, "entityId"), from = text(args, "from"), to = text(args, "to");
@@ -41,7 +88,17 @@ public class RunGraphReadService {
           selectedEdges = edges.stream().filter(r -> reachable.contains(r.sourceId()) && reachable.contains(r.targetId())).toList();
         }
       }
-      case "graph_path" -> { if (from.isEmpty() || to.isEmpty()) throw new IllegalArgumentException("from and to required"); result.put("path", GraphQueries.path(entities, edges, from, to)); }
+      case "graph_path" -> {
+        String type = text(args, "rankByType");
+        if (from.isEmpty() || to.isEmpty() && type.isEmpty()) throw new IllegalArgumentException("from and either to or rankByType are required");
+        if (type.isEmpty()) result.put("path", GraphQueries.path(entities, edges, from, to));
+        else {
+          if (offset != 0) throw new IllegalArgumentException("Ranked paths require offset=0; use limit to bound returned ties");
+          result.put("pathRanking", GraphQueries.rankPaths(entities, edges, from, to, type, (int) args.get("maxDepth"), limit));
+          selectedEntities = List.of();
+          selectedEdges = List.of();
+        }
+      }
       case "graph_metrics" -> result.put("metrics", GraphQueries.metrics(entities, edges));
       default -> throw new IllegalArgumentException("Unknown graph query");
     }

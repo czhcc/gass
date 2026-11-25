@@ -36,6 +36,6 @@ public interface HierarchyHost {
   }
   /** Executes an Action with its optional, explicitly selected input event. @author czhcc-trsdsj\codexsandboxoffline */
   Map<String,Object> execute(TaskRecord task, AgentDefinition agent, Decision decision, long expectedVersion, String inputEventId);
-  /** Appends a bounded public task event. @author czhcc-trsdsj\codexsandboxoffline */
-  void record(String type, String agentId, Map<String,Object> payload);
+  /** Appends a bounded public task event and returns its sequence. @author czhcc-trsdsj\codexsandboxoffline */
+  long record(String type, String agentId, Map<String,Object> payload);
 }

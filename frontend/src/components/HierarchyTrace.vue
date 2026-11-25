@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import {computed} from 'vue';
-import type {ActionCatalog,Agent,BusinessOutcome,Entity,Lang,RunEvent,TaskRecord} from '../types';
+import type {Agent,BusinessOutcome,Lang,RunEvent,TaskRecord} from '../types';
 import {agentDisplayName} from '../agentPresentation';
-import {executionSummary,publicNarrative} from '../taskNarrative';
-const props=defineProps<{tasks:TaskRecord[];events:RunEvent[];agents:Agent[];cursor:number;lang:Lang;entities?:Entity[];catalog?:ActionCatalog;hideOutcome?:boolean}>();
+import {actionLabels,executionSummary,publicNarrative,type NarrativeContext} from '../taskNarrative';
+const props=defineProps<NarrativeContext & {tasks:TaskRecord[];events:RunEvent[];agents:Agent[];cursor:number;lang:Lang;hideOutcome?:boolean}>();
 const zh=computed(()=>props.lang==='zh');
 const visible=computed(()=>props.tasks.filter(t=>t.createdSequence<=props.cursor));
 const roots=computed(()=>visible.value.filter(t=>!t.parentTaskId));
@@ -14,12 +14,12 @@ const receipts=(t:TaskRecord)=>(result(t).receipts??[]) as {accepted:boolean;act
 const queries=(t:TaskRecord)=>(result(t).queryResults??[]) as {version:number;totalObjects:number;totalRelations:number;truncated:boolean}[];
 const name=(id:string)=>agentDisplayName(props.agents.find(a=>a.id===id)??{id},props.lang);
 const objectName=(id:string)=>props.entities?.find(e=>e.id===id)?.name??id;
-const actionName=(id:string)=>{const definition=props.catalog?.agents.flatMap(a=>a.capabilities).find(c=>c.action.actionType===id)?.action;return definition?(zh.value?definition.nameZh:definition.nameEn):id;};
+const actionName=(id:string)=>{const definition=props.catalog?.agents.flatMap(a=>a.capabilities).find(c=>c.action.actionType===id)?.action;return definition?(zh.value?definition.nameZh:definition.nameEn):actionLabels[id]?.[zh.value?0:1]??id;};
 const status=(t:TaskRecord)=>!completed(t)?(zh.value?'执行中':'Running'):({SUCCEEDED:zh.value?'已完成':'Completed',REJECTED:zh.value?'被拒绝':'Rejected',FAILED:zh.value?'执行失败':'Failed',CANCELLED:zh.value?'已取消':'Cancelled',NO_ACTION:zh.value?'未执行操作':'No Action submitted',NO_EVIDENCE:zh.value?'未返回查询证据':'No query evidence'}[t.status]??t.status);
 const outcome=computed(()=>props.hideOutcome ? undefined : [...props.events].reverse().find(e=>e.sequence<=props.cursor&&e.eventType==='SCENARIO_EVALUATED')?.payload.outcome as BusinessOutcome|undefined);
 const children=(root:TaskRecord)=>visible.value.filter(t=>t.parentTaskId===root.taskId);
 const engineSummary=(root:TaskRecord)=>result(root).reportSource==='ENGINE_FALLBACK';
-const narrative=(value:unknown)=>publicNarrative(value,props.lang);
+const narrative=(value:unknown)=>publicNarrative(value,props.lang,props);
 const findings=(root:TaskRecord)=>(report(root)?.findings??[]).map(narrative).filter(Boolean);
 const nextTasks=(root:TaskRecord)=>(report(root)?.nextTasks??[]).map(narrative).filter(Boolean);
 const summary=(root:TaskRecord)=>(!engineSummary(root)&&narrative(report(root)?.summary))||(zh.value?`本轮委派 ${children(root).length} 项子任务，${children(root).filter(completed).length} 项已返回；`:`${children(root).length} subtasks delegated; `)+executionSummary(children(root).filter(completed).map(result),props.lang);
