@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "stage": 1,
+  "attempt": 2,
+  "status": "PASSED",
+  "exitCode": 0,
+  "nextStageAllowed": true,
+  "startedAt": "2026-11-25T10:05:32.140535+00:00",
+  "endedAt": "2026-11-25T10:05:32.497306+00:00",
+  "reason": null,
+  "baselineCommit": "95ce067282a350c8332699d90f16a9bd51a8c01d",
+  "candidateCommit": "2e3e8f048cfbbe76cd43b59f3eb6c47c352a63e0",
+  "checkoutHead": "2e3e8f048cfbbe76cd43b59f3eb6c47c352a63e0",
+  "checkManifestSha256": "30abec244e90fbbd4fc8f4a6b473ab8b796a306da27839e1dac31baf5eb9e4ad",
+  "evidenceIndexSha256": "61d899fe14d106b3eeb88c6e9515ebd3ca60f32b300e7eef0f76cc2126219c64",
+  "reviewerPayloadSha256": "d60c9cc6b86bde67f6a1b8ff2d07c9206331ea1e7ab12dd5c150faf3b66600b3",
+  "gateImplementationSha256": "017e4fe8851636075a0445ce9fb009bcaf4178a20d2c22a14336ca21d51c378f",
+  "reviewerSessionId": "gass-s1-2e3e8f04-attempt-02",
+  "requiredChecks": 31,
+  "requiredCommandRuns": 28,
+  "verifiedEvidenceFiles": 136,
+  "testReports": {
+    "CMD-BASELINE-PNPM-TEST": {
+      "total": 82,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 13
+    },
+    "CMD-CANDIDATE-PNPM-TEST": {
+      "total": 82,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 13
+    },
+    "CMD-BASELINE-MAVEN": {
+      "total": 92,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 20
+    },
+    "CMD-CANDIDATE-MAVEN": {
+      "total": 94,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 20
+    },
+    "CMD-BASELINE-OBJECTIVE-ALERT": {
+      "total": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-OBJECTIVE-ALERT": {
+      "total": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    }
+  }
+}

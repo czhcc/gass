@@ -44,3 +44,16 @@
 | 历史 Action 证据通过相邻事件序号关联。 | 阶段 2 引入显式 Action 关联，阶段 4 扩展因果链。 |
 | `complete_objective` 与运行终止耦合，未来轮次约束和证据充分性仍受现有提示词及规则限制。 | 阶段 3 明确完成、评价及终止门禁，阶段 6–7 增强证据与评价。 |
 | 时钟随轮次推进，每轮最多处理 10 条到期输入。 | 阶段 3 调整时钟与持久化调度。 |
+
+## 第一阶段独立验收（第 1 次）
+
+- 基线 `95ce067282a350c8332699d90f16a9bd51a8c01d`，候选 `2e3e8f048cfbbe76cd43b59f3eb6c47c352a63e0`。
+- 结论 `BLOCKED`。31 项必验中 30 项通过。G-01 缺开发前冻结清单及批准记录，自动 Stage Gate 尚无脚本可执行。
+- 候选后端 94 项、前端 82 项通过，前端生产构建成功。基线 HTTP 与候选的银行、信息及分支记录零差异。候选重新读取基线数据库的三条历史运行，零差异。
+- `nextStageAllowed=false`。[验收报告](acceptance/stage-01/attempt-01/review.md)、[机器可读结果](acceptance/stage-01/attempt-01/result.json)、[证据索引](acceptance/stage-01/attempt-01/evidence-index.json)。
+
+## 第一阶段独立验收（第 2 次）
+
+- 本轮候选 `2e3e8f048cfbbe76cd43b59f3eb6c47c352a63e0`。获批清单为事后补录，首轮报告与 `BLOCKED` 记录完整保留。
+- 自动 Stage Gate 结论 `PASSED`，退出 `0`，`nextStageAllowed=true`。
+- [第二次验收报告](acceptance/stage-01/attempt-02/review.md) · [门禁报告](acceptance/stage-01/attempt-02/gate-report.json) · [第二次机器可读结果](acceptance/stage-01/attempt-02/result.json)
