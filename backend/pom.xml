@@ -26,5 +26,39 @@
     <module>bootstart</module>
   </modules>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>3.11.0</version>
+        <configuration>
+          <encoding>UTF-8</encoding>
+          <java>
+            <lineEndings>UNIX</lineEndings>
+            <removeUnusedImports/>
+            <importOrder/>
+            <forbidWildcardImports/>
+            <palantirJavaFormat>
+              <version>2.102.0</version>
+              <style>PALANTIR</style>
+              <formatJavadoc>false</formatJavadoc>
+            </palantirJavaFormat>
+            <trimTrailingWhitespace/>
+            <endWithNewline/>
+          </java>
+        </configuration>
+        <executions>
+          <execution>
+            <id>spotless-check</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>
