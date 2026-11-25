@@ -19,6 +19,82 @@ public final class GraphQueries {
     return p == null ? List.of() : p.getVertexList();
   }
 
+  /** Ranks enabled directed simple paths by the count of objects of a requested type. @author czhcc-trsdsj\codexsandboxoffline */
+  public static Map<String, Object> rankPaths(List<Entity> entities, List<Relation> relations,
+      String from, String to, String type, int maxDepth, int limit) {
+    var graph = graph(entities, relations);
+    var matches = new HashSet<String>();
+    entities.stream().filter(entity -> type.equals(entity.type())).forEach(entity -> matches.add(entity.id()));
+    var search = new PathRanking(graph, matches, to, maxDepth, limit);
+    if (graph.containsVertex(from)) search.visit(from, 0);
+    return Map.of("from", from, "to", to, "rankByType", type, "maxDepth", maxDepth,
+        "maxCount", Math.max(0, search.best), "candidatePaths", search.candidates, "paths", List.copyOf(search.paths),
+        "tieCount", search.ties, "tiesTruncated", search.ties > search.paths.size(),
+        "complete", !search.depthLimited && !search.exhausted);
+  }
+
+  /** Bounds the cost of enumerating simple paths and reports when the search is incomplete. @author czhcc-trsdsj\codexsandboxoffline */
+  private static final class PathRanking {
+    private final Map<String, List<String>> outgoing = new HashMap<>();
+    private final Set<String> matches;
+    private final String to;
+    private final int maxDepth;
+    private final int limit;
+    private final SequencedSet<String> path = new LinkedHashSet<>();
+    private final List<List<String>> paths = new ArrayList<>();
+    private int best = -1;
+    private int ties;
+    private int candidates;
+    private int visits;
+    private boolean depthLimited;
+    private boolean exhausted;
+
+    private PathRanking(DefaultDirectedGraph<String, DefaultEdge> graph, Set<String> matches,
+        String to, int maxDepth, int limit) {
+      graph.vertexSet().forEach(id -> outgoing.put(id, graph.outgoingEdgesOf(id).stream()
+          .map(graph::getEdgeTarget).sorted().toList()));
+      this.matches = matches;
+      this.to = to;
+      this.maxDepth = maxDepth;
+      this.limit = limit;
+    }
+
+    private void visit(String id, int count) {
+      if (++visits > 50000) {
+        exhausted = true;
+        return;
+      }
+      path.add(id);
+      if (matches.contains(id)) count++;
+      boolean atTarget = id.equals(to);
+      if (atTarget || to.isEmpty() && path.size() > 1) record(count);
+      if (!atTarget) {
+        for (String next : outgoing.get(id)) {
+          if (path.contains(next)) continue;
+          if (path.size() > maxDepth) {
+            depthLimited = true;
+            break;
+          }
+          visit(next, count);
+          if (exhausted) break;
+        }
+      }
+      path.removeLast();
+    }
+
+    private void record(int count) {
+      candidates++;
+      if (count < best) return;
+      if (count > best) {
+        paths.clear();
+        best = count;
+        ties = 0;
+      }
+      ties++;
+      if (paths.size() < limit) paths.add(List.copyOf(path));
+    }
+  }
+
   /**
    * Computes degree and betweenness; bridge candidates are explanations, not facts. @author agent
    */

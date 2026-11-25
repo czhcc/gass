@@ -56,12 +56,12 @@ it('shows readable key events and related objects, retaining all-event playback 
   expect(fetcher.mock.calls.every(([url, init]) => init?.method === 'GET' && !url.endsWith('/step'))).toBe(true);
 });
 it('shows the engine verdict and the master’s cited evidence only at their recorded replay positions', async () => {
-  const run = { id: 'goal', scenarioId: 's', objective: 'Verify file review', status: 'COMPLETED', terminationReason: 'OBJECTIVE_MET', step: 2, maxSteps: 2, version: 1 };
-  const state = { runId: run.id, entities: [], relations: [], simulationTime: 2, version: 1 };
+  const run = { id: 'goal', scenarioId: 's', objective: 'Verify file review', status: 'COMPLETED', terminationReason: 'OBJECTIVE_REVIEW_COMPLETED', step: 2, maxSteps: 6, version: 1 };
+  const state = { runId: run.id, entities: [{ id: 'document_f', name: 'File F', type: 'DOCUMENT', properties: {} }], relations: [], simulationTime: 2, version: 1 };
   const events = [
     { runId: run.id, sequence: 1, simulationTime: 1, eventType: 'ACTION_ACCEPTED', payload: { actionType: 'MARK_REVIEWED', targetId: 'f' } },
     { runId: run.id, sequence: 2, simulationTime: 2, eventType: 'SCENARIO_EVALUATED', payload: { outcome: { result: 'SUCCEEDED', evaluatedRound: 2, version: 1, conditions: [{ id: 'review', nameZh: '文件已审查', nameEn: 'File reviewed', satisfied: true, evidence: 1, error: '' }] } } },
-    { runId: run.id, sequence: 3, simulationTime: 2, eventType: 'OBJECTIVE_REVIEWED', payload: { status: 'AVAILABLE', mode: 'MOCK', review: { conclusion: 'The file was reviewed.', evidenceSequences: [1, 2], limitations: 'Simulation only.' } } },
+    { runId: run.id, sequence: 3, simulationTime: 2, eventType: 'OBJECTIVE_REVIEWED', payload: { status: 'AVAILABLE', mode: 'MOCK', review: { conclusion: 'The reviewed object is document_f.', history: 'The review action was executed.', finalState: 'File F is marked reviewed.', evidenceSequences: [1, 2], limitations: 'Simulation only.' } } },
   ];
   vi.stubGlobal('fetch', vi.fn(async (url: string) => ({ ok: true, json: async () => url === '/api/runs' ? [run] : url.endsWith('/events') ? events
     : /\/(branches|agents|tasks)$/.test(url) ? [] : url.endsWith('/state') || url.includes('/replay?') ? state : { ...run, agents: [] } })));
@@ -70,10 +70,17 @@ it('shows the engine verdict and the master’s cited evidence only at their rec
   const panel = await screen.findByRole('region', { name: 'Objective results' });
   expect(within(panel).getByText('Verify file review')).toBeTruthy();
   expect(within(panel).getByText('File reviewed · Met')).toBeTruthy();
-  expect(within(panel).getByText('The file was reviewed.')).toBeTruthy();
+  expect(within(panel).getByText('The reviewed object is File F.')).toBeTruthy();
+  expect(within(panel).getByText('Evaluated after round 2')).toBeTruthy();
+  expect(within(panel).getByRole('heading', { name: 'Action history' })).toBeTruthy();
+  expect(within(panel).getByText('The review action was executed.')).toBeTruthy();
+  expect(within(panel).getByRole('heading', { name: 'Graph at the end' })).toBeTruthy();
+  expect(within(panel).getByText('File F is marked reviewed.')).toBeTruthy();
+  expect(within(panel).getByText('Original review text').closest('details')?.open).toBe(false);
   await fireEvent.click(within(panel).getByRole('button', { name: /#1 Action accepted/ }));
   expect(await within(panel).findByText('Not evaluated at this position')).toBeTruthy();
-  expect(within(panel).queryByText('The file was reviewed.')).toBeNull();
+  expect(within(panel).queryByText('The reviewed object is File F.')).toBeNull();
+  expect(within(panel).queryByRole('heading', { name: 'Action history' })).toBeNull();
 });
 
 describe("historical playback", () => {

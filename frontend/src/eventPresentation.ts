@@ -1,7 +1,7 @@
 import type { ActionCatalog, ActionDefinition, Agent, Entity, Lang, Relation, RunEvent } from './types';
 import { unavailableDescription } from './actionDescriptions';
 import { agentDisplayName, modelModeLabel } from './agentPresentation';
-import { executionSummary, publicNarrative } from './taskNarrative';
+import { actionLabels as actions, executionSummary, publicNarrative, readableNarrative, relationLabels as relations } from './taskNarrative';
 
 export interface EventContext { events: RunEvent[]; agents?: Agent[]; entities?: Entity[]; relations?: Relation[]; catalog?: ActionCatalog }
 export interface EventDescription {
@@ -30,6 +30,7 @@ export const terminationMessages: Record<string, [string, string]> = {
   OBJECTIVE_NOT_MET: ['已到达设定轮数，场景效果未达成', 'Configured horizon reached; business effects not achieved'],
   OBJECTIVE_EVALUATION_FAILED: ['效果条件计算失败，请检查场景配置', 'Outcome conditions failed to evaluate; check the scenario configuration'],
   OBJECTIVE_NOT_VERIFIABLE: ['已到达设定轮数，未配置可判定条件', 'Configured horizon reached without engine conditions'],
+  OBJECTIVE_REVIEW_COMPLETED: ['主研判 Agent 已引用运行证据完成文字目标研判', 'Master completed the text objective review with recorded evidence'],
   OBJECTIVE_HORIZON_INTERRUPTED: ['截止轮次中断，未完成目标判定', 'The final round was interrupted before evaluation'],
 };
 export const failureDiagnosticMessages: Record<string, [string, string]> = {
@@ -51,11 +52,7 @@ const titles: Record<string, [string, string]> = {
   ACTION_TASK_RECEIPT: ['子任务执行回执', 'Task Action receipt'], ACTION_INPUT_HANDLED: ['输入请求已处理', 'Input request handled'],
   TASK_MEMORY_RESTORED: ['已继承任务记忆', 'Task memory inherited'], SCENARIO_EVALUATED: ['场景效果判定', 'Business effects evaluated'], MODEL_REQUESTED: ['已请求模型', 'Model requested'],
   OBJECTIVE_REVIEWED: ['主研判目标结论', 'Master objective review'],
-};
-const actions: Record<string, [string, string]> = {
-  MARK_REVIEWED: ['标记审查', 'Mark reviewed'], ANALYZE_RELATIONS: ['分析关系', 'Analyze relations'], SIMULATE_PROPAGATION: ['模拟接收传播', 'Simulate exposure'],
-  REVOKE_SHARING: ['撤销共享', 'Revoke sharing'], DISABLE_SYNC: ['禁用同步', 'Disable synchronization'], TRANSFER: ['模拟转账', 'Simulated transfer'],
-  FLAG_RISK: ['标记模拟风险', 'Flag simulated risk'], ANALYZE_ACCOUNT: ['分析账户', 'Analyze account'], ASSESS_RISK_CEL: ['CEL 风险评分', 'CEL risk score'], END: ['结束 Agent 任务', 'End agent task'],
+  OBJECTIVE_COMPLETION_RECORDED: ['已提交目标完成依据', 'Objective completion evidence submitted'],
 };
 const rejectionReasons: Record<string, [string, string]> = {
   ACTION_FORBIDDEN: ['此 Agent 没有该行动的执行权限', 'The agent is not permitted to perform this action'],
@@ -68,16 +65,16 @@ const rejectionReasons: Record<string, [string, string]> = {
 };
 const parameters: Record<string, [string, string]> = { sourceId: ['来源对象', 'Source object'], recipientId: ['共享接收对象', 'Sharing recipient'], destinationId: ['同步目标对象', 'Sync destination'], amount: ['金额（元）', 'Amount (major units)'], currency: ['币种', 'Currency'] };
 const properties: Record<string, [string, string]> = { reviewed: ['审查状态', 'Review status'], exposed: ['模拟暴露状态', 'Simulated exposure'], riskFlag: ['模拟风险标记', 'Simulated risk flag'], riskScore: ['模拟风险评分', 'Simulated risk score'], balanceMinor: ['账户余额', 'Account balance'], currency: ['币种', 'Currency'], exposureSource: ['传播来源', 'Exposure source'], sourceId: ['转出账户', 'Source account'], targetId: ['转入账户', 'Destination account'], amountMinor: ['金额（分）', 'Amount (minor units)'] };
-const relations: Record<string, [string, string]> = { SHARED_WITH: ['共享', 'Sharing'], SYNCS_TO: ['同步', 'Synchronization'], ACCESSED_BY: ['访问', 'Access'], STORED_IN: ['存储', 'Storage'], CONTACTS: ['联系', 'Contact'] };
 const tools: Record<string, [string, string]> = { graph_search_entity: ['搜索可见对象', 'Search visible objects'], graph_get_entity: ['读取可见对象', 'Read a visible object'], graph_expand_relations: ['查询关系可达范围', 'Expand visible relationships'], graph_find_paths: ['查询图谱路径', 'Find graph paths'], graph_calculate_centrality: ['计算图谱中心性', 'Calculate centrality'], graph_get_subgraph: ['读取局部图谱', 'Read a subgraph'], graph_estimate_impact: ['估计潜在影响范围', 'Estimate potential impact'] };
 
 export function isKeyEvent(event: RunEvent) {
-  return event.eventType.startsWith('RUN_') || ['ACTION_ACCEPTED', 'ACTION_REJECTED', 'WORLD_STATE_CHANGED', 'SIMULATION_EVENT_CREATED', 'SIMULATION_EVENT_SCHEDULED', 'BRANCH_CREATED', 'MASTER_REVIEW', 'SUBTASK_DISPATCHED', 'SUBTASK_COMPLETED', 'SCENARIO_EVALUATED', 'OBJECTIVE_REVIEWED'].includes(event.eventType);
+  return event.eventType.startsWith('RUN_') || ['ACTION_ACCEPTED', 'ACTION_REJECTED', 'WORLD_STATE_CHANGED', 'SIMULATION_EVENT_CREATED', 'SIMULATION_EVENT_SCHEDULED', 'BRANCH_CREATED', 'MASTER_REVIEW', 'SUBTASK_DISPATCHED', 'SUBTASK_COMPLETED', 'SCENARIO_EVALUATED', 'OBJECTIVE_REVIEWED', 'OBJECTIVE_COMPLETION_RECORDED'].includes(event.eventType);
 }
 
 /** Uses persisted proposals and snapshots only; it never translates by calling a model. */
 export function describeEvent(event: RunEvent, context: EventContext, lang: Lang): EventDescription {
   const t = (zh: string, en: string) => choose(lang, zh, en);
+  const narrative = (value: unknown) => publicNarrative(value, lang, context);
   const local = (dictionary: Record<string, [string, string]>, key: string) => dictionary[key]?.[lang === 'zh' ? 0 : 1] ?? key;
   const p = object(event.payload), before = object(p.before), after = object(p.after), observation = object(p.observation);
   const pool = [...objects(after.entities), ...objects(before.entities), ...objects(observation.entities), ...(context.entities ?? [])];
@@ -193,7 +190,7 @@ export function describeEvent(event: RunEvent, context: EventContext, lang: Lang
     result.summary = t('输入事件为 Agent 提供后续决策信息，本身不直接改变对象状态。', 'The input informs later agent decisions; it does not directly change object state.');
   }
   if (['MASTER_TASK_STARTED','SUBTASK_DISPATCHED'].includes(event.eventType)) {
-    result.summary = publicNarrative(object(p.request).goal, lang)||t('已安排授权范围内的任务，具体目标见原始事件。','An authorized task was arranged; see its original request for the goal.'); fact(t('读取版本','Input version'), p.inputVersion);
+    result.summary = narrative(object(p.request).goal)||t('已安排授权范围内的任务，具体目标见原始事件。','An authorized task was arranged; see its original request for the goal.'); fact(t('读取版本','Input version'), p.inputVersion);
     fact(t('允许的行动','Allowed Actions'), object(p.request).allowedActions);
   } else if (event.eventType === 'MASTER_REVIEW') {
     const report = object(p.report);
@@ -205,11 +202,11 @@ export function describeEvent(event: RunEvent, context: EventContext, lang: Lang
       fact(t('已接受行动', 'Accepted Actions'), report.acceptedActions);
       fact(t('图谱查询', 'Graph queries'), report.queryCount);
     } else {
-      result.summary = publicNarrative(report.summary, lang)||t('主 Agent 已完成本轮研判；请结合子任务的查询证据和执行回执查看，原始研判可展开阅读。','The master completed this review; inspect worker evidence and engine receipts, or expand the original report.');
-      result.changes = [...(Array.isArray(report.findings) ? report.findings.map(v=>publicNarrative(v,lang)).filter(Boolean) : []), ...(Array.isArray(report.nextTasks) ? report.nextTasks.map(v=>publicNarrative(v,lang)).filter(Boolean).map(v => t('下一步：','Next: ') + v) : [])];
+      result.summary = narrative(report.summary)||t('主 Agent 已完成本轮研判；请结合子任务的查询证据和执行回执查看，原始研判可展开阅读。','The master completed this review; inspect worker evidence and engine receipts, or expand the original report.');
+      result.changes = [...(Array.isArray(report.findings) ? report.findings.map(narrative).filter(Boolean) : []), ...(Array.isArray(report.nextTasks) ? report.nextTasks.map(narrative).filter(Boolean).map(v => t('下一步：','Next: ') + v) : [])];
     }
   } else if (['SUBTASK_COMPLETED','MASTER_TASK_COMPLETED'].includes(event.eventType)) {
-    result.summary = publicNarrative(object(p.result).summary,lang) || executionSummary([object(p.result)],lang);
+    result.summary = narrative(object(p.result).summary) || executionSummary([object(p.result)],lang);
     fact(t('任务状态','Task status'), ({SUCCEEDED:t('已完成','Completed'),FAILED:t('执行失败','Failed'),REJECTED:t('被拒绝','Rejected'),CANCELLED:t('已取消','Cancelled'),NO_ACTION:t('未执行操作','No Action submitted'),NO_EVIDENCE:t('未返回查询证据','No query evidence')} as Record<string,string>)[str(p.status)] ?? p.status);
   } else if (event.eventType === 'GRAPH_QUERY_RESULT') {
     const evidence=object(p.result); result.summary=t(`从当前授权图谱查询得到 ${str(evidence.totalObjects)} 个对象、${str(evidence.totalRelations)} 条关系；查询不修改状态。`,`Queried ${str(evidence.totalObjects)} objects and ${str(evidence.totalRelations)} relationships in the authorized runtime; no state changes.`);
@@ -219,9 +216,9 @@ export function describeEvent(event: RunEvent, context: EventContext, lang: Lang
     const outcome=object(p.outcome); result.tone=outcome.result==='SUCCEEDED'?'success':'warning';
     result.summary=outcome.result==='SUCCEEDED'?t('达到指定轮数，所有场景效果条件均满足。','At the configured horizon, all business conditions were met.'):outcome.result==='ERROR'?t('效果条件计算出错，请检查定义及数据依赖。','An outcome condition failed to evaluate; check its definition and data dependencies.'):t('达到指定轮数，仍有场景效果条件未满足。','At the configured horizon, some business conditions were not met.');
     result.changes=objects(outcome.conditions).map(c=>`${c.satisfied?'✓':'✗'} ${str(lang==='zh'?c.nameZh:c.nameEn)}`);
-    if (outcome.result === 'NO_CONDITIONS') result.summary = local(terminationMessages, 'OBJECTIVE_NOT_VERIFIABLE');
+    if (outcome.result === 'NO_CONDITIONS') result.summary = lang === 'zh' ? '此目标未配置引擎判定条件' : 'No engine conditions were configured for this objective';
   } else if (event.eventType === 'OBJECTIVE_REVIEWED') {
-    result.summary = str(object(p.review).conclusion) || t('未能生成有可核验依据的结论。', 'A conclusion with verifiable references could not be generated.');
+    result.summary = readableNarrative(object(p.review).conclusion, lang, context) || t('未能生成有可核验依据的结论。', 'A conclusion with verifiable references could not be generated.');
   } else if(event.eventType==='ACTION_TASK_RECEIPT') {
     result.summary=p.accepted===true?t('执行引擎已接受子任务的对象操作。','The engine accepted the worker’s object Action.'):t('执行引擎已拒绝该操作，图谱未改变。','The engine rejected the Action; the graph was unchanged.');
     fact(t('输入 / 输出版本','Input / output version'),`${str(p.inputVersion)} → ${str(p.outputVersion)}`);

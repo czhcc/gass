@@ -12,6 +12,13 @@ const proposed = event(1, 'ACTION_PROPOSED', { action: { actionType: 'REVOKE_SHA
 const accepted = event(2, 'ACTION_ACCEPTED', { actionType: 'REVOKE_SHARING', targetId: 'a', affectedRelationIds: ['share'], reason: 'Declarative CEL action committed as SIMULATED' });
 const context = { events: [proposed, accepted], entities, agents, relations: [] };
 
+it('shows readable objective conclusions while preserving the original event', () => {
+  const finalEvent = event(3, 'OBJECTIVE_REVIEWED', { review: { conclusion: 'a 执行了 REVOKE_SHARING，引擎返回 NO_CONDITIONS。' } });
+  render(EventDetails, { props: { event: finalEvent, context, lang: 'zh' } });
+  expect(screen.getByText('人员 A 执行了撤销共享，引擎返回无可判定条件。')).toBeTruthy();
+  expect(screen.getByText(/a 执行了 REVOKE_SHARING/).closest('details')?.open).toBe(false);
+});
+
 it('labels a fallback round review as an execution summary and shows its counts', () => {
   const fallback = event(3, 'MASTER_REVIEW', { reportSource: 'ENGINE_FALLBACK', report: { completedTasks: 2, acceptedActions: 1, queryCount: 3 } }, 'lead');
   const description = describeEvent(fallback, context, 'zh');
