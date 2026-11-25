@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.trs.simulation.Json;
-import com.trs.simulation.ModelService;
+import com.trs.simulation.common.Json;
+import com.trs.simulation.model.ModelService;
 import java.net.CookieManager;
 import java.net.URI;
 import java.net.http.HttpClient;

@@ -8,8 +8,8 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import com.trs.simulation.Json;
-import com.trs.simulation.ModelService;
+import com.trs.simulation.common.Json;
+import com.trs.simulation.model.ModelService;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFileAttributeView;

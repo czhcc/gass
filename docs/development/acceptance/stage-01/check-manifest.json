@@ -1,0 +1,610 @@
+{
+  "schemaVersion": 1,
+  "stage": 1,
+  "status": "FROZEN",
+  "retrospective": true,
+  "draftedOn": "2026-11-25",
+  "timeZone": "Asia/Shanghai",
+  "frozenAt": "2026-11-25T17:49:28.698+08:00",
+  "approval": {
+    "status": "APPROVED",
+    "approverRole": "项目负责人",
+    "source": "当前会话中的用户确认",
+    "approvedAt": "2026-11-25T17:48:55.3427612+08:00",
+    "statement": "确认，按草案冻结第一阶段必验清单。保留事后补录说明和实际批准时间，外部 LLM 和 MCP 联调不启用，自动 Stage Gate 保留为准入条件，第一次验收的 BLOCKED 记录保留。",
+    "approvedDraftSha256": "c879b1f0adea2cf9b1722f7e80a31f09bd8f2e0ced106062fbd3c0833403b5a4"
+  },
+  "previousStages": [],
+  "notice": "事后补录。草案编制晚于候选提交与第 1 次独立验收。项目负责人在当前会话明确批准。批准按收到确认后首次读取到的本机时间记录，冻结按实际写入时间记录。第 1 次独立验收的 BLOCKED 记录保留。",
+  "baselineCommit": "95ce067282a350c8332699d90f16a9bd51a8c01d",
+  "candidateCommit": "2e3e8f048cfbbe76cd43b59f3eb6c47c352a63e0",
+  "plans": {
+    "development": {
+      "path": "docs/GASS_AI开发实施指南.md",
+      "version": "修订版 2（2026-11-25）",
+      "sha256": "bc91f91cc12a5081a24980fbddc9615927a650a49cdb3392ee48c9edfff4f475"
+    },
+    "acceptance": {
+      "path": "docs/GASS_AI独立验收指南.md",
+      "version": "V1.0（2026-11-25）",
+      "sha256": "987b2bb8aace891d494016dde401bd52d52e59491111493336e70705df2c4d1f"
+    }
+  },
+  "scope": {
+    "summary": "保留既有行为的架构重构，覆盖指南第 3、4 节及第 13 节指定的 E2E-A 和 E2E-K。",
+    "browser": "S1-15 中的工作台回归为必验，使用实际浏览器；E2E-I 完整场景作为后续累积验收。",
+    "laterStageE2E": [
+      "E2E-B",
+      "E2E-C",
+      "E2E-D",
+      "E2E-E",
+      "E2E-F",
+      "E2E-G",
+      "E2E-H",
+      "E2E-I",
+      "E2E-J",
+      "E2E-L",
+      "E2E-M"
+    ],
+    "normalization": "只规范化确知无业务含义的随机 ID、墙钟时间和实际耗时，并保留 ID 引用关系、逻辑时间、事件及其顺序、金额、状态、失败码和授权。"
+  },
+  "conditions": [
+    {
+      "id": "EXTERNAL-MODEL",
+      "enabled": false,
+      "approvalStatus": "APPROVED",
+      "applicability": "NOT_APPLICABLE",
+      "reason": "项目负责人批准本轮不启用外部 LLM 联调。Mock 与本地 OpenAI 协议 fixture 继续用于验证 SDK 契约。"
+    },
+    {
+      "id": "EXTERNAL-MCP",
+      "enabled": false,
+      "approvalStatus": "APPROVED",
+      "applicability": "NOT_APPLICABLE",
+      "reason": "项目负责人批准本轮不启用外部 MCP/KG 联调。"
+    },
+    {
+      "id": "STAGE-GATE",
+      "enabled": true,
+      "approvalStatus": "APPROVED",
+      "applicability": "REQUIRED",
+      "reason": "项目负责人批准保留确定性自动门禁为准入条件。脚本当前缺失，门禁尚未运行。"
+    }
+  ],
+  "execution": {
+    "workspace": "两版使用固定 SHA 的既有隔离副本或经批准的临时副本和相同 fixture。先跑基线后跑候选。使用各自临时 SQLite、回环端口、Mock 或本地模型协议，保护现有数据。",
+    "sampleServerCommand": "mvn -B -f backend/pom.xml package; java -jar backend/bootstart/target/bootstart-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev --server.address=127.0.0.1 --server.port=<隔离端口> --spring.datasource.url=jdbc:sqlite:<临时数据库绝对路径> --studio.model-key-file=<临时密钥路径>",
+    "existingAttempt": "docs/development/acceptance/stage-01/attempt-01/result.json",
+    "existingEvidenceIndex": "docs/development/acceptance/stage-01/attempt-01/evidence-index.json",
+    "fixtures": "命令模板中的独立夹具和完整实参来自第 1 次验收的命令记录与索引。独立 Reviewer 核对固定 SHA、夹具、日志和哈希后决定沿用有效证据或重跑缺项。夹具及原始日志留在隔离目录。",
+    "record": "记录实际命令、工作目录、固定 SHA、起止时间、退出码、测试数量、失败及跳过、日志路径和 SHA-256。",
+    "criterion": "所有 31 个必验项须由独立 Reviewer 核验。适用命令实际成功且证据可查，无未关闭的 BLOCKER/MAJOR；自动门禁按批准范围独立核验。"
+  },
+  "checks": [
+    {
+      "id": "G-01",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "输入一致",
+      "expected": "核对阶段、完整 SHA、祖先关系、指南哈希、冻结与批准记录及候选业务差异。阶段一无前置阶段。",
+      "verificationIds": [
+        "INPUT",
+        "STATIC"
+      ]
+    },
+    {
+      "id": "G-02",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "需求与范围",
+      "expected": "追踪开发指南第 4–6 节至实现和回归。确认候选限于行为保持型重构。",
+      "verificationIds": [
+        "STATIC"
+      ]
+    },
+    {
+      "id": "G-03",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "架构与技术栈",
+      "expected": "核查锁定依赖、bootstart → app → common 和 Java 包依赖无环。",
+      "verificationIds": [
+        "ENV",
+        "STATIC"
+      ]
+    },
+    {
+      "id": "G-04",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "测试完整性",
+      "expected": "对比现有断言与测试配置，核对负例、边界、禁用项和真实业务路径。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "FRONT-TEST"
+      ]
+    },
+    {
+      "id": "G-05",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "后端测试",
+      "expected": "基线与候选都执行 Maven 全 reactor，查验退出码及 Surefire/Failsafe（如有）报告和未经批准的跳过。",
+      "verificationIds": [
+        "MAVEN"
+      ]
+    },
+    {
+      "id": "G-06",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "前端测试及构建",
+      "expected": "两版锁文件安装、全量测试和生产构建均成功，核对报告与既有页面行为。",
+      "verificationIds": [
+        "FRONT-INSTALL",
+        "FRONT-TEST",
+        "FRONT-BUILD",
+        "BROWSER"
+      ]
+    },
+    {
+      "id": "G-07",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "数据兼容",
+      "expected": "核查 V1–V9 无新增或修改，验证空库迁移、旧库升级及候选重开基线历史记录。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "DB-REOPEN"
+      ]
+    },
+    {
+      "id": "G-08",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "API 兼容",
+      "expected": "对比旧请求、响应、错误码、冻结 JSON 和事件读取。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "HTTP-SMOKE",
+        "HTTP-COMPARE",
+        "DB-REOPEN"
+      ]
+    },
+    {
+      "id": "G-09",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "权限与安全",
+      "expected": "核查模型读写和作用域边界及日志脱敏，验证无权读取、提交和引用的负例。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "GRAPH",
+        "EVIDENCE",
+        "OBJECTIVE-ALERT"
+      ]
+    },
+    {
+      "id": "G-10",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "状态一致",
+      "expected": "验证拒绝、版本冲突、幂等重试、提交失败的回滚、顺序及回放无副作用。",
+      "verificationIds": [
+        "MAVEN",
+        "CONCURRENCY",
+        "HTTP-COMPARE",
+        "DB-REOPEN"
+      ]
+    },
+    {
+      "id": "G-11",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "现有业务回归",
+      "expected": "同输入银行、信息场景对照收据、目标、干预、停止恢复、分支、回放及 SSE。",
+      "verificationIds": [
+        "MAVEN",
+        "HTTP-SMOKE",
+        "HTTP-COMPARE"
+      ]
+    },
+    {
+      "id": "G-12",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "工程规范",
+      "expected": "核查 Java 文档与作者、SQL 与命名，验证双语界面和失败反馈。",
+      "verificationIds": [
+        "STATIC",
+        "FORMAT",
+        "FRONT-TEST",
+        "BROWSER"
+      ]
+    },
+    {
+      "id": "G-13",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "交付与可追溯",
+      "expected": "核对文档、回滚点、限制、报告 SHA、证据索引和可访问哈希，检查提交内容。",
+      "verificationIds": [
+        "INPUT",
+        "STATIC",
+        "EVIDENCE-REVIEW"
+      ]
+    },
+    {
+      "id": "S1-01",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "实质拆包与依赖边界",
+      "expected": "对照重构图、源码和实测依赖，确认 graph/evidence 职责独立、模块方向与无环。",
+      "verificationIds": [
+        "STATIC"
+      ]
+    },
+    {
+      "id": "S1-02",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "RunService 职责拆分",
+      "expected": "检查生命周期、持久化、调度、提交、RuntimeHost、预算和终止的调用及实际归属。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN"
+      ]
+    },
+    {
+      "id": "S1-03",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "主从协调职责拆分",
+      "expected": "检查 SDK、委派、上下文、证据、完成与研判边界，验证 invocation 状态隔离。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "OBJECTIVE-ALERT",
+        "EVIDENCE"
+      ]
+    },
+    {
+      "id": "S1-04",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "Spring 加载与调用",
+      "expected": "启动 Spring，验证 Bean 扫描及注入、配置、序列化和 HTTP 入口。",
+      "verificationIds": [
+        "MAVEN",
+        "HTTP-SMOKE"
+      ]
+    },
+    {
+      "id": "S1-05",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "兼容与阶段边界",
+      "expected": "核对迁移、数据库结构、REST/JSON、工具名和参数、依赖及原业务语义。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "HTTP-COMPARE",
+        "DB-REOPEN"
+      ]
+    },
+    {
+      "id": "S1-06",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "同步、lease 与事务",
+      "expected": "同版本双调用、暂停/取消/恢复、提交失败与快照回滚，检查共享锁、版本冲突和写事务范围。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "CONCURRENCY"
+      ]
+    },
+    {
+      "id": "S1-07",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "银行及信息领域同输入",
+      "expected": "对比两版余额、状态、裁定、收据、事件类型及相对顺序和目标判定。",
+      "verificationIds": [
+        "MAVEN",
+        "HTTP-SMOKE",
+        "HTTP-COMPARE"
+      ]
+    },
+    {
+      "id": "S1-08",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "冻结 Action 与历史分支",
+      "expected": "对比冻结修订、回放、Fork、逻辑时钟及旧事件。回放只读。",
+      "verificationIds": [
+        "MAVEN",
+        "HTTP-COMPARE",
+        "DB-REOPEN"
+      ]
+    },
+    {
+      "id": "S1-09",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "保存的文字目标优先",
+      "expected": "纯图谱目标混入默认角色目标和无关告警，核对 QUERY 只读且无无关 Action。",
+      "verificationIds": [
+        "MAVEN",
+        "OBJECTIVE-ALERT"
+      ]
+    },
+    {
+      "id": "S1-10",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "路径排名边界",
+      "expected": "覆盖启用有向边、环、简单路径、并列、深度和返回截断，核对 complete、tiesTruncated、64 跳及 50000 前缀预算。",
+      "verificationIds": [
+        "MAVEN",
+        "GRAPH"
+      ]
+    },
+    {
+      "id": "S1-11",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "缓存键及审计",
+      "expected": "对照相同 run/version/精确 scope/规范参数命中。改变运行、分支、scope 或版本时隔离，reused 仍入审计。",
+      "verificationIds": [
+        "MAVEN",
+        "GRAPH",
+        "OBJECTIVE-ALERT"
+      ]
+    },
+    {
+      "id": "S1-12",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "跨轮当前版本证据",
+      "expected": "查询跨轮复用后执行改变版本的 Action，验证旧查询退出当前证据。",
+      "verificationIds": [
+        "MAVEN",
+        "EVIDENCE",
+        "OBJECTIVE-ALERT"
+      ]
+    },
+    {
+      "id": "S1-13",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "完成引用与旧终止契约",
+      "expected": "覆盖有效、非法、过期、越权、截断引用和有 CEL 条件的场景，核对提前完成、关闭委派、horizon、NO_CONDITIONS 及 OBJECTIVE_REVIEW_COMPLETED。",
+      "verificationIds": [
+        "MAVEN",
+        "EVIDENCE"
+      ]
+    },
+    {
+      "id": "S1-14",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "历史 Action 与最终图谱",
+      "expected": "模拟接收后禁用关系，核对历史和最终视图分开，HierarchyHost.record 返回持久化序号。",
+      "verificationIds": [
+        "MAVEN",
+        "EVIDENCE",
+        "HTTP-COMPARE"
+      ]
+    },
+    {
+      "id": "S1-15",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "浏览器及旧报告兼容",
+      "expected": "验证旧 ObjectiveReview、新字段、原文展开、引用跳转、播放位置和 SSE 去重，浏览器实测与服务端证据互补。",
+      "verificationIds": [
+        "FRONT-TEST",
+        "BROWSER",
+        "HTTP-SMOKE"
+      ]
+    },
+    {
+      "id": "S1-16",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "源码与交付映射",
+      "expected": "核查实际职责、新旧路径、风险、回滚点和测试报告，检查有无无关改动。",
+      "verificationIds": [
+        "INPUT",
+        "STATIC",
+        "EVIDENCE-REVIEW"
+      ]
+    },
+    {
+      "id": "E2E-A",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "原银行/信息场景",
+      "expected": "同输入对比收据、状态、目标和回放。",
+      "verificationIds": [
+        "HTTP-SMOKE",
+        "HTTP-COMPARE",
+        "DB-REOPEN"
+      ]
+    },
+    {
+      "id": "E2E-K",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "文字目标与路径排名",
+      "expected": "同输入检验缓存隔离、证据支持的提前完成、历史行动与最终状态。",
+      "verificationIds": [
+        "MAVEN",
+        "GRAPH",
+        "EVIDENCE",
+        "OBJECTIVE-ALERT",
+        "BROWSER"
+      ]
+    }
+  ],
+  "verification": [
+    {
+      "id": "INPUT",
+      "cwd": "仓库根目录",
+      "target": "repo",
+      "command": "git status --short; git branch --show-current; git rev-parse HEAD 95ce0672 2e3e8f04; git merge-base --is-ancestor 95ce0672 2e3e8f04; Get-FileHash -Algorithm SHA256 -LiteralPath 'docs/GASS_AI开发实施指南.md','docs/GASS_AI独立验收指南.md'",
+      "notes": "逐条记录退出码。按本文档的实际批准日期核对候选绑定。",
+      "required": true
+    },
+    {
+      "id": "STATIC",
+      "cwd": "仓库根目录",
+      "target": "repo",
+      "command": "git diff --stat 95ce0672 2e3e8f04; git diff --name-status 95ce0672 2e3e8f04; git diff 95ce0672 2e3e8f04 -- backend frontend docs scripts; git diff --check 95ce0672 2e3e8f04",
+      "notes": "核对 AGENTS、编码规范及指南 §2.1 所列项目文档。记录源码行号、依赖图、测试 diff、迁移、锁文件与契约差异。",
+      "required": true
+    },
+    {
+      "id": "ENV",
+      "cwd": "隔离副本根目录",
+      "target": "both",
+      "command": "java -version; mvn -version; node --version; pnpm --version; python --version",
+      "notes": "使用 JDK 21、项目锁定的 Node/pnpm 与本机 Maven 设置。PowerShell 采用 mvn.cmd 或 pnpm.cmd。",
+      "required": true
+    },
+    {
+      "id": "MAVEN",
+      "cwd": "backend",
+      "target": "both",
+      "command": "mvn test",
+      "notes": "优先项目 Maven Wrapper（若存在），允许复用已配置的离线 Maven 缓存。全 reactor 执行，保留退出码、日志、XML。",
+      "required": true
+    },
+    {
+      "id": "FORMAT",
+      "cwd": "backend",
+      "target": "candidate",
+      "command": "mvn -pl app,bootstart spotless:check",
+      "notes": "记录实际退出码。独立验收以检查为主。",
+      "required": true
+    },
+    {
+      "id": "FRONT-INSTALL",
+      "cwd": "frontend",
+      "target": "both",
+      "command": "pnpm install --frozen-lockfile",
+      "notes": "允许锁定版本的离线缓存和隔离 store。",
+      "required": true
+    },
+    {
+      "id": "FRONT-TEST",
+      "cwd": "frontend",
+      "target": "both",
+      "command": "pnpm test --reporter=default --reporter=junit --outputFile.junit=<临时报告路径>",
+      "notes": "Vitest 全量非交互运行。",
+      "required": true
+    },
+    {
+      "id": "FRONT-BUILD",
+      "cwd": "frontend",
+      "target": "both",
+      "command": "pnpm build",
+      "notes": "记录实际产物与退出码。",
+      "required": true
+    },
+    {
+      "id": "HTTP-SMOKE",
+      "cwd": "隔离副本根目录",
+      "target": "both",
+      "command": "python scripts/smoke_mock.py --base-url http://127.0.0.1:<隔离端口>",
+      "notes": "先从固定 SHA 构建并启动 Spring 临时实例，使用独立 SQLite、密钥和回环端口。脚本会写入模拟世界和运行数据，只对该实例执行。",
+      "required": true
+    },
+    {
+      "id": "GRAPH",
+      "cwd": "隔离副本根目录",
+      "target": "both",
+      "command": "java @graph-fixture-arguments.txt",
+      "notes": "使用独立 Reviewer 固定图夹具及对应版本类路径。",
+      "required": true
+    },
+    {
+      "id": "EVIDENCE",
+      "cwd": "隔离副本根目录",
+      "target": "both",
+      "command": "java @evidence-fixture-arguments.txt",
+      "notes": "使用独立 Reviewer 固定证据夹具及对应版本类路径。",
+      "required": true
+    },
+    {
+      "id": "OBJECTIVE-ALERT",
+      "cwd": "backend",
+      "target": "both",
+      "command": "mvn -Dtest=ReviewerQueryObjectiveTest#routesAUserObjectiveAndReusesOnlyCurrentGraphEvidenceAcrossRounds -Dsurefire.failIfNoSpecifiedTests=false test",
+      "notes": "先在隔离副本准备 Reviewer 的临时测试并核对源码。两版使用等价 fixture；该临时测试独立于候选全量测试。",
+      "required": true
+    },
+    {
+      "id": "CONCURRENCY",
+      "cwd": "隔离副本根目录",
+      "target": "both",
+      "command": "python concurrency_fixture.py",
+      "notes": "以隔离实例上的两个同版本提交为固定输入。",
+      "required": true
+    },
+    {
+      "id": "BROWSER",
+      "cwd": "隔离副本根目录",
+      "target": "both",
+      "command": "node browser-fixture-verified.mjs",
+      "notes": "用两版生产构建及真实 Chromium 检查 S1-15。记录合成浏览器输入，另用 Spring HTTP 验证真实服务端。",
+      "required": true
+    },
+    {
+      "id": "HTTP-COMPARE",
+      "cwd": "隔离证据根目录",
+      "target": "comparison",
+      "command": "python http_fixture.py compare",
+      "notes": "加载同输入的两版 HTTP/事件轨迹，核对状态、事件/逻辑时间、权限结果、金额与证据。",
+      "required": true
+    },
+    {
+      "id": "DB-REOPEN",
+      "cwd": "隔离证据根目录",
+      "target": "comparison",
+      "command": "python http_fixture.py reopen",
+      "notes": "在候选实例打开基线库的临时副本，核对事件、收据、快照、历史回放与评价。",
+      "required": true
+    },
+    {
+      "id": "EVIDENCE-REVIEW",
+      "cwd": "仓库根目录及隔离证据根目录",
+      "target": "repo",
+      "command": "Get-FileHash -Algorithm SHA256 -LiteralPath <核对的证据文件>",
+      "notes": "逐条查阅独立命令记录及证据索引。校验候选 SHA、日志路径、实际退出码、测试总数/失败/跳过、采集起止时间、哈希和缺陷状态。",
+      "required": true
+    },
+    {
+      "id": "EXTERNAL-MODEL",
+      "cwd": "隔离副本根目录",
+      "target": "conditional",
+      "command": "python scripts/verify_p3.py --base-url http://127.0.0.1:<隔离端口> --model-id <获批模型ID>",
+      "notes": "仅在明确批准外部模型配置、调用范围与预算后适用。使用环境变量提供临时实例认证。",
+      "required": false
+    },
+    {
+      "id": "STAGE-GATE",
+      "cwd": "仓库根目录",
+      "target": "gate",
+      "command": "python scripts/acceptance/stage_gate.py --stage 1",
+      "notes": "指南的命令入口，当前仓库缺实现。待可用且清单冻结后执行此入口或经批准的等效实现，并记录退出码和门禁报告。",
+      "required": true
+    }
+  ],
+  "manifestVersion": 1
+}

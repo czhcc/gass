@@ -17,6 +17,8 @@
 
 `HierarchicalCoordinator` 使用项目锁定版本 AgentScope Java 2.0.5 的 `ReActAgent`、`Toolkit` 和原生 `SubAgentTool`。主 Agent 只注册配置的子 Agent 委派工具，不能提交业务 Action；QUERY 子 Agent 只暴露只读查询工具；ACTION 子 Agent 可读图、获取对象能力并提交操作。执行引擎仍是图谱变更的唯一入口。
 
+协调器位于 `com.trs.simulation.agent`。模型并发和请求预留由 `ModelInvocationGuard` 处理，授权后的观察与 Worker 工具由 `AgentContextBuilder` 和 `WorkerTools` 提供。`CompleteObjective` 使用 `evidence.ObjectiveEvidence` 校验引用，`ObjectiveReviewService` 生成独立的最终研判。所有工具经 `HierarchyHost` 与运行时交互。
+
 一轮是主 Agent 完成一次有限的研判、委派、获取反馈和总结。没有“每个 Agent 每轮必须调用一次”的约束。模拟模型按配置的 `mockRules` 从最新能力与输入中选择任务；真实 LLM 按角色提示词、委派描述、证据与引擎回执决定任务。
 
 | 场景 | 主 Agent | 查询分析子 Agent | 操作子 Agent |

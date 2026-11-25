@@ -5,12 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.trs.simulation.RunGraphReadService;
 import com.trs.simulation.SimulationTypes.AgentDefinition;
 import com.trs.simulation.SimulationTypes.AgentRuntime;
 import com.trs.simulation.SimulationTypes.Entity;
 import com.trs.simulation.SimulationTypes.Relation;
 import com.trs.simulation.SimulationTypes.State;
+import com.trs.simulation.graph.RunGraphReadService;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;

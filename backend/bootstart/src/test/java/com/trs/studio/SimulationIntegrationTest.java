@@ -7,11 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
-import com.trs.simulation.AgentScopeDecisionProvider;
-import com.trs.simulation.Examples;
-import com.trs.simulation.GraphQueries;
-import com.trs.simulation.InformationEnvironment;
-import com.trs.simulation.RunService;
 import com.trs.simulation.SimulationTypes.AgentDefinition;
 import com.trs.simulation.SimulationTypes.Decision;
 import com.trs.simulation.SimulationTypes.Entity;
@@ -21,12 +16,18 @@ import com.trs.simulation.SimulationTypes.Relation;
 import com.trs.simulation.SimulationTypes.Scenario;
 import com.trs.simulation.SimulationTypes.ScheduledInput;
 import com.trs.simulation.SimulationTypes.State;
-import com.trs.simulation.WorldService;
+import com.trs.simulation.agent.AgentScopeDecisionProvider;
+import com.trs.simulation.domain.examples.Examples;
+import com.trs.simulation.domain.information.InformationEnvironment;
+import com.trs.simulation.graph.GraphQueries;
+import com.trs.simulation.runtime.RunService;
+import com.trs.simulation.world.WorldService;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -135,6 +136,56 @@ class SimulationIntegrationTest {
                 .enabled());
         runs.stop(run.id());
         assertThrows(IllegalStateException.class, () -> runs.step(run.id(), "stopped"));
+    }
+
+    @Test
+    void failedSnapshotWriteRollsBackInterventionAndAllowsSameCommandToRetry() {
+        var world = worlds.create(Examples.informationLeak());
+        var agent = new AgentDefinition(
+                "response",
+                "Response",
+                "Reduce risk",
+                "model",
+                List.of("DISABLE_SYNC"),
+                List.of("system_s", "system_t"),
+                10);
+        var scenario = worlds.scenario(new Scenario(null, "rollback", world.id(), List.of(agent), 5, 100));
+        var run = runs.create(scenario.id());
+        runs.pause(run.id());
+        var before = runs.state(run.id());
+        var initialEvents = runs.events(run.id(), 0);
+        var cursor = initialEvents.getLast().sequence();
+        var decision = new Decision("DISABLE_SYNC", "sync_st", Map.of(), "contain spread");
+
+        jdbc.execute("""
+                CREATE TRIGGER reject_intervention_snapshot BEFORE INSERT ON simulation_snapshot
+                BEGIN
+                    SELECT RAISE(ABORT, 'snapshot rejected by test');
+                END
+                """);
+        try {
+            assertThrows(
+                    DataAccessException.class,
+                    () -> runs.intervene(run.id(), "intervene-once", agent.id(), decision, before.version()));
+            assertEquals(before, runs.state(run.id()));
+            assertEquals(initialEvents, runs.events(run.id(), 0));
+            assertEquals(before, runs.replay(run.id(), before.version()));
+        } finally {
+            jdbc.execute("DROP TRIGGER reject_intervention_snapshot");
+        }
+
+        var after = runs.intervene(run.id(), "intervene-once", agent.id(), decision, before.version());
+        assertEquals(before.version() + 1, after.version());
+        assertEquals(after, runs.replay(run.id(), after.version()));
+        var committed = runs.events(run.id(), cursor);
+        assertEquals(
+                List.of("USER_INTERVENTION", "ACTION_PROPOSED", "ACTION_ACCEPTED", "WORLD_STATE_CHANGED"),
+                committed.stream().map(Event::eventType).toList());
+        assertEquals(
+                List.of(cursor + 1, cursor + 2, cursor + 3, cursor + 4),
+                committed.stream().map(Event::sequence).toList());
+        assertEquals(after, runs.intervene(run.id(), "intervene-once", agent.id(), decision, before.version()));
+        assertEquals(committed, runs.events(run.id(), cursor));
     }
 
     @Test
