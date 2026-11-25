@@ -9,6 +9,7 @@ import {
 } from "vue";
 import { api, ApiError } from "../api";
 import { mergeEvents } from "../playback";
+import { usePlayback } from "../usePlayback";
 import ObjectActions from "./ObjectActions.vue";
 import EntityDetails from "./EntityDetails.vue";
 import EventDetails from './EventDetails.vue';
@@ -42,8 +43,6 @@ const runs = ref<Run[]>([]),
   baselineIds = ref<string[]>([]),
   cursor = ref(0),
   live = ref(true),
-  playing = ref(false),
-  speed = ref(1),
   busy = ref(false),
   error = ref(""),
   connection = ref(""),
@@ -63,7 +62,6 @@ const deletionId = ref<string | null>(null), deletionError = ref("");
 const dialog = ref<HTMLElement>(), cancelButton = ref<HTMLButtonElement>(), runSelect = ref<HTMLSelectElement>();
 let deletionTrigger: HTMLElement | undefined;
 let source: EventSource | undefined,
-  timer: ReturnType<typeof setTimeout> | undefined,
   revision = 0,
   taskRevision = 0,
   disposed = false;
@@ -234,10 +232,7 @@ const allowed = computed(
     agents.value.find((a) => a.id === intervention.value.agentId)
       ?.allowedActions ?? [],
 );
-function stopPlayback() {
-  playing.value = false;
-  if (timer) clearTimeout(timer);
-}
+const { playing, speed, stopPlayback, play } = usePlayback(cursor, maxSequence, seek, () => disposed);
 async function listRuns() {
   runs.value = await api<Run[]>("/runs");
   const branches =
@@ -365,24 +360,6 @@ async function showObjectiveEvidence(sequence: number) {
   await seek(sequence);
   await nextTick();
   eventDetailsTarget.value?.scrollIntoView?.({ block: 'start' });
-}
-async function play() {
-  if (playing.value) {
-    stopPlayback();
-    return;
-  }
-  if (cursor.value >= maxSequence.value) await seek(0);
-  playing.value = true;
-  const advance = async () => {
-    if (!playing.value || disposed) return;
-    if (cursor.value >= maxSequence.value) {
-      stopPlayback();
-      return;
-    }
-    await seek(cursor.value + 1, false);
-    if (playing.value) timer = setTimeout(advance, 500 / speed.value);
-  };
-  timer = setTimeout(advance, 500 / speed.value);
 }
 async function command(action: string) {
   busy.value = true;

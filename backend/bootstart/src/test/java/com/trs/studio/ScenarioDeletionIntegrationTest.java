@@ -5,23 +5,27 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.trs.simulation.DemoService;
-import com.trs.simulation.Examples;
-import com.trs.simulation.Json;
-import com.trs.simulation.RunService;
 import com.trs.simulation.SimulationTypes.Entity;
+import com.trs.simulation.SimulationTypes.Event;
 import com.trs.simulation.SimulationTypes.Relation;
 import com.trs.simulation.SimulationTypes.Run;
 import com.trs.simulation.SimulationTypes.ScheduledInput;
 import com.trs.simulation.SimulationTypes.World;
-import com.trs.simulation.WorldService;
+import com.trs.simulation.common.Json;
+import com.trs.simulation.config.DemoService;
+import com.trs.simulation.domain.examples.Examples;
+import com.trs.simulation.runtime.RunService;
+import com.trs.simulation.world.WorldService;
 import java.net.CookieManager;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -73,6 +77,49 @@ class ScenarioDeletionIntegrationTest {
         assertTrue(send(client, "GET", "/api/runs/" + run.id() + "/usage", null)
                 .body()
                 .contains("reserved_tokens"));
+    }
+
+    @Test
+    @Timeout(20)
+    void reconnectStreamsPersistedEventsInOrderUsingLastEventId() throws Exception {
+        var client = HttpClient.newBuilder().cookieHandler(new CookieManager()).build();
+        assertEquals(
+                200,
+                send(client, "POST", "/api/auth/login", Map.of("username", "admin", "password", "123456"))
+                        .statusCode());
+        var run = demos.create("bank", worlds.create(Examples.bankTransfer()).id(), 3);
+        runs.step(run.id(), "stream-fixture");
+        var persisted = runs.events(run.id(), 0);
+        var cursor = persisted.getLast().sequence() - 3;
+        var expected =
+                persisted.stream().filter(event -> event.sequence() > cursor).toList();
+        assertEquals(3, expected.size());
+
+        String path = "/api/runs/" + run.id();
+        var eventResponse = send(client, "GET", path + "/events?after=" + cursor, null);
+        assertEquals(200, eventResponse.statusCode());
+        assertEquals(expected, List.of(Json.read(eventResponse.body(), Event[].class)));
+
+        var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path + "/stream?after=0"))
+                .timeout(Duration.ofSeconds(10))
+                .header("Accept", "text/event-stream")
+                .header("Last-Event-ID", Long.toString(cursor))
+                .build();
+        var response = client.send(request, HttpResponse.BodyHandlers.ofLines());
+        try (var body = response.body()) {
+            assertEquals(200, response.statusCode());
+            assertTrue(response.headers().firstValue("Content-Type").orElse("").startsWith("text/event-stream"));
+            var lines = body.iterator();
+            for (var event : expected) {
+                assertEquals("id:" + event.sequence(), lines.next());
+                assertEquals("event:simulation", lines.next());
+                var data = lines.next();
+                assertTrue(data.startsWith("data:"));
+                assertEquals(event, Json.read(data.substring("data:".length()), Event.class));
+                assertEquals("", lines.next());
+            }
+        }
+        assertEquals(persisted, runs.events(run.id(), 0));
     }
 
     @Test

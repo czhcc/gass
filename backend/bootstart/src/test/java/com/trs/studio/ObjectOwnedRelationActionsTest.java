@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.trs.simulation.Examples;
-import com.trs.simulation.InformationActionEngine;
 import com.trs.simulation.InformationOntology;
 import com.trs.simulation.SimulationTypes.AgentDefinition;
 import com.trs.simulation.SimulationTypes.Decision;
@@ -15,6 +13,8 @@ import com.trs.simulation.SimulationTypes.Outcome;
 import com.trs.simulation.SimulationTypes.Relation;
 import com.trs.simulation.SimulationTypes.State;
 import com.trs.simulation.SimulationTypes.World;
+import com.trs.simulation.domain.examples.Examples;
+import com.trs.simulation.domain.information.InformationActionEngine;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

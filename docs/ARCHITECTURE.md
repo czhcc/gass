@@ -6,9 +6,32 @@
 
 `ActionLibraryService` 维护 V8 草稿 / 不可变发布修订；生成器复用模型配置与并发限制，只保存合法草稿。显式发布、绑定和场景授权后，新运行才使用该定义。完整定义随世界和运行冻结，编辑和重新绑定不改变已有回放或分支。模型决策上下文仅包含可见能力的参数规范、说明和条件提示，不发送执行程序；完整运行契约仍由引擎与人工干预 UI 使用。详细格式与资源边界见 [声明式 Action](DECLARATIVE_ACTIONS.md)。
 
+## 推演组件
+
+`runtime.RunService` 提供原有运行入口并持有运行锁。轮次时钟与待投递输入由 `RoundScheduler` 处理，冻结数据和审计日志由 `RunStateRepository` 读取，`ActionCommitService` 提交裁定及状态快照，`RunTerminationPolicy` 执行既有终止规则和共享预算。完整源码路径见 [第一阶段重构映射](development/REFACTOR_MAP.md)。
+
+```mermaid
+flowchart LR
+    API[REST / SSE] --> Runtime[RunService]
+    API --> History[HistoryService]
+    History --> Runtime
+    Runtime --> Scheduler[RoundScheduler]
+    Runtime --> Termination[RunTerminationPolicy]
+    Runtime --> Store[RunStateRepository]
+    Runtime --> Coordinator[HierarchicalCoordinator]
+    Coordinator --> Graph[graph 查询与缓存]
+    Coordinator --> Evidence[evidence 投影与校验]
+    Coordinator -->|HierarchyHost 契约| Host[HierarchyRuntimeHost]
+    Host -->|校验并协调提交| Commit[ActionCommitService]
+    Runtime --> Commit
+    Commit --> Store
+    Store --> SQLite[(SQLite 日志与运行数据)]
+    Commit --> SQLite
+```
+
 ## 决策与状态隔离
 
-`Model → AgentScope ReActAgent → DecisionProvider → DomainEnvironment → RunService事务提交 → SQLite事件/快照 → SSE/查询 → GUI`
+`Model → AgentScope ReActAgent → DecisionProvider → DomainEnvironment → ActionCommitService → SQLite 事件/快照 → SSE/查询 → GUI`
 
 - 模型仅收到授权观察，不能访问世界表、连接或任意 HTTP/SQL 工具。
 - AgentScopeDecisionProvider 使用锁定并核实 API 的 Java SDK 2.0.5。支持 OpenAIChatModel 与显式 SimulatedModel；两者共用真实 SDK 工具/结构化输出流程。
@@ -32,6 +55,8 @@ Fork 原子复制精确状态、冻结场景、当时待处理事件和受限反
 Vue 3 + TypeScript + Pinia + Vue Router hash 路由。Cytoscape 反映后端实体/关系和状态；对象高亮同时提供标签与图例。ECharts 比较潜在范围/模拟暴露/干预数量或账户余额，并有可读数据表。
 
 SSE 每条记录具有持久化 sequence；Last-Event-ID 或 after 恢复，前端按 sequence 去重排序。SSE 不是存储。连接关闭/超时会清理后台轮询。模拟计算与历史播放分离：计算控制调用生命周期/step，播放、拖动、事件跳转只读取 replay。
+
+`RunStudio.vue` 通过 `usePlayback` 按播放速度读取历史事件位置。事件序号、引用跳转与 SSE 更新仍由工作台协调。
 
 ## 两个领域
 

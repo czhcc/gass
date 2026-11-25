@@ -4,11 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.trs.simulation.DemoService;
-import com.trs.simulation.HistoryService;
-import com.trs.simulation.Json;
-import com.trs.simulation.RunService;
-import com.trs.simulation.WorldService;
+import com.trs.simulation.common.Json;
+import com.trs.simulation.config.DemoService;
+import com.trs.simulation.history.HistoryService;
+import com.trs.simulation.runtime.RunService;
+import com.trs.simulation.world.WorldService;
 import java.net.CookieManager;
 import java.net.URI;
 import java.net.http.HttpClient;

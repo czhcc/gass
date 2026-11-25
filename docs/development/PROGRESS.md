@@ -1,0 +1,46 @@
+# 第一阶段开发记录
+
+## 基线
+
+2026-11-25 从 `main` 创建 `refactor/simulation-structure`。基线为 `95ce067282a350c8332699d90f16a9bd51a8c01d`，包含评审提交 `1e11b598` 之后的后端 Spotless 配置和开发、验收指南。初始工作区只有未跟踪的 `.idea/`，保留原状。Flyway 最高版本为 V9。
+
+| 同一 fixture 的回归参照 | 基线行为及候选复测 |
+| --- | --- |
+| 银行 Mock，`HierarchicalFrameworkIntegrationTest` | 首轮写入一笔交易，账户总余额为 1,200,000,000 分，收据引用 `demo-initial`，重试原命令复用结果。四轮时业务评价为 `SUCCEEDED`。 |
+| 信息 Mock，`HierarchicalFrameworkIntegrationTest` | 一轮截止时运行结束原因是 `OBJECTIVE_NOT_MET`；八轮时为 `SUCCEEDED`，相关共享和同步边已禁用，响应任务成功。 |
+| 回放与历史分支，`ContinuationIntegrationTest`、`HierarchicalFrameworkIntegrationTest` | 分支读取指定事件对应的精确快照，保持祖先时钟，隔离父分支状态与未来注入。回放读取无需调用模型。 |
+| 文字目标和历史证据，`HierarchyModelContractTest` | 有效引用可在首轮提前完成，业务记录为 `NO_CONDITIONS`；已执行 Action 的历史结果与最终图谱视图分开。下一轮只复用当前版本的查询证据。 |
+| 排名、缓存、权限，`ObjectiveGraphQueryTest`、`HierarchyGatewayIntegrationTest` | 启用、有向关系上的简单路径保留并列，深度受限报告不完整。等价请求在同 runId、version 与确切授权范围命中，运行、分支、版本或范围不同则隔离。版本冲突、越权、取消均保留现有裁定。 |
+| Action 事务，`SimulationIntegrationTest` 新特征 | 快照写入失败时，状态、事件、回放和幂等键同步回滚。重试同键产生连续的 `USER_INTERVENTION → ACTION_PROPOSED → ACTION_ACCEPTED → WORLD_STATE_CHANGED` 序列。 |
+| 播放，`RunStudio.test.ts` 扩展 | 从历史位置自动前进，只 GET 对应事件的回放接口，到末端停止。 |
+
+比对使用测试中的业务结果、事件类型与顺序及快照内容，随机生成的运行 ID 和实际耗时仅用于定位。
+
+## 交付
+
+- 完成包迁移和运行边界拆分。按非空行计，`RunService` 从 1,442 行降到 751 行，`HierarchicalCoordinator` 从 1,083 行降到 478 行。路径、依赖、偏差与回滚点见 [REFACTOR_MAP.md](REFACTOR_MAP.md)。
+- 新增回滚和 SSE 续传集成测试。SSE 测试在真实 Spring HTTP 端口比对 `Last-Event-ID` 续传结果、事件查询 JSON 和持久化日志，验证读取后原事件不变。回滚和定时播放特征断言分别先在拆分前通过。
+- REST 继续通过原有生命周期、Action、查询与回放入口工作。业务 DTO 字段、构造器、事件名、持久化格式与 API 映射沿用原实现。V1–V9 文件保持原样。空库迁移、旧世界目录迁移、冻结运行读取、回放和分支的自动化测试通过。
+- 当前提交为独立的第一阶段开发提交。可用 `git log -1 -- docs/development/PROGRESS.md` 查阅提交号。
+
+## 实际验证
+
+| 时点 | 命令与结果 |
+| --- | --- |
+| 修改前 | 后端 Maven `test`，92 项通过，0 失败、0 跳过。前端 `pnpm.cmd test`，82 项通过。 |
+| 修改前 | `pnpm.cmd build` 在沙箱默认 `dist` 清理时返回 EPERM。使用 `pnpm.cmd build --outDir <临时目录>` 后通过。 |
+| 分批迁移 | 领域和配置集成测试 16 项，Action、图谱、领域回归 21 项，HTTP、运行终止与模型契约 32 项，运行时专项 43 项，协调器专项 23 项，均通过。 |
+| 修改后 | 后端 Maven `-B -o -s <本机 Maven 设置> test`，94 项通过，0 失败、0 错误、0 跳过。 |
+| 修改后 | Maven `-pl app,bootstart spotless:apply spotless:check` 通过。当前包的 import 依赖图无跨包环。 |
+| 修改后 | `pnpm.cmd test`，82 项通过。`pnpm.cmd build` 在本机默认 `dist` 通过，Vite 保留基线已有的分块体积提示。 |
+
+本机 Maven 首次在沙箱内无法访问依赖库，随后用已配置的本机 Maven 缓存完成验证。包迁移期间有编译期可见性及 import 错误，已修正。一次 Spring 上下文因残留旧包字节码出现 Bean 同名，后续清理 Maven 产物并重新测试通过。模型验证使用 Mock 与本地模型协议 fixture。独立人工验收、实际浏览器操作和外部模型服务联调未执行。
+
+## 后续阶段登记
+
+| 现有行为 | 计划阶段 |
+| --- | --- |
+| 旧查询事件可能缺少 `scopeIds`，查询完整性和可见范围逻辑分散。 | 阶段 2 统一可见性，阶段 5 扩展外部覆盖范围语义。 |
+| 历史 Action 证据通过相邻事件序号关联。 | 阶段 2 引入显式 Action 关联，阶段 4 扩展因果链。 |
+| `complete_objective` 与运行终止耦合，未来轮次约束和证据充分性仍受现有提示词及规则限制。 | 阶段 3 明确完成、评价及终止门禁，阶段 6–7 增强证据与评价。 |
+| 时钟随轮次推进，每轮最多处理 10 条到期输入。 | 阶段 3 调整时钟与持久化调度。 |

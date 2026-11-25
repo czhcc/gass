@@ -18,6 +18,7 @@ vi.mock("./components/Comparison.vue", () => ({
 }));
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -172,6 +173,13 @@ describe("historical playback", () => {
         entities: [],
         relations: [],
       },
+      "/runs/r1/replay?sequence=1": {
+        runId: "r1",
+        simulationTime: 1,
+        version: 1,
+        entities: [],
+        relations: [],
+      },
       "/runs/r1/evaluation": {},
     };
     const fetcher = vi.fn().mockImplementation(async (url: string) => ({
@@ -200,5 +208,15 @@ describe("historical playback", () => {
     expect(
       fetcher.mock.calls.every((call) => !String(call[0]).includes("/step")),
     ).toBe(true);
+    fetcher.mockClear();
+    vi.useFakeTimers();
+    await fireEvent.click(screen.getByRole("button", { name: "Play" }));
+    await vi.advanceTimersByTimeAsync(500);
+    expect(screen.getByTestId("world-version").textContent).toContain("1");
+    await vi.advanceTimersByTimeAsync(500);
+    expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
+    expect(fetcher.mock.calls.map(([url, options]) => [url, options?.method])).toEqual([
+      ["/api/runs/r1/replay?sequence=1", "GET"],
+    ]);
   });
 });
