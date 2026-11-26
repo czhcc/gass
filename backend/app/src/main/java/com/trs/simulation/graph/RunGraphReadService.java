@@ -20,8 +20,8 @@ public class RunGraphReadService {
             Set.of("graph_get_entity", "graph_neighbors", "graph_subgraph", "graph_path", "graph_metrics");
     private final LinkedHashMap<QueryKey, Map<String, Object>> cache = new LinkedHashMap<>(128, 0.75f, true);
 
-    /** Auditable read result and whether computation was reused. @author czhcc-trsdsj\codexsandboxoffline */
-    public record GraphRead(Map<String, Object> result, boolean reused) {}
+    /** Auditable result with the exact scope used for projection and cache lookup. @author czhcc-trsdsj\codexsandboxoffline */
+    public record GraphRead(Map<String, Object> result, boolean reused, List<String> scopeIds) {}
 
     /** Identifies the authorized projection and effective query arguments. @author czhcc-trsdsj\codexsandboxoffline */
     private record QueryKey(
@@ -40,11 +40,11 @@ public class RunGraphReadService {
         var args = normalized(tool, arguments);
         var key = new QueryKey(state.runId(), state.version(), ids, tool, args);
         var previous = cache.get(key);
-        if (previous != null) return new GraphRead(previous, true);
+        if (previous != null) return new GraphRead(previous, true, List.copyOf(ids));
         var result = query(ids, state, tool, args);
         cache.put(key, result);
         if (cache.size() > 128) cache.pollFirstEntry();
-        return new GraphRead(result, false);
+        return new GraphRead(result, false, List.copyOf(ids));
     }
 
     private Map<String, Object> normalized(String tool, Map<String, Object> args) {

@@ -70,17 +70,8 @@ final class WorkerTools {
                     Map<String, Object> arguments) {
         host.check();
         if (++queries > 5) throw new IllegalArgumentException("Task query limit reached");
-        var projected = new AgentDefinition(
-                agent.id(),
-                agent.name(),
-                agent.goal(),
-                agent.modelId(),
-                agent.allowedActions(),
-                List.copyOf(host.visibleIds(agent)),
-                agent.maxDecisions(),
-                agent.runtime());
         var args = arguments == null ? Map.<String, Object>of() : arguments;
-        var read = graph.read(projected, host.state(), tool, args);
+        var read = graph.read(agent, host.state(), tool, args);
         var result = read.result();
         if (Json.write(result).length() > 24000)
             throw new IllegalArgumentException("Query result too large; reduce limit");
@@ -99,9 +90,9 @@ final class WorkerTools {
                         "result",
                         result,
                         "scopeSize",
-                        projected.visibleEntityIds().size(),
+                        read.scopeIds().size(),
                         "scopeIds",
-                        projected.visibleEntityIds(),
+                        read.scopeIds(),
                         "reused",
                         read.reused()));
         var cited = new LinkedHashMap<>(result);

@@ -295,6 +295,75 @@ class ContinuationIntegrationTest {
     }
 
     @Test
+    void commitsALegalTransferBeyondTheInitialBalanceCapAndPreservesTheTemplateCap() {
+        var base = Examples.bankTransfer();
+        long initialCap = 1_000_000_000_000L;
+        var accounts = base.entities().stream()
+                .map(account -> account.id().equals("account_b")
+                        ? new Entity(
+                                account.id(),
+                                account.type(),
+                                account.name(),
+                                Map.of("balanceMinor", initialCap, "currency", "CNY"))
+                        : account)
+                .toList();
+        var template = new World(
+                null,
+                base.name(),
+                base.domainCode(),
+                base.entityTypes(),
+                base.relationTypes(),
+                accounts,
+                base.relations(),
+                1,
+                base.ontology());
+        var world = worlds.create(template);
+        var agent = new AgentDefinition(
+                "bank", "Bank", "Transfer", "mock", List.of("TRANSFER"), List.of("account_a", "account_b"), 5);
+        var scenario = worlds.scenario(new Scenario(null, "Boundary transfer", world.id(), List.of(agent), 5, 100));
+        var run = runs.create(scenario.id());
+        var decision = new Decision(
+                "TRANSFER",
+                "account_b",
+                Map.of("sourceId", "account_a", "amount", "0.01", "currency", "CNY"),
+                "One cent",
+                "ENTITY");
+        var before = runs.state(run.id());
+        var after = runs.intervene(run.id(), "boundary", agent.id(), decision, before.version());
+        var accepted = runs.events(run.id(), 0).stream()
+                .filter(e -> e.eventType().equals("ACTION_ACCEPTED"))
+                .findFirst();
+        assertTrue(accepted.isPresent(), () -> runs.events(run.id(), 0).toString());
+        assertEquals(1, after.version());
+        assertEquals(initialCap + 1, balance(after, "account_b"));
+        assertEquals(balance(before, "account_a") - 1, balance(after, "account_a"));
+        assertEquals(after, runs.replay(run.id(), after.version()));
+        assertEquals(after, runs.intervene(run.id(), "boundary", agent.id(), decision, before.version()));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> worlds.create(new World(
+                        null,
+                        "Over cap",
+                        world.domainCode(),
+                        world.entityTypes(),
+                        world.relationTypes(),
+                        after.entities(),
+                        world.relations(),
+                        1,
+                        world.ontology())));
+    }
+
+    private long balance(State state, String id) {
+        return ((Number) state.entities().stream()
+                        .filter(e -> e.id().equals(id))
+                        .findFirst()
+                        .orElseThrow()
+                        .properties()
+                        .get("balanceMinor"))
+                .longValue();
+    }
+
+    @Test
     void bankRejectsInvalidInitialBalancesAndFractionalMinorUnits() {
         var w = Examples.bankTransfer();
         var invalid = new ArrayList<Entity>(w.entities());

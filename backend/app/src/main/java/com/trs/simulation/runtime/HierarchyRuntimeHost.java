@@ -142,7 +142,15 @@ final class HierarchyRuntimeHost implements HierarchyHost {
             var existing = runs.tasks(id).stream()
                     .filter(t -> t.taskId().equals(taskId))
                     .findFirst();
-            if (existing.isPresent()) return existing.get();
+            if (existing.isPresent()) {
+                var previous = existing.get();
+                if (!previous.agentId().equals(agent.id())
+                        || !Objects.equals(previous.parentTaskId(), parentId)
+                        || !previous.request().equals(request)) {
+                    throw new IllegalArgumentException("Task identifier already belongs to another request");
+                }
+                return previous;
+            }
             if (store.decisionCount(id, agent.id()) >= agent.maxDecisions())
                 throw new IllegalStateException("Agent task budget exhausted");
             if (parentId != null
@@ -151,9 +159,15 @@ final class HierarchyRuntimeHost implements HierarchyHost {
                                     && t.parentTaskId() == null
                                     && t.status().equals("RUNNING")))
                 throw new IllegalArgumentException("Active parent task required");
+            var effective = parentId == null ? agent : taskAgent(scenario(), agent.id(), request);
+            if (parentId != null
+                    && (!visibleIds(effective).containsAll(request.scopeIds())
+                            || !effective.allowedActions().containsAll(request.allowedActions()))) {
+                throw new IllegalArgumentException("Task exceeds the child role scope or permissions");
+            }
             if (request.inputEventId() != null
                     && history().stream()
-                            .noneMatch(e -> visibleInput(agent, e)
+                            .noneMatch(e -> visibleInput(effective, e)
                                     && request.inputEventId().equals(e.payload().get("scheduledEventId"))))
                 throw new IllegalArgumentException("Task input event is outside the authorized scope");
             tx.executeWithoutResult(t -> {
@@ -262,34 +276,9 @@ final class HierarchyRuntimeHost implements HierarchyHost {
             var current = state();
             var scene = scenario();
             var team = scene.team();
-            var role = scene.agents().stream()
-                    .filter(member -> member.id().equals(activeTask.agentId()))
-                    .findFirst()
-                    .orElseThrow();
-            if (!role.runtime().role().equals("ACTION") || activeTask.parentTaskId() == null) {
+            var effective = taskAgent(scene, activeTask.agentId(), activeTask.request());
+            if (!effective.runtime().role().equals("ACTION") || activeTask.parentTaskId() == null) {
                 throw new IllegalArgumentException("Task lacks mutation authority");
-            }
-            var root = scene.agents().stream()
-                    .filter(member -> member.id().equals(team.rootAgentId()))
-                    .findFirst()
-                    .orElseThrow();
-            var effective = VisibilityPolicy.restrict(role, visibleIds(root));
-            if (!activeTask.request().scopeIds().isEmpty()) {
-                effective = VisibilityPolicy.restrict(
-                        effective, activeTask.request().scopeIds());
-            }
-            if (!activeTask.request().allowedActions().isEmpty()) {
-                effective = new AgentDefinition(
-                        effective.id(),
-                        effective.name(),
-                        effective.goal(),
-                        effective.modelId(),
-                        effective.allowedActions().stream()
-                                .filter(activeTask.request().allowedActions()::contains)
-                                .toList(),
-                        effective.visibleEntityIds(),
-                        effective.maxDecisions(),
-                        effective.runtime());
             }
             if (decision.reason() == null
                     || decision.reason().length() > 1000
@@ -299,7 +288,7 @@ final class HierarchyRuntimeHost implements HierarchyHost {
             var command = new ActionCommitService.Command(
                     id,
                     "task:" + task.taskId(),
-                    role.id(),
+                    effective.id(),
                     expectedVersion,
                     decision,
                     "AGENT_ACTION",
@@ -355,6 +344,18 @@ final class HierarchyRuntimeHost implements HierarchyHost {
             receipts.put(task.taskId(), receipt);
             return receipt;
         }
+    }
+
+    private AgentDefinition taskAgent(Scenario scene, String agentId, TaskRequest request) {
+        var role = scene.agents().stream()
+                .filter(member -> member.id().equals(agentId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unknown task agent"));
+        var root = scene.agents().stream()
+                .filter(member -> member.id().equals(scene.team().rootAgentId()))
+                .findFirst()
+                .orElseThrow();
+        return VisibilityPolicy.delegated(role, root, request);
     }
 
     private boolean visibleInput(AgentDefinition agent, Event event) {

@@ -1,5 +1,6 @@
 package com.trs.simulation;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import java.util.Map;
@@ -164,7 +165,26 @@ public final class SimulationTypes {
             List<String> allowedActions,
             List<String> visibleEntityIds,
             int maxDecisions,
-            AgentRuntime runtime) {
+            AgentRuntime runtime,
+            @JsonIgnore Set<String> taskScopeLimit) {
+        /** Copies the internal scope limit so a delegated grant cannot change after creation. @author czhcc-trsdsj\codexsandboxoffline */
+        public AgentDefinition {
+            taskScopeLimit = taskScopeLimit == null ? null : Set.copyOf(taskScopeLimit);
+        }
+
+        /** Creates a frozen role with its normal derived visibility. @author czhcc-trsdsj\codexsandboxoffline */
+        public AgentDefinition(
+                String id,
+                String name,
+                String goal,
+                String modelId,
+                List<String> allowedActions,
+                List<String> visibleEntityIds,
+                int maxDecisions,
+                AgentRuntime runtime) {
+            this(id, name, goal, modelId, allowedActions, visibleEntityIds, maxDecisions, runtime, null);
+        }
+
         /** Preserves frozen legacy agent definitions. @author czhcc-trsdsj\codexsandboxoffline */
         public AgentDefinition(
                 String id,

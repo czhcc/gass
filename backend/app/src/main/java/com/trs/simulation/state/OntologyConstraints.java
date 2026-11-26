@@ -199,7 +199,8 @@ public final class OntologyConstraints {
                     raw instanceof Number && currency instanceof String code && code.matches("[A-Z]{3}"),
                     "Invalid bank account currency or balance");
             long value = new BigDecimal(raw.toString()).longValueExact();
-            require(value >= 0 && value <= 1_000_000_000_000L, "Bank account balance outside allowed range");
+            // The initial balance cap belongs to template admission. Runtime balances can grow through transfers.
+            require(value >= 0, "Bank account balance cannot be negative");
             totals.merge(currency.toString(), value, Math::addExact);
         }
         return totals;

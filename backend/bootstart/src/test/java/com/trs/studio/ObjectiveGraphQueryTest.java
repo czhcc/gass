@@ -11,8 +11,11 @@ import com.trs.simulation.SimulationTypes.Entity;
 import com.trs.simulation.SimulationTypes.Event;
 import com.trs.simulation.SimulationTypes.Relation;
 import com.trs.simulation.SimulationTypes.State;
+import com.trs.simulation.SimulationTypes.TaskRequest;
+import com.trs.simulation.common.Json;
 import com.trs.simulation.evidence.ObjectiveEvidence;
 import com.trs.simulation.graph.RunGraphReadService;
+import com.trs.simulation.state.VisibilityPolicy;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,6 +119,77 @@ class ObjectiveGraphQueryTest {
         var again = graph.read(queryWorker, state, "graph_get_entity", params);
         assertTrue(again.reused());
         assertEquals(first.result(), again.result());
+    }
+
+    @Test
+    void taskScopeCapsDerivedTransactionsInQueriesCacheAndCitations() {
+        var state = new State(
+                "bank",
+                1,
+                2,
+                List.of(
+                        new Entity("debit", "BANK_ACCOUNT", "Debit", Map.of("lastReceipt", "tx")),
+                        entity("credit", "BANK_ACCOUNT"),
+                        new Entity(
+                                "tx",
+                                "TRANSACTION",
+                                "Receipt",
+                                Map.of("sourceId", "debit", "targetId", "credit", "amountMinor", 42))),
+                List.of(edge("debit", "tx", true)));
+        var role = new AgentDefinition(
+                "query",
+                "Query",
+                "Observe",
+                "mock",
+                List.of(),
+                List.of("debit", "credit"),
+                5,
+                new AgentRuntime("QUERY", "query", "Observe", List.of("graph_get_entity", "graph_subgraph")));
+        var task = VisibilityPolicy.restrict(role, List.of("debit", "credit"));
+        var graphArgs = Map.<String, Object>of();
+        var transactionArgs = Map.<String, Object>of("entityId", "tx");
+        assertFalse(graph.read(role, state, "graph_get_entity", transactionArgs).reused());
+        assertThrows(
+                IllegalArgumentException.class, () -> graph.read(task, state, "graph_get_entity", transactionArgs));
+
+        var full = graph.read(role, state, "graph_subgraph", graphArgs);
+        var limited = graph.read(task, state, "graph_subgraph", graphArgs);
+        assertFalse(limited.reused());
+        var objects = (List<?>) limited.result().get("entities");
+        assertEquals(
+                List.of("debit", "credit"),
+                objects.stream().map(Entity.class::cast).map(Entity::id).toList());
+        assertFalse(((Entity) objects.getFirst()).properties().containsKey("lastReceipt"));
+        assertEquals(List.of(), limited.result().get("relations"));
+        assertTrue(graph.read(task, state, "graph_subgraph", graphArgs).reused());
+        assertEquals(
+                full.result(),
+                graph.read(role, state, "graph_subgraph", graphArgs).result());
+
+        var evidence = new Event(
+                state.runId(),
+                1,
+                "GRAPH_QUERY_RESULT",
+                state.simulationTime(),
+                role.id(),
+                Map.of("scopeIds", List.copyOf(VisibilityPolicy.readableIds(role, state)), "result", full.result()));
+        assertFalse(ObjectiveEvidence.usableForCompletion(evidence, VisibilityPolicy.readableIds(task, state), 2));
+        assertTrue(ObjectiveEvidence.usableForCompletion(evidence, VisibilityPolicy.readableIds(role, state), 2));
+        var explicitlyAllowed = VisibilityPolicy.restrict(role, List.of("debit", "credit", "tx"));
+        assertTrue(graph.read(explicitlyAllowed, state, "graph_get_entity", transactionArgs)
+                .reused());
+        var composed = VisibilityPolicy.restrict(task, List.of("debit", "credit", "tx"));
+        assertThrows(
+                IllegalArgumentException.class, () -> graph.read(composed, state, "graph_get_entity", transactionArgs));
+        var withoutCounterparty = VisibilityPolicy.restrict(role, List.of("debit", "tx"));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> graph.read(withoutCounterparty, state, "graph_get_entity", transactionArgs));
+        var inherited = VisibilityPolicy.delegated(role, task, new TaskRequest("Observe", List.of(), List.of(), null));
+        assertEquals(Set.of("debit", "credit"), VisibilityPolicy.readableIds(inherited, state));
+        var implicit = VisibilityPolicy.delegated(role, role, new TaskRequest("Observe", List.of(), List.of(), null));
+        assertEquals(Set.of("debit", "credit", "tx"), VisibilityPolicy.readableIds(implicit, state));
+        assertEquals(Json.write(role), Json.write(task));
     }
 
     @Test

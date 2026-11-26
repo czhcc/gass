@@ -353,22 +353,10 @@ public class HierarchicalCoordinator {
                                 .filter(agent -> agent.id().equals(root.agentId()))
                                 .findFirst()
                                 .orElseThrow();
-                        var narrowed = VisibilityPolicy.restrict(child, host.visibleIds(master));
-                        if (!host.visibleIds(narrowed).containsAll(request.scopeIds())
+                        var effective = VisibilityPolicy.delegated(child, master, request);
+                        if (!host.visibleIds(effective).containsAll(request.scopeIds())
                                 || !child.allowedActions().containsAll(request.allowedActions()))
                             throw new IllegalArgumentException("Task exceeds the child role scope or permissions");
-                        var effective = new AgentDefinition(
-                                child.id(),
-                                child.name(),
-                                child.goal(),
-                                child.modelId(),
-                                request.allowedActions().isEmpty() ? child.allowedActions() : request.allowedActions(),
-                                request.scopeIds().isEmpty()
-                                        ? narrowed.visibleEntityIds()
-                                        : VisibilityPolicy.restrict(narrowed, request.scopeIds())
-                                                .visibleEntityIds(),
-                                child.maxDecisions(),
-                                child.runtime());
                         started = host.startTask(taskId, root.taskId(), effective, request);
                         if (!started.status().equals("RUNNING"))
                             return Mono.just(ToolResultBlock.text(Json.write(started.result())));

@@ -155,6 +155,29 @@ class DeclarativeActionEngineTest {
     }
 
     @Test
+    void transferRejectsOverflowWithoutMutatingEitherAccount() {
+        var bank = Examples.bankTransfer();
+        var entities = bank.entities().stream()
+                .map(account -> account.id().equals("account_b")
+                        ? new Entity(
+                                account.id(),
+                                account.type(),
+                                account.name(),
+                                Map.of("currency", "CNY", "balanceMinor", Long.MAX_VALUE))
+                        : account)
+                .toList();
+        var original = new State("bank", 0, 0, entities, bank.relations());
+        var result = engine.execute(
+                bank,
+                agent(bank, "TRANSFER"),
+                decision("TRANSFER", "account_b", Map.of("sourceId", "account_a", "amount", "0.01", "currency", "CNY")),
+                original);
+        assertFalse(result.accepted());
+        assertEquals("ACTION_PRECONDITION_FAILED", result.code());
+        assertEquals(original, result.state());
+    }
+
+    @Test
     void customCelCanCalculatePropertiesWithoutWritingJavaAndFailuresRollBackAllOperations() {
         var w = Examples.informationLeak();
         var action = new ActionDefinition(

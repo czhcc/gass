@@ -49,7 +49,7 @@ final class AgentContextBuilder {
                 .toList();
         var work = new ArrayList<Map<String, Object>>();
         for (var child : agent.runtime().role().equals("MASTER") ? children : List.of(agent)) {
-            var capabilities = host.capabilities(VisibilityPolicy.restrict(child, scope)).stream()
+            var capabilities = host.capabilities(VisibilityPolicy.underParent(child, agent)).stream()
                     .filter(ActionCapability::available)
                     .limit(24)
                     .map(c -> Map.of(
