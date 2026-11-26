@@ -1,0 +1,884 @@
+{
+  "schemaVersion": 1,
+  "stage": 2,
+  "status": "PENDING_APPROVAL",
+  "retrospective": false,
+  "draftedOn": "2026-11-26",
+  "timeZone": "Asia/Shanghai",
+  "frozenAt": null,
+  "approval": null,
+  "baselineCommit": "2708c13de67db48877bf54c5e11929c9187a758a",
+  "candidateCommit": null,
+  "previousStages": [
+    1
+  ],
+  "plans": {
+    "development": {
+      "path": "docs/GASS_AI开发实施指南.md",
+      "version": "修订版 2（2026-11-25）",
+      "sha256": "bc91f91cc12a5081a24980fbddc9615927a650a49cdb3392ee48c9edfff4f475"
+    },
+    "acceptance": {
+      "path": "docs/GASS_AI独立验收指南.md",
+      "version": "V1.0（2026-11-25）",
+      "sha256": "987b2bb8aace891d494016dde401bd52d52e59491111493336e70705df2c4d1f"
+    }
+  },
+  "baselineRecord": {
+    "path": "docs/development/acceptance/stage-02/baseline.json",
+    "sha256": "b13768fa17ca0914f394601ffe1bc947ce0f81ec11de97ff3e58c1233d47645b"
+  },
+  "prerequisiteRecords": [
+    {
+      "stage": 1,
+      "attempt": 2,
+      "candidateCommit": "2e3e8f048cfbbe76cd43b59f3eb6c47c352a63e0",
+      "isAncestorOfBaseline": true,
+      "status": "PASSED",
+      "exitCode": 0,
+      "nextStageAllowed": true,
+      "gateReport": "docs/development/acceptance/stage-01/attempt-02/gate-report.json",
+      "gateReportSha256": "12b5438479d4ce38412f77f25705d138141c3b0678c84fe846e846b37ee20fe7",
+      "checkManifestSha256": "30abec244e90fbbd4fc8f4a6b473ab8b796a306da27839e1dac31baf5eb9e4ad"
+    }
+  ],
+  "scope": {
+    "summary": "开发指南第 7 节。本体属性、关系、状态不变量；既有 Action 原语白名单；统一可见性；原子状态提交、StateDiff、持久幂等及 actionRunId 证据关联。",
+    "cumulative": "强制回归 S1-01 至 S1-16、E2E-A、E2E-K，按阶段二批准的权限收紧和新增兼容字段适度更新预期。E2E-M 验收本阶段 actionRunId 部分。",
+    "phaseBoundary": "新增原语仅在获批启用后开发。阶段三处理逻辑时间和终止语义，阶段四处理 ECA 与完整因果链，阶段五处理外部图谱与动态授权。沿用现有前端入口并验证旧报告、重复事件、历史播放。",
+    "migration": "V1–V9 保持原样；涉及新持久化结构从 V10 起追加。旧契约、旧记录和已冻结 Action 按 V9 语义兼容读取。"
+  },
+  "conditions": [
+    {
+      "id": "EXTERNAL-MODEL",
+      "proposedEnabled": false,
+      "approvalStatus": "PENDING",
+      "reason": "以 Mock 和本地模型协议测试为必验，外部模型配置及预算尚未批准。"
+    },
+    {
+      "id": "EXTERNAL-MCP",
+      "proposedEnabled": false,
+      "approvalStatus": "PENDING",
+      "reason": "阶段二未建设外部 KG/MCP 导入。"
+    },
+    {
+      "id": "OPTIONAL-PRIMITIVES",
+      "proposedEnabled": false,
+      "approvalStatus": "PENDING",
+      "primitives": [
+        "ENABLE_RELATION",
+        "UPDATE_RELATION_PROPERTY",
+        "CREATE_ENTITY",
+        "CREATE_RELATION"
+      ],
+      "reason": "开发指南第 7.2 节允许延期，阶段二以既有三种原语及通用机制为范围。若另行获批启用，须追加相应正负例并版本化清单。"
+    },
+    {
+      "id": "INDEPENDENT-SCOPE-REVISION",
+      "proposedEnabled": false,
+      "approvalStatus": "PENDING",
+      "reason": "有效范围由冻结授权及当前状态计算；若最终设计引入独立权限或覆盖版本，确认更新适用条件并补测缓存隔离。"
+    },
+    {
+      "id": "STAGE-GATE",
+      "proposedEnabled": true,
+      "approvalStatus": "PENDING",
+      "reason": "延续自动准入。现有实现把候选 SHA 作为冻结输入，且只在前置阶段根目录查找准入报告。阶段二开工获批后，测试先行适配独立候选登记及已核验的前置报告路径和哈希，保留阶段一历史记录与门禁强度。"
+    }
+  ],
+  "execution": {
+    "candidateRegistration": "正式冻结时候选为空。完成候选提交后单独登记完整候选 SHA、基线 SHA、冻结清单 SHA-256 及批准记录引用。自动门禁复验登记与实际候选、候选提交时间、冻结哈希及批准内容，冻结文件保持字节不变。",
+    "workspace": "两版使用固定 SHA 的既有隔离副本或经批准的临时副本和相同 fixture。先跑基线后跑候选。使用各自临时 SQLite、回环端口、Mock 或本地模型协议，保护现有数据。",
+    "sampleServerCommand": "mvn -B -f backend/pom.xml package; java -jar backend/bootstart/target/bootstart-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev --server.address=127.0.0.1 --server.port=<隔离端口> --spring.datasource.url=jdbc:sqlite:<临时数据库绝对路径> --studio.model-key-file=<临时密钥路径>",
+    "normalization": "只规范化确知无业务含义的随机 ID、墙钟时间和实际耗时，并保留 ID 引用关系、逻辑时间、事件及其顺序、金额、状态、失败码和授权。",
+    "record": "记录实际命令、工作目录、固定 SHA、起止时间、退出码、测试数量、失败及跳过、日志路径和 SHA-256。",
+    "acceptance": "开发自测用于比对基线。独立 Reviewer 按固定 SHA 和同输入夹具出具报告，记录所有 46 项和实际命令、证据及缺陷。自动门禁通过并满足获批人工要求后才准入。"
+  },
+  "checks": [
+    {
+      "id": "G-01",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "输入一致",
+      "expected": "核对基线与候选的完整 SHA、祖先关系、前置准入和两份指南摘要。批准及冻结须早于候选提交；候选登记独立关联冻结清单哈希。",
+      "verificationIds": [
+        "INPUT",
+        "STATIC",
+        "GATE-TEST"
+      ],
+      "minimumEvidence": "Git 输出、冻结与批准记录、候选登记及前置自动门禁报告"
+    },
+    {
+      "id": "G-02",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "需求与范围",
+      "expected": "追踪开发指南第 7 节至实现和测试。通用原语与确定性提交按获批范围实施，ECA、外部 KG 导入、时钟改造和完整因果链留在原计划阶段。",
+      "verificationIds": [
+        "STATIC"
+      ],
+      "minimumEvidence": "候选绑定的源码、diff、文档、依赖或工件哈希"
+    },
+    {
+      "id": "G-03",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "架构与技术栈",
+      "expected": "核查锁定依赖、bootstart → app → common 和 Java 包依赖无环。",
+      "verificationIds": [
+        "ENV",
+        "STATIC"
+      ],
+      "minimumEvidence": "候选绑定的源码、diff、文档、依赖或工件哈希"
+    },
+    {
+      "id": "G-04",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "测试完整性",
+      "expected": "对比现有断言与测试配置，核对负例、边界、禁用项和真实业务路径。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "FRONT-TEST"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "G-05",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "后端测试",
+      "expected": "基线与候选都执行 Maven 全 reactor，查验退出码及 Surefire/Failsafe（如有）报告和未经批准的跳过。",
+      "verificationIds": [
+        "MAVEN"
+      ],
+      "minimumEvidence": "基线与候选命令日志和 Surefire/Failsafe XML"
+    },
+    {
+      "id": "G-06",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "前端测试及构建",
+      "expected": "两版锁文件安装、全量测试和生产构建均成功，核对报告与既有页面行为。",
+      "verificationIds": [
+        "FRONT-INSTALL",
+        "FRONT-TEST",
+        "FRONT-BUILD",
+        "BROWSER"
+      ],
+      "minimumEvidence": "锁文件安装、Vitest XML、生产构建日志和浏览器证据"
+    },
+    {
+      "id": "G-07",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "数据兼容",
+      "expected": "V1–V9 内容保持不变。需要持久化新增字段或表时自 V10 起追加，验证空库、V9 升级及历史运行读取。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "DB-REOPEN"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "G-08",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "API 兼容",
+      "expected": "对比旧请求、响应、错误码、冻结 JSON 和事件读取。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "HTTP-SMOKE",
+        "HTTP-COMPARE",
+        "DB-REOPEN"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "G-09",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "权限与安全",
+      "expected": "核查模型读写和作用域边界及日志脱敏，验证无权读取、提交和引用的负例。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "GRAPH",
+        "EVIDENCE",
+        "OBJECTIVE-ALERT"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "G-10",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "状态一致",
+      "expected": "验证拒绝、版本冲突、幂等重试、提交失败的回滚、顺序及回放无副作用。",
+      "verificationIds": [
+        "MAVEN",
+        "CONCURRENCY",
+        "HTTP-COMPARE",
+        "DB-REOPEN"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "G-11",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "现有业务回归",
+      "expected": "同输入银行、信息场景对照收据、目标、干预、停止恢复、分支、回放及 SSE。",
+      "verificationIds": [
+        "MAVEN",
+        "HTTP-SMOKE",
+        "HTTP-COMPARE"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "G-12",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "工程规范",
+      "expected": "核查 Java 文档与作者、SQL 与命名，验证双语界面和失败反馈。",
+      "verificationIds": [
+        "STATIC",
+        "FORMAT",
+        "FRONT-TEST",
+        "BROWSER"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "G-13",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "交付与可追溯",
+      "expected": "核对文档、回滚点、限制、报告 SHA、证据索引和可访问哈希，检查提交内容。",
+      "verificationIds": [
+        "INPUT",
+        "STATIC",
+        "EVIDENCE-REVIEW"
+      ],
+      "minimumEvidence": "候选绑定的源码、diff、文档、依赖或工件哈希"
+    },
+    {
+      "id": "S1-01",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "实质拆包与依赖边界",
+      "expected": "对照重构图、源码和实测依赖，确认 graph/evidence 职责独立、模块方向与无环。",
+      "verificationIds": [
+        "STATIC"
+      ],
+      "minimumEvidence": "候选绑定的源码、diff、文档、依赖或工件哈希"
+    },
+    {
+      "id": "S1-02",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "RunService 职责拆分",
+      "expected": "检查生命周期、持久化、调度、提交、RuntimeHost、预算和终止的调用及实际归属。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S1-03",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "主从协调职责拆分",
+      "expected": "检查 SDK、委派、上下文、证据、完成与研判边界，验证 invocation 状态隔离。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "OBJECTIVE-ALERT",
+        "EVIDENCE"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S1-04",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "Spring 加载与调用",
+      "expected": "启动 Spring，验证 Bean 扫描及注入、配置、序列化和 HTTP 入口。",
+      "verificationIds": [
+        "MAVEN",
+        "HTTP-SMOKE"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S1-05",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "兼容与阶段边界",
+      "expected": "累计兼容回归。旧 DTO、工具契约、已冻结定义、保存记录和既有行为保持兼容。第二阶段采用向后兼容的结构化记录和授权收紧，迁移自 V10 起追加。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "HTTP-COMPARE",
+        "DB-REOPEN"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S1-06",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "同步、lease 与事务",
+      "expected": "同版本双调用、暂停/取消/恢复、提交失败与快照回滚，检查共享锁、版本冲突和写事务范围。",
+      "verificationIds": [
+        "STATIC",
+        "MAVEN",
+        "CONCURRENCY"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S1-07",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "银行及信息领域同输入",
+      "expected": "对比两版余额、状态、裁定、收据、事件类型及相对顺序和目标判定。",
+      "verificationIds": [
+        "MAVEN",
+        "HTTP-SMOKE",
+        "HTTP-COMPARE"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S1-08",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "冻结 Action 与历史分支",
+      "expected": "对比冻结修订、回放、Fork、逻辑时钟及旧事件。回放只读。",
+      "verificationIds": [
+        "MAVEN",
+        "HTTP-COMPARE",
+        "DB-REOPEN"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S1-09",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "保存的文字目标优先",
+      "expected": "纯图谱目标混入默认角色目标和无关告警，核对 QUERY 只读且无无关 Action。",
+      "verificationIds": [
+        "MAVEN",
+        "OBJECTIVE-ALERT"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S1-10",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "路径排名边界",
+      "expected": "覆盖启用有向边、环、简单路径、并列、深度和返回截断，核对 complete、tiesTruncated、64 跳及 50000 前缀预算。",
+      "verificationIds": [
+        "MAVEN",
+        "GRAPH"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S1-11",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "缓存键及审计",
+      "expected": "对照相同 run/version/精确 scope/规范参数命中。改变运行、分支、scope 或版本时隔离，reused 仍入审计。",
+      "verificationIds": [
+        "MAVEN",
+        "GRAPH",
+        "OBJECTIVE-ALERT"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S1-12",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "跨轮当前版本证据",
+      "expected": "查询跨轮复用后执行改变版本的 Action，验证旧查询退出当前证据。",
+      "verificationIds": [
+        "MAVEN",
+        "EVIDENCE",
+        "OBJECTIVE-ALERT"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S1-13",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "完成引用与旧终止契约",
+      "expected": "回归有效引用、关闭委派、CEL horizon、NO_CONDITIONS 与 OBJECTIVE_REVIEW_COMPLETED。新版引用遵从 S2-09 和 S2-11 的收紧要求，阶段三的终止策略保持原计划。",
+      "verificationIds": [
+        "MAVEN",
+        "EVIDENCE"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S1-14",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "历史 Action 与最终图谱",
+      "expected": "保留历史行动与最终图谱的区分及实际持久化序号。新版优先以 actionRunId 关联，旧版按 S2-12 的兼容规则读取。",
+      "verificationIds": [
+        "MAVEN",
+        "EVIDENCE",
+        "HTTP-COMPARE"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S1-15",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "浏览器及旧报告兼容",
+      "expected": "验证旧 ObjectiveReview、新字段、原文展开、引用跳转、播放位置和 SSE 去重，浏览器实测与服务端证据互补。",
+      "verificationIds": [
+        "FRONT-TEST",
+        "BROWSER",
+        "HTTP-SMOKE"
+      ],
+      "minimumEvidence": "实际浏览器轨迹、截图、基线和候选的原始报告及 GET/SSE 证据"
+    },
+    {
+      "id": "S1-16",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "源码与交付映射",
+      "expected": "核查实际职责、新旧路径、风险、回滚点和测试报告，检查有无无关改动。",
+      "verificationIds": [
+        "INPUT",
+        "STATIC",
+        "EVIDENCE-REVIEW"
+      ],
+      "minimumEvidence": "候选绑定的源码、diff、文档、依赖或工件哈希"
+    },
+    {
+      "id": "E2E-A",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "原银行/信息场景",
+      "expected": "同输入对比收据、状态、目标和回放。",
+      "verificationIds": [
+        "HTTP-SMOKE",
+        "HTTP-COMPARE",
+        "DB-REOPEN"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "E2E-K",
+      "required": true,
+      "applicability": "ALWAYS",
+      "name": "文字目标与路径排名",
+      "expected": "同输入检验缓存隔离、证据支持的提前完成、历史行动与最终状态。",
+      "verificationIds": [
+        "MAVEN",
+        "GRAPH",
+        "EVIDENCE",
+        "OBJECTIVE-ALERT",
+        "BROWSER"
+      ],
+      "minimumEvidence": "候选绑定的命令日志、测试报告和适用的基线对比或负例证据"
+    },
+    {
+      "id": "S2-01",
+      "name": "旧契约兼容",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "用冻结的旧本体、已发布 Action、V9 运行开库、创建、回放及 Fork；旧契约兼容，发布定义不重写，严格约束按采用的契约生效。",
+      "verificationIds": [
+        "MAVEN",
+        "DB-REOPEN",
+        "STAGE2-ONTOLOGY"
+      ],
+      "minimumEvidence": "基线快照、已发布 JSON、升级前后 REST 状态及分支记录"
+    },
+    {
+      "id": "S2-02",
+      "name": "属性与严格类型",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "拒绝字符串写入整数、缺必填、非法枚举或区间、不可变字段和未知属性；状态原样保留，原因可核验，旧本体兼容模式可辨识。",
+      "verificationIds": [
+        "MAVEN",
+        "STAGE2-ONTOLOGY"
+      ],
+      "minimumEvidence": "负例及拒绝码、前后状态、兼容用例报告"
+    },
+    {
+      "id": "S2-03",
+      "name": "关系和领域不变量",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "拒绝非法端点及悬空边、重复 ID、超基数和非法金融状态；无不合法对象或关系写入。",
+      "verificationIds": [
+        "MAVEN",
+        "STAGE2-ONTOLOGY"
+      ],
+      "minimumEvidence": "违规候选、拒绝码及数据库前后快照"
+    },
+    {
+      "id": "S2-04",
+      "name": "白名单原语及受保护字段",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "既有 SET_PROPERTY、DISABLE_RELATIONS、TRANSFER_MONEY 正常运行；通用原语无法改写受保护余额、币种、交易。实际启用的新原语需验证类型、端点、授权、ID、预算与白名单。",
+      "verificationIds": [
+        "MAVEN",
+        "STAGE2-ONTOLOGY"
+      ],
+      "minimumEvidence": "合法与越权输入、原语注册审查、金融守恒记录"
+    },
+    {
+      "id": "S2-05",
+      "name": "多步 Action 原子验证",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "中间步骤有效而末步或最终不变量失败时整笔拒绝；无成功收据、快照和有效变更。",
+      "verificationIds": [
+        "MAVEN",
+        "STAGE2-COMMIT"
+      ],
+      "minimumEvidence": "前后快照、收据、日志、失败码和 JUnit 报告"
+    },
+    {
+      "id": "S2-06",
+      "name": "确定性 StateDiff 与 no-op",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "同一 Action 写入后恢复，缺失与 null 可区分，数值规范比较；按最终候选计算，no-op 无变化事件、不增版本，真正多步变化只增一次。",
+      "verificationIds": [
+        "MAVEN",
+        "STAGE2-COMMIT"
+      ],
+      "minimumEvidence": "多版本 diff、前后状态、类型边界及版本记录"
+    },
+    {
+      "id": "S2-07",
+      "name": "并发与持久幂等",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "同旧版本并发仅一个合法提交成功；同 commandId 同载荷返回原收据，同键不同载荷拒绝，重启后重试及银行金额不重复扣减。",
+      "verificationIds": [
+        "CONCURRENCY",
+        "MAVEN",
+        "STAGE2-COMMIT"
+      ],
+      "minimumEvidence": "双请求及重启轨迹、收据序号、状态版本和余额"
+    },
+    {
+      "id": "S2-08",
+      "name": "写入失败整笔回滚",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "在状态、快照、收据或审计写入注入故障，核对事务回滚和故障恢复后的可重试状态。",
+      "verificationIds": [
+        "MAVEN",
+        "STAGE2-COMMIT"
+      ],
+      "minimumEvidence": "独立故障注入日志、SQL 前后计数、状态和重试报告"
+    },
+    {
+      "id": "S2-09",
+      "name": "统一可见范围",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "同一受限 Worker 在查询、能力、执行、引用和历史看到一致有效对象与关系；区分可读与可执行，委派不得扩权，跨对象参数与收据不泄露。",
+      "verificationIds": [
+        "MAVEN",
+        "STAGE2-VISIBILITY"
+      ],
+      "minimumEvidence": "委派范围、工具 schema、API 负例、回执和证据投影"
+    },
+    {
+      "id": "S2-10",
+      "name": "缓存与权限隔离",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "验证 runId/version/精确 scope/规范化参数边界、不可变缓存、每次授权和审计。若引入独立权限或覆盖版本，验证版本变化必然隔离。",
+      "verificationIds": [
+        "GRAPH",
+        "MAVEN",
+        "STAGE2-VISIBILITY"
+      ],
+      "minimumEvidence": "命中与隔离轨迹、权限检查和 reused 审计事件"
+    },
+    {
+      "id": "S2-11",
+      "name": "旧查询的未知范围",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "缺 scopeIds 的旧记录只在全范围可证明或历史授权可可靠重建时用于证据，局部角色不能借用未知范围旧记录。",
+      "verificationIds": [
+        "EVIDENCE",
+        "MAVEN",
+        "STAGE2-VISIBILITY"
+      ],
+      "minimumEvidence": "旧事件 JSON、局部及全范围角色的引用结果"
+    },
+    {
+      "id": "S2-12",
+      "name": "按 actionRunId 显式关联",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "Action 提议、裁定、变更和收据插入其他事件仍能关联；校验稳定 actionRunId、runId 及输入输出版本，旧事件用受约束的兼容读法。",
+      "verificationIds": [
+        "MAVEN",
+        "STAGE2-EVIDENCE",
+        "DB-REOPEN"
+      ],
+      "minimumEvidence": "交错的新旧事件、重建证据和持久化关联"
+    },
+    {
+      "id": "S2-13",
+      "name": "来源、版本与只读回放",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "核对 origin、actorId、inputVersion、outputVersion、commandId 和证据标记；初始化、Agent、人工身份清晰，回放与证据呈现无写入。",
+      "verificationIds": [
+        "MAVEN",
+        "STAGE2-COMMIT",
+        "STAGE2-EVIDENCE"
+      ],
+      "minimumEvidence": "事件 JSON、回放前后状态、快照和日志计数"
+    },
+    {
+      "id": "S2-14",
+      "name": "算法和证据语义",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "区分搜索完整、返回截断、授权范围、历史时间及当前版本；并列截断沿用保守规则。保留文字研判与业务判定的区别。",
+      "verificationIds": [
+        "GRAPH",
+        "EVIDENCE",
+        "MAVEN",
+        "STAGE2-EVIDENCE"
+      ],
+      "minimumEvidence": "局部及全范围查询、路径排名、历史收据和结构化研判"
+    },
+    {
+      "id": "E2E-M",
+      "name": "阶段二显式 Action 关联与历史回放",
+      "required": true,
+      "applicability": "ALWAYS",
+      "expected": "对真实 Spring 模拟运行插入非 Action 审计，使用 actionRunId 还原提议、裁定、变更、收据及旧历史分支，权限投影一致。causeEventRef、规则版本和完整因果链按阶段四验收。",
+      "verificationIds": [
+        "HTTP-COMPARE",
+        "DB-REOPEN",
+        "STAGE2-EVIDENCE"
+      ],
+      "minimumEvidence": "事件轨迹、历史分支结果及授权对照"
+    }
+  ],
+  "verification": [
+    {
+      "id": "INPUT",
+      "cwd": "仓库根目录",
+      "target": "repo",
+      "command": "git status --short; git branch --show-current; git rev-parse HEAD <基线SHA> <候选SHA>; git merge-base --is-ancestor <基线SHA> <候选SHA>; Get-FileHash -Algorithm SHA256 -LiteralPath <两份指南、冻结清单和前置门禁报告>",
+      "notes": "逐条记录退出码；候选 SHA 来源为后登记记录。",
+      "required": true
+    },
+    {
+      "id": "STATIC",
+      "cwd": "仓库根目录",
+      "target": "repo",
+      "command": "git diff --stat <基线SHA> <候选SHA>; git diff --name-status <基线SHA> <候选SHA>; git diff <基线SHA> <候选SHA> -- backend frontend docs scripts; git diff --check <基线SHA> <候选SHA>",
+      "notes": "核对 AGENTS、编码规范及指南 §2.1 所列项目文档。记录源码行号、依赖图、测试 diff、迁移、锁文件与契约差异。",
+      "required": true
+    },
+    {
+      "id": "ENV",
+      "cwd": "隔离副本根目录",
+      "target": "both",
+      "command": "java -version; mvn -version; node --version; pnpm --version; python --version",
+      "notes": "使用 JDK 21、项目锁定的 Node/pnpm 与本机 Maven 设置。PowerShell 采用 mvn.cmd 或 pnpm.cmd。",
+      "required": true
+    },
+    {
+      "id": "MAVEN",
+      "cwd": "backend",
+      "target": "both",
+      "command": "mvn test",
+      "notes": "优先项目 Maven Wrapper（若存在），允许复用已配置的离线 Maven 缓存。全 reactor 执行，保留退出码、日志、XML。",
+      "required": true
+    },
+    {
+      "id": "FORMAT",
+      "cwd": "backend",
+      "target": "candidate",
+      "command": "mvn -pl app,bootstart spotless:check",
+      "notes": "记录实际退出码。独立验收以检查为主。",
+      "required": true
+    },
+    {
+      "id": "FRONT-INSTALL",
+      "cwd": "frontend",
+      "target": "both",
+      "command": "pnpm install --frozen-lockfile",
+      "notes": "允许锁定版本的离线缓存和隔离 store。",
+      "required": true
+    },
+    {
+      "id": "FRONT-TEST",
+      "cwd": "frontend",
+      "target": "both",
+      "command": "pnpm test --reporter=default --reporter=junit --outputFile.junit=<临时报告路径>",
+      "notes": "Vitest 全量非交互运行。",
+      "required": true
+    },
+    {
+      "id": "FRONT-BUILD",
+      "cwd": "frontend",
+      "target": "both",
+      "command": "pnpm build",
+      "notes": "记录实际产物与退出码。",
+      "required": true
+    },
+    {
+      "id": "HTTP-SMOKE",
+      "cwd": "隔离副本根目录",
+      "target": "both",
+      "command": "python scripts/smoke_mock.py --base-url http://127.0.0.1:<隔离端口>",
+      "notes": "先从固定 SHA 构建并启动 Spring 临时实例，使用独立 SQLite、密钥和回环端口。脚本会写入模拟世界和运行数据，只对该实例执行。",
+      "required": true
+    },
+    {
+      "id": "GRAPH",
+      "cwd": "隔离副本根目录",
+      "target": "both",
+      "command": "java @graph-fixture-arguments.txt",
+      "notes": "使用独立 Reviewer 固定图夹具及对应版本类路径。 本轮 Reviewer 从已获准的阶段一证据或重新准备的等价隔离夹具复跑，记录夹具哈希。",
+      "required": true
+    },
+    {
+      "id": "EVIDENCE",
+      "cwd": "隔离副本根目录",
+      "target": "both",
+      "command": "java @evidence-fixture-arguments.txt",
+      "notes": "使用独立 Reviewer 固定证据夹具及对应版本类路径。 本轮 Reviewer 从已获准的阶段一证据或重新准备的等价隔离夹具复跑，记录夹具哈希。",
+      "required": true
+    },
+    {
+      "id": "OBJECTIVE-ALERT",
+      "cwd": "backend",
+      "target": "both",
+      "command": "mvn -Dtest=ReviewerQueryObjectiveTest#routesAUserObjectiveAndReusesOnlyCurrentGraphEvidenceAcrossRounds -Dsurefire.failIfNoSpecifiedTests=false test",
+      "notes": "先在隔离副本准备 Reviewer 的临时测试并核对源码。两版使用等价 fixture；该临时测试独立于候选全量测试。 本轮 Reviewer 从已获准的阶段一证据或重新准备的等价隔离夹具复跑，记录夹具哈希。",
+      "required": true
+    },
+    {
+      "id": "CONCURRENCY",
+      "cwd": "隔离副本根目录",
+      "target": "both",
+      "command": "python concurrency_fixture.py",
+      "notes": "以隔离实例上的两个同版本提交为固定输入。 本轮 Reviewer 从已获准的阶段一证据或重新准备的等价隔离夹具复跑，记录夹具哈希。",
+      "required": true
+    },
+    {
+      "id": "BROWSER",
+      "cwd": "隔离副本根目录",
+      "target": "both",
+      "command": "node browser-fixture-verified.mjs",
+      "notes": "用两版生产构建及真实 Chromium 检查 S1-15。记录合成浏览器输入，另用 Spring HTTP 验证真实服务端。 本轮 Reviewer 从已获准的阶段一证据或重新准备的等价隔离夹具复跑，记录夹具哈希。",
+      "required": true
+    },
+    {
+      "id": "HTTP-COMPARE",
+      "cwd": "隔离证据根目录",
+      "target": "comparison",
+      "command": "python http_fixture.py compare",
+      "notes": "使用同输入对照。仅规范化随机 ID 和实际耗时，并保留业务字段和 ID 引用；另列阶段二批准的附加字段、审计扩展和授权变更，逐项断言旧行为或其安全边界。 本轮 Reviewer 从已获准的阶段一证据或重新准备的等价隔离夹具复跑，记录夹具哈希。",
+      "required": true
+    },
+    {
+      "id": "DB-REOPEN",
+      "cwd": "隔离证据根目录",
+      "target": "comparison",
+      "command": "python http_fixture.py reopen",
+      "notes": "在候选实例打开基线库的临时副本，核对事件、收据、快照、历史回放与评价。 本轮 Reviewer 从已获准的阶段一证据或重新准备的等价隔离夹具复跑，记录夹具哈希。",
+      "required": true
+    },
+    {
+      "id": "EVIDENCE-REVIEW",
+      "cwd": "仓库根目录及隔离证据根目录",
+      "target": "repo",
+      "command": "Get-FileHash -Algorithm SHA256 -LiteralPath <核对的证据文件>",
+      "notes": "逐条查阅独立命令记录及证据索引。校验候选 SHA、日志路径、实际退出码、测试总数/失败/跳过、采集起止时间、哈希和缺陷状态。",
+      "required": true
+    },
+    {
+      "id": "EXTERNAL-MODEL",
+      "cwd": "隔离副本根目录",
+      "target": "conditional",
+      "command": "python scripts/verify_p3.py --base-url http://127.0.0.1:<隔离端口> --model-id <获批模型ID>",
+      "notes": "仅在明确批准外部模型配置、调用范围与预算后适用。使用环境变量提供临时实例认证。",
+      "required": false
+    },
+    {
+      "id": "STAGE-GATE",
+      "cwd": "仓库根目录",
+      "target": "gate",
+      "command": "python scripts/acceptance/stage_gate.py --stage 2 --attempt <独立验收编号>",
+      "notes": "当前脚本仍要求冻结时有候选 SHA，且前置记录只从阶段根目录读取。完成获批的门禁适配后，使用实际独立验收尝试编号执行，输出退出码与报告。",
+      "required": true
+    },
+    {
+      "id": "STAGE2-ONTOLOGY",
+      "cwd": "候选隔离副本/backend",
+      "target": "candidate",
+      "command": "mvn -Dtest=ReviewerStage2OntologyTest -Dsurefire.failIfNoSpecifiedTests=false test",
+      "notes": "使用独立固定 JUnit fixture 覆盖 V9 兼容、严格本体、关系约束、原语与保护字段。",
+      "required": true
+    },
+    {
+      "id": "STAGE2-COMMIT",
+      "cwd": "候选隔离副本/backend",
+      "target": "candidate",
+      "command": "mvn -Dtest=ReviewerStage2CommitTest -Dsurefire.failIfNoSpecifiedTests=false test",
+      "notes": "使用隔离 SQLite，覆盖无变化、多步变化、事务故障、重启、版本冲突与持久幂等。",
+      "required": true
+    },
+    {
+      "id": "STAGE2-VISIBILITY",
+      "cwd": "候选隔离副本/backend",
+      "target": "candidate",
+      "command": "mvn -Dtest=ReviewerStage2VisibilityTest -Dsurefire.failIfNoSpecifiedTests=false test",
+      "notes": "在本地真实 SDK 协议夹具及 Mock 下验证有效范围、权限传播、缓存隔离、旧证据与投影。",
+      "required": true
+    },
+    {
+      "id": "STAGE2-EVIDENCE",
+      "cwd": "候选隔离副本/backend",
+      "target": "candidate",
+      "command": "mvn -Dtest=ReviewerStage2EvidenceTest -Dsurefire.failIfNoSpecifiedTests=false test",
+      "notes": "使用独立 JUnit fixture 或同名 Spring 集成套件验证事件交错、历史兼容、关联及分支轨迹。",
+      "required": true
+    },
+    {
+      "id": "GATE-TEST",
+      "cwd": "仓库根目录",
+      "target": "candidate",
+      "command": "python -m unittest discover -s scripts/acceptance -p test_stage_gate.py",
+      "notes": "覆盖候选后登记、冻结哈希不可变、上阶段证据绑定、漏项/篡改、失败命令及旧阶段记录兼容。",
+      "required": true
+    }
+  ]
+}

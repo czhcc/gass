@@ -1,0 +1,2 @@
+# Keep the guide bytes used in frozen acceptance manifests stable on checkout.
+GASS_AI*.md text eol=crlf

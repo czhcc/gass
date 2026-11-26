@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "stage": 2,
+  "baselineCommit": "2708c13de67db48877bf54c5e11929c9187a758a",
+  "branch": "feat/formal-state-commit",
+  "capturedOn": "2026-11-26",
+  "timeZone": "Asia/Shanghai",
+  "worktree": {
+    "sourceBranch": "main",
+    "sourceStatus": "与 origin/main 一致，只有原有未跟踪 .idea/，源码、测试和构建清单无未提交修改。",
+    "beforeDraftStatus": "第二阶段分支与阶段基线一致。"
+  },
+  "environment": {
+    "os": "Windows 11 amd64",
+    "java": "Oracle JDK 21.0.8",
+    "maven": "Apache Maven 3.9.16",
+    "node": "24.22.1",
+    "pnpm": "11.25.0",
+    "flywayHighestMigration": "V9",
+    "frontendDependencies": "使用工作区已有依赖，仅运行测试与构建。独立验收须使用冻结锁文件安装。"
+  },
+  "prerequisite": {
+    "stage": 1,
+    "attempt": 2,
+    "candidateCommit": "2e3e8f048cfbbe76cd43b59f3eb6c47c352a63e0",
+    "isAncestorOfBaseline": true,
+    "status": "PASSED",
+    "exitCode": 0,
+    "nextStageAllowed": true,
+    "gateReport": "docs/development/acceptance/stage-01/attempt-02/gate-report.json",
+    "gateReportSha256": "12b5438479d4ce38412f77f25705d138141c3b0678c84fe846e846b37ee20fe7",
+    "checkManifestSha256": "30abec244e90fbbd4fc8f4a6b473ab8b796a306da27839e1dac31baf5eb9e4ad"
+  },
+  "commands": [
+    {
+      "id": "BASE-MAVEN",
+      "cwd": "backend",
+      "command": "mvn.cmd -B -o -s <本机 Maven settings.xml> test -l <临时日志>",
+      "startedAt": "2026-11-26T11:12:51.5988111+08:00",
+      "endedAt": "2026-11-26T11:13:25.1236097+08:00",
+      "exitCode": 0,
+      "testCounts": {
+        "total": 94,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "${TEMP}/gass-stage02-baseline-maven-2708c13.log",
+      "sha256": "d8e6cf8d6e5b77b9231a1606b98c0205b2fb14376396f3589580cab06ca8282c"
+    },
+    {
+      "id": "BASE-PNPM-TEST",
+      "cwd": "frontend",
+      "command": "pnpm.cmd test",
+      "startedAt": "2026-11-26T11:12:45.1366320+08:00",
+      "endedAt": "2026-11-26T11:12:50.9840522+08:00",
+      "exitCode": 0,
+      "testCounts": {
+        "total": 82,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "${TEMP}/gass-stage02-baseline-frontend-test-2708c13.log",
+      "sha256": "461ccab73119d28a49ab0dcd315c4c398332e347cb66c5f52e9ccd07e4812715"
+    },
+    {
+      "id": "BASE-PNPM-BUILD",
+      "cwd": "frontend",
+      "command": "pnpm.cmd build --outDir <临时 dist>",
+      "startedAt": "2026-11-26T11:12:44.4385982+08:00",
+      "endedAt": "2026-11-26T11:12:54.2603756+08:00",
+      "exitCode": 0,
+      "testCounts": null,
+      "log": "${TEMP}/gass-stage02-baseline-frontend-build-2708c13.log",
+      "sha256": "1f0f4da7cb62f33dfe8dbd374802a6647feb442b6a868c02ae2121f48504301f"
+    }
+  ],
+  "observations": [
+    "后端 94 项、前端 82 项通过。前端生产构建写入本机临时目录，Vite 保留分块大小和临时输出目录提示。",
+    "从第一阶段获准候选到本阶段基线，Git 比对显示 backend/ 和 frontend/ 无差异。第一阶段第二次独立验收保存的模拟 HTTP、回放、分支和浏览器证据作为业务参照。本次实际重跑的是全量 Maven、前端测试和生产构建。",
+    "已登记阶段二待处理基线行为包括旧证据缺 scopeIds、Action 证据按相邻事件序号关联和分散可见范围。阶段三才调整旧轮次时钟和文字完成终止门禁。"
+  ]
+}
