@@ -85,3 +85,11 @@
 - 46 项必验和累计回归均通过。后端基线 94 项、候选 109 项，两版前端各 82 项及生产构建成功。原样复测旧候选及修复候选，关闭 STAGE02-001 与 STAGE02-002。
 - 自动 Stage Gate 退出 `0`，`nextStageAllowed=true`。
 - [第 2 次验收报告](acceptance/stage-02/attempt-02/review.md) · [门禁报告](acceptance/stage-02/attempt-02/gate-report.json) · [证据索引](acceptance/stage-02/attempt-02/evidence-index.json)
+
+## 第三阶段开发完成（待独立验收）
+
+- 分支 `feat/simulation-clock-scheduler`，基线 `9a266333d0a7f5c08282068643da6840d1a42d9b`，候选 `2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90`。
+- 批准后的 60 项清单于 `2026-11-26T15:04:16.8344445+08:00` 冻结，SHA-256 为 `3ce65d029034063d1761976e4d6d7dfa7528f3b4efc9750192a03decb7647c3b`。准入采用自动 Stage Gate。
+- 新增版本化的严格模拟时钟、V11 持久化调度、按审计序号的历史分支与冻结评价策略。保留旧场景轮次契约。
+- 后端 119 项、前端 83 项、门禁自测 32 项通过。Spotless、生产构建、HTTP、SQLite 重开和 SSE 续读通过。
+- [开发报告及证据](acceptance/stage-03/development.md) · [候选登记](acceptance/stage-03/candidate.json) · [冻结清单](acceptance/stage-03/check-manifest.json)
