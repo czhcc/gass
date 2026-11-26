@@ -78,3 +78,10 @@
 - STAGE02-001 修复模板录入上限误用于运行余额的问题，保留金融不变量。STAGE02-002 修复派生交易越过显式任务范围的问题，统一查询、能力、Action、审计与证据的有效范围。
 - 后端 109 项、前端 82 项、原 Reviewer 后端夹具 15 项、门禁回归 30 项通过。生产构建、Chromium 双版本回归、HTTP 同输入对比、V9 历史库重开及并发提交复测通过。
 - [修复候选登记](acceptance/stage-02/candidate.json) · [修复与测试证据](acceptance/stage-02/development.md#修复验证)
+
+## 第二阶段独立验收（第 2 次）
+
+- 基线 `2708c13de67db48877bf54c5e11929c9187a758a`，修复候选 `fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89`。冻结清单、批准记录和原始基线逐字节一致，首轮 `FAILED` 记录与证据保留。
+- 46 项必验和累计回归均通过。后端基线 94 项、候选 109 项，两版前端各 82 项及生产构建成功。原样复测旧候选及修复候选，关闭 STAGE02-001 与 STAGE02-002。
+- 自动 Stage Gate 退出 `0`，`nextStageAllowed=true`。
+- [第 2 次验收报告](acceptance/stage-02/attempt-02/review.md) · [门禁报告](acceptance/stage-02/attempt-02/gate-report.json) · [证据索引](acceptance/stage-02/attempt-02/evidence-index.json)
