@@ -107,3 +107,10 @@
 - 投递审计与待研判检查点同事务保存。恢复原时点、原轮次和未完成的工作，并依据已落盘 Action 检查点保证幂等。未完成研判继续阻止自然终止。
 - 后端 123 项、前端 83 项、门禁自测 32 项和首轮原版 Java 夹具 27 项通过。生产构建、真实进程重启、历史库重开、HTTP、并发、浏览器、图谱及证据回归通过。
 - [修复报告与证据](acceptance/stage-03/development.md#stage03-001-修复与重新验收候选) · [候选登记](acceptance/stage-03/candidate.json) · [首次独立验收](acceptance/stage-03/attempt-01/review.md)
+
+## 第三阶段独立验收（第 2 次）
+
+- 基线 `9a266333d0a7f5c08282068643da6840d1a42d9b`，修复候选 `68898b543c680ea926b61b06569b2bd0c2c9a750`。原始批准、基线、清单和首轮报告保留。
+- 原冻结 60 项必验及累计回归全部通过，关闭 STAGE03-001。首轮夹具在旧候选复现失败，在修复候选通过。真实应用进程重启验证未完成研判继续，已经接受的 Action 未重复提交。
+- 候选后端 123 项、前端 83 项通过，生产构建通过。Stage Gate 退出 `0`，`nextStageAllowed=true`，第四阶段获得准入。
+- [独立验收报告](acceptance/stage-03/attempt-02/review.md) · [机器可读结果](acceptance/stage-03/attempt-02/result.json) · [证据索引](acceptance/stage-03/attempt-02/evidence-index.json) · [Stage Gate 报告](acceptance/stage-03/attempt-02/gate-report.json)
