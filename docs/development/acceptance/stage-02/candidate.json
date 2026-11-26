@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "stage": 2,
+  "status": "PENDING_INDEPENDENT_REVIEW",
+  "baselineCommit": "2708c13de67db48877bf54c5e11929c9187a758a",
+  "candidateCommit": "356ea246171d6bcc252747b08301d82ae8e801f1",
+  "candidateCommittedAt": "2026-11-26T11:57:41+08:00",
+  "registeredAt": "2026-11-26T11:58:08.4336387+08:00",
+  "checkManifest": "check-manifest.json",
+  "checkManifestSha256": "ad0697d6c94a929d51c1a09317d9517993e4307383c469c6129c371bd111121b",
+  "approvalRecord": "check-manifest.json#approval",
+  "approvedAt": "2026-11-26T11:20:46.3398371+08:00",
+  "developmentReport": "development.md"
+}

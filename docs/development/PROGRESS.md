@@ -57,3 +57,10 @@
 - 本轮候选 `2e3e8f048cfbbe76cd43b59f3eb6c47c352a63e0`。获批清单为事后补录，首轮报告与 `BLOCKED` 记录完整保留。
 - 自动 Stage Gate 结论 `PASSED`，退出 `0`，`nextStageAllowed=true`。
 - [第二次验收报告](acceptance/stage-01/attempt-02/review.md) · [门禁报告](acceptance/stage-01/attempt-02/gate-report.json) · [第二次机器可读结果](acceptance/stage-01/attempt-02/result.json)
+
+## 第二阶段开发完成，待验收
+
+- 基线 `2708c13de67db48877bf54c5e11929c9187a758a`，候选 `356ea246171d6bcc252747b08301d82ae8e801f1`。46 项必验清单经项目负责人批准后，于 2026-11-26 11:21:10（UTC+8）冻结。候选 SHA 单独登记。
+- 完成本体约束、统一状态提交与可见性、持久化幂等收据和显式 Action 证据关联。新增 V10，兼容原 V1–V9 与历史记录。
+- 后端 105 项、前端 82 项与 Stage Gate 回归 30 项通过。Spotless、前端生产构建与隔离 Mock HTTP 冒烟通过。独立验收和阶段准入待执行。
+- [冻结清单](acceptance/stage-02/check-manifest.json) · [候选登记](acceptance/stage-02/candidate.json) · [开发报告](acceptance/stage-02/development.md)
