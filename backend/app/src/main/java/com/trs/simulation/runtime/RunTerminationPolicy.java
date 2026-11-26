@@ -1,5 +1,6 @@
 package com.trs.simulation.runtime;
 
+import com.trs.simulation.SimulationTypes.BusinessOutcome;
 import com.trs.simulation.SimulationTypes.Run;
 import com.trs.simulation.SimulationTypes.Scenario;
 import com.trs.simulation.common.Json;
@@ -46,7 +47,9 @@ final class RunTerminationPolicy {
     boolean check(String id, Scenario scenario, boolean checkSteps, Limits limits) {
         var run = readRun.apply(id);
         if (!List.of("PAUSED", "RUNNING").contains(run.status())) return true;
-        if (scenario.team() == null && scenario.agents().stream().allMatch(a -> store.hasEnded(id, a.id())))
+        if (!scenario.eventDriven()
+                && scenario.team() == null
+                && scenario.agents().stream().allMatch(a -> store.hasEnded(id, a.id())))
             return finish(
                     id,
                     "ALL_AGENTS_ENDED",
@@ -54,7 +57,8 @@ final class RunTerminationPolicy {
                     scenario.agents().size(),
                     "All agents submitted accepted END decisions",
                     "");
-        if (checkSteps
+        if (!scenario.eventDriven()
+                && checkSteps
                 && scenario.objective() != null
                 && scenario.team().conditions().isEmpty()
                 && scheduler.pendingEvents(id) == 0
@@ -64,7 +68,7 @@ final class RunTerminationPolicy {
                                 && round.intValue() == run.step()
                                 && e.payload().get("version") instanceof Number version
                                 && version.longValue() == run.version())) return evaluateHorizon(id, scenario, true);
-        if (checkSteps && run.step() >= scenario.maxSteps()) {
+        if (!scenario.eventDriven() && checkSteps && run.step() >= scenario.maxSteps()) {
             if (scenario.objective() != null
                     && db.queryForObject(
                                     "SELECT COUNT(*) FROM simulation_task WHERE run_id=? AND round=? AND parent_task_id IS NULL AND status='SUCCEEDED'",
@@ -101,7 +105,8 @@ final class RunTerminationPolicy {
         if (run.activeRuntimeMs() >= timeLimit)
             return finish(
                     id, "MAX_RUNTIME", run.activeRuntimeMs(), timeLimit, "Active computation time budget reached", "");
-        if (scenario.team() == null
+        if (!scenario.eventDriven()
+                && scenario.team() == null
                 && scenario.agents().stream()
                         .allMatch(a ->
                                 store.hasEnded(id, a.id()) || store.decisionCount(id, a.id()) >= a.maxDecisions())) {
@@ -129,27 +134,34 @@ final class RunTerminationPolicy {
                     Math.min(50, limits.decisionBudget()),
                     "Global decision budget reached",
                     "");
-        if (scenario.team() == null && (total + 1) * 6L > limits.requestBudget())
-            return finish(
-                    id,
-                    "MODEL_REQUEST_BUDGET",
-                    (total + 1) * 6L,
-                    limits.requestBudget(),
-                    "Insufficient model request budget for the next decision (reserved estimate)",
-                    "");
-        if (limits.enforceOutputTokenBudget() && scenario.team() == null && (total + 1) * 6144L > limits.tokenBudget())
-            return finish(
-                    id,
-                    "TOKEN_BUDGET",
-                    (total + 1) * 6144L,
-                    limits.tokenBudget(),
-                    "Insufficient generated token budget for the next decision (reserved estimate)",
-                    "");
+        if (!scenario.eventDriven() && scenario.team() == null && checkLegacyEstimate(id, limits, total)) return true;
         long changes = store.state(id).version()
                 - db.queryForObject("SELECT MIN(version) FROM simulation_snapshot WHERE run_id=?", Long.class, id);
         if (changes >= limits.changeBudget())
             return finish(id, "MAX_STATE_CHANGES", changes, limits.changeBudget(), "State change budget reached", "");
         return false;
+    }
+
+    boolean checkLegacyEstimate(String id, Limits limits, long decisions) {
+        long next = decisions + 1;
+        if (next * 6L > limits.requestBudget()) {
+            return finish(
+                    id,
+                    "MODEL_REQUEST_BUDGET",
+                    next * 6L,
+                    limits.requestBudget(),
+                    "Insufficient model request budget for the next decision (reserved estimate)",
+                    "");
+        }
+        return limits.enforceOutputTokenBudget()
+                && next * 6144L > limits.tokenBudget()
+                && finish(
+                        id,
+                        "TOKEN_BUDGET",
+                        next * 6144L,
+                        limits.tokenBudget(),
+                        "Insufficient generated token budget for the next decision (reserved estimate)",
+                        "");
     }
 
     boolean finish(String id, String reason, long actual, long limit, String message, String agentId) {
@@ -162,7 +174,7 @@ final class RunTerminationPolicy {
             store.append(
                     id,
                     completed ? "RUN_COMPLETED" : "RUN_BUDGET_EXHAUSTED",
-                    run.step(),
+                    auditTime(id),
                     null,
                     Map.of(
                             "reasonCode",
@@ -179,6 +191,76 @@ final class RunTerminationPolicy {
                             agentId));
         });
         return true;
+    }
+
+    long auditTime(String id) {
+        return store.scenario(id).eventDriven()
+                ? store.state(id).simulationTime()
+                : readRun.apply(id).step();
+    }
+
+    void concludeEventRun(String id, Scenario scene, String queueState, long pending, boolean answered, boolean ready) {
+        var run = readRun.apply(id);
+        var current = store.state(id);
+        var result = !ready
+                ? new BusinessOutcome("NOT_EVALUATED", run.step(), current.version(), List.of())
+                : scene.team() == null
+                        ? new BusinessOutcome("NO_CONDITIONS", run.step(), current.version(), List.of())
+                        : BusinessEvaluation.evaluate(
+                                scene,
+                                store.initialState(id),
+                                current,
+                                run.step(),
+                                pending,
+                                unhandledInputs(id, scene));
+        String objectiveStatus = switch (result.result()) {
+            case "SUCCEEDED" -> "MET";
+            case "FAILED" -> "NOT_MET";
+            case "NO_CONDITIONS" -> answered ? "ANSWERED" : "UNVERIFIABLE";
+            default -> "UNVERIFIABLE";
+        };
+        String reason = switch (result.result()) {
+            case "ERROR" -> "OBJECTIVE_EVALUATION_FAILED";
+            case "SUCCEEDED" -> "OBJECTIVE_MET";
+            case "FAILED" -> "OBJECTIVE_NOT_MET";
+            case "NO_CONDITIONS" ->
+                scene.objective() == null
+                        ? queueState
+                        : answered ? "OBJECTIVE_REVIEW_COMPLETED" : "OBJECTIVE_NOT_VERIFIABLE";
+            default -> "EVALUATION_NOT_READY";
+        };
+        tx.executeWithoutResult(t -> {
+            db.update("UPDATE simulation_usage SET outcome_json=? WHERE run_id=?", Json.write(result), id);
+            db.update(
+                    "UPDATE simulation_run SET status=?,termination_reason=? WHERE id=?",
+                    result.result().equals("ERROR") ? "FAILED" : "COMPLETED",
+                    reason,
+                    id);
+            var evaluation = Map.of(
+                    "outcome",
+                    result,
+                    "objectiveStatus",
+                    objectiveStatus,
+                    "queueState",
+                    queueState,
+                    "pendingWork",
+                    pending);
+            store.append(id, "SCENARIO_EVALUATED", current.simulationTime(), null, evaluation);
+            store.append(
+                    id,
+                    result.result().equals("ERROR") ? "RUN_FAILED" : "RUN_COMPLETED",
+                    current.simulationTime(),
+                    null,
+                    Map.of(
+                            "reasonCode",
+                            reason,
+                            "queueState",
+                            queueState,
+                            "objectiveStatus",
+                            objectiveStatus,
+                            "pendingWork",
+                            pending));
+        });
     }
 
     private long unhandledInputs(String id, Scenario scene) {

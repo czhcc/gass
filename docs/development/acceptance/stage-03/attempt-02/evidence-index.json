@@ -1,0 +1,5383 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "9a266333d0a7f5c08282068643da6840d1a42d9b",
+  "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+  "evidenceRoots": [
+    "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence"
+  ],
+  "evidence": [
+    {
+      "id": "EV-001",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-001-input.log",
+      "sha256": "479bbc4c92e9419fff2ae82c355cfbbb1f2eb3fdfc6e9f187d1e0b694ffeff5c",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.799683+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-002",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-002-input-meta.json",
+      "sha256": "0ed57197f5ae4e07ed6e6618e6162494f8305efc5f0a86d0ef442fbbcdbc44cf",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.799683+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-003",
+      "kind": "SOURCE_REVIEW",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-003-review-input-audit.json",
+      "sha256": "66283b990bf8c452e44d30cb9f3e3229875daaab6ee61b8eac1da645e5b68cf3",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.799683+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-004",
+      "kind": "SOURCE_REVIEW",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-004-preserved-attempt01.json",
+      "sha256": "19d9173d87f413e68df4ac0e01745daed6b4115a33823be1255131ea70b687e1",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.800683+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-005",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-005-static.log",
+      "sha256": "648f74b78e969fa9cda4524ad1f3279e2303a3c8de38756de48ba3c1c1bdff5c",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.801682+08:00",
+      "checkIds": [
+        "G-01",
+        "G-02",
+        "G-03",
+        "G-04",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-12",
+        "G-13",
+        "S1-01",
+        "S1-02",
+        "S1-03",
+        "S1-05",
+        "S1-06",
+        "S1-16",
+        "S3-03",
+        "S3-09"
+      ]
+    },
+    {
+      "id": "EV-006",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-006-static-meta.json",
+      "sha256": "e8c7d8cec6cd92353588ae8183f18d3c8abfeed4c3cd6f92e337e5634f6e3c95",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.801682+08:00",
+      "checkIds": [
+        "G-01",
+        "G-02",
+        "G-03",
+        "G-04",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-12",
+        "G-13",
+        "S1-01",
+        "S1-02",
+        "S1-03",
+        "S1-05",
+        "S1-06",
+        "S1-16",
+        "S3-03",
+        "S3-09"
+      ]
+    },
+    {
+      "id": "EV-007",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-007-verify_inputs.py",
+      "sha256": "d4d4a3da03684f355d09a196f922ac644b300f1350df588eb46a4aab4871cedc",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.802681+08:00",
+      "checkIds": [
+        "G-01",
+        "G-02",
+        "G-03",
+        "G-04",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-12",
+        "G-13",
+        "S1-01",
+        "S1-02",
+        "S1-03",
+        "S1-05",
+        "S1-06",
+        "S1-16",
+        "S3-03",
+        "S3-09"
+      ]
+    },
+    {
+      "id": "EV-008",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-008-baseline-maven.log",
+      "sha256": "d033498fbf00575a81a41e2d2f9b178b0d285f21b9550c91e9fe92fd557ad8a2",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.803690+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-009",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-009-baseline-maven-meta.json",
+      "sha256": "20a9e88a7b25f529f265982b1a0c23aeb8906139b0629c3152c248dec5ac3115",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.804682+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-010",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-010-TEST-com.trs.simulation.agent.WorkerToolsTest.xml",
+      "sha256": "3a94f508d2c27a1225644c355fb211812a838f879bce8e78c0aebb1aa1b4ea47",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.804682+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-011",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-011-TEST-com.trs.studio.ActionLibraryIntegrationTest.xml",
+      "sha256": "da9790fbbd3b5b97cc2425a25b3eec9a6cd5cd402dda5e2f609eee312e7c6e93",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.805681+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-012",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-012-TEST-com.trs.studio.AgentScopeContractTest.xml",
+      "sha256": "70c51db9667327adc948396f7ba94b57955f57a2d5782b38703c027684f36609",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.805681+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-013",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-013-TEST-com.trs.studio.AuthIntegrationTest.xml",
+      "sha256": "fe0db0ae10f56f00fc3175adea6a64ca6ef1f69550758e9e296975757af4685c",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.806682+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-014",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-014-TEST-com.trs.studio.ContinuationIntegrationTest.xml",
+      "sha256": "22072f5415b583b91b73b04555104bf2c882a1ed33a2c9bbd0f225ce68346d08",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.806682+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-015",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-015-TEST-com.trs.studio.DeclarativeActionEngineTest.xml",
+      "sha256": "d0434132f2e57d052e91b7246eb4c8702a3c19c02d0bdea51f62dab8c8b2c528",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.806682+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-016",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-016-TEST-com.trs.studio.HierarchicalFrameworkIntegrationTest.xml",
+      "sha256": "d62e0b450649af3ac89a8e723cf4269ab41cde7a0e19b18e013e616bdb4e82a0",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.807682+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-017",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-017-TEST-com.trs.studio.HierarchyGatewayIntegrationTest.xml",
+      "sha256": "5dc7095d1fac45694c4585158a81393d7cf240cbc01975e7958de4dee1d066a6",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.807682+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-018",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-018-TEST-com.trs.studio.HierarchyModelContractTest.xml",
+      "sha256": "a2c2a391a009ac2962141f691317d7cf122663daf8414922d7c5360393421d12",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.807682+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-019",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-019-TEST-com.trs.studio.InformationObjectActionsTest.xml",
+      "sha256": "f1e74a2f5d0b093360bc4058ebe0945ed35ea5c346ffdf8e890c0f405b0e35cd",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.808683+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-020",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-020-TEST-com.trs.studio.ModelEditingIntegrationTest.xml",
+      "sha256": "13a1862e8a63ddc7c2c95df82702a494f2d2dcedb661fd38e9582fed06aa2562",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.808683+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-021",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-021-TEST-com.trs.studio.ModelKeyPersistenceTest.xml",
+      "sha256": "a0092630381c4ff2688b02f4fab5d6adad18a61d2838b49b1badc7c05e226cfc",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.809681+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-022",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-022-TEST-com.trs.studio.ObjectActionRuntimeIntegrationTest.xml",
+      "sha256": "b9141a74c020c8dc9575567b0563ec58c2e546c4c06782d47a16c2a23f10dcfa",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.809681+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-023",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-023-TEST-com.trs.studio.ObjectiveGraphQueryTest.xml",
+      "sha256": "54f0ac209544dbb7f8a26ea56868f6788a4f9623c8d5c02802c8fadbb0135dd0",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.809681+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-024",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-024-TEST-com.trs.studio.ObjectOwnedRelationActionsTest.xml",
+      "sha256": "06c4191ddf0960c833cf7073dae333055d19233bd0862a491bda8612a8eeb714",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.810682+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-025",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-025-TEST-com.trs.studio.RunDeletionIntegrationTest.xml",
+      "sha256": "5ea58145e429abea0da1c8dd4ca25ea9718d671518c32128a13c09d4adb6da11",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.810682+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-026",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-026-TEST-com.trs.studio.RunTerminationIntegrationTest.xml",
+      "sha256": "8f5c7671fefc26d286f3a6ecc1a13aca399fc735f5eb61304b0c2451d72caa58",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.811681+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-027",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-027-TEST-com.trs.studio.ScenarioDeletionIntegrationTest.xml",
+      "sha256": "aed29323d074a67cce109e74d250c991adcbcaf37719b5cc8e1e8045f049eb83",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.811681+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-028",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-028-TEST-com.trs.studio.SimulationIntegrationTest.xml",
+      "sha256": "f0615424d467c4d3ac40816e415decdbed36c0c6b310bebf6d9185214705a285",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.811681+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-029",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-029-TEST-com.trs.studio.WorldCatalogMigrationTest.xml",
+      "sha256": "61dd97c1395cc6b11c112777b6514e37c3a4d9381e36b5f6445d0f2bfae54338",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.812681+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-030",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-030-TEST-com.trs.studio.WorldMaintenanceIntegrationTest.xml",
+      "sha256": "49fa288c2981fbf23dcb42f21de19554b9fa19d80b4208787b44cc5e64a9cbc1",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.812681+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-031",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-031-baseline-env.log",
+      "sha256": "be3610ec36b5393dbf11f5696037ebaca3801d368edf9a2fdc3c4740516b8dfb",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.822443+08:00",
+      "checkIds": [
+        "G-03"
+      ]
+    },
+    {
+      "id": "EV-032",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-032-baseline-env-meta.json",
+      "sha256": "687551946479a4763e7b9c29e4316fdf25f0fe554cda056858982fd4715ed01e",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.822443+08:00",
+      "checkIds": [
+        "G-03"
+      ]
+    },
+    {
+      "id": "EV-033",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-033-baseline-pnpm-retry-install.log",
+      "sha256": "f439b7ff1d0069fa6c36ea644d3f812d2a208c92aa34130343b4c0d0891d9013",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.823443+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-034",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-034-baseline-pnpm-retry-install-meta.json",
+      "sha256": "0b3294c5fb322450971e6ca0817c3860aeb1810b1079856daf3009b366b6c68d",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.823443+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-035",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-035-baseline-pnpm-retry-test.log",
+      "sha256": "fef0a0f4d80a1231d94a6630ff081e35335802a87b5761344b493be5a2c63ce0",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.823443+08:00",
+      "checkIds": [
+        "G-04",
+        "G-06",
+        "G-12",
+        "S1-15"
+      ]
+    },
+    {
+      "id": "EV-036",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-036-baseline-pnpm-retry-test-meta.json",
+      "sha256": "0a57516e28110060b91d9624f3d25891687813d82bb9a83624a50ed107ada873",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.824443+08:00",
+      "checkIds": [
+        "G-04",
+        "G-06",
+        "G-12",
+        "S1-15"
+      ]
+    },
+    {
+      "id": "EV-037",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-037-baseline-vitest.xml",
+      "sha256": "b1c08f69022275f8fb1452786c85bd8a44d84cb9c2dd26970b4dcd0960913093",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.824443+08:00",
+      "checkIds": [
+        "G-04",
+        "G-06",
+        "G-12",
+        "S1-15"
+      ]
+    },
+    {
+      "id": "EV-038",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-038-baseline-pnpm-retry-build.log",
+      "sha256": "65d3f4aa36197e8d689e0c2c80ea1d1933e50c9aafb044396b4085bb9cc7074c",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.825444+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-039",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-039-baseline-pnpm-retry-build-meta.json",
+      "sha256": "634880083cf5ba843655d566a43a2d48fbae58b2b8626e2b1a186a518b6faa28",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.825444+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-040",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-040-baseline-graph.log",
+      "sha256": "72d6ab275d60c1505d4ea2557eca1412c8ee6d25125ec0dc95439274932f1064",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.826443+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-10",
+        "S1-11",
+        "E2E-K",
+        "S2-10",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-041",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-041-baseline-graph-meta.json",
+      "sha256": "c8484945b9317093958451cd7e3fe68f0024aeba3f96b759dfa2f485208a7a9c",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.826443+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-10",
+        "S1-11",
+        "E2E-K",
+        "S2-10",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-042",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-042-baseline-evidence-retry.log",
+      "sha256": "adf556e154cae31ab5651e4aeef28dabf29c736e65fefc262b3fe0d1197ac2a8",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.826443+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-11",
+        "S2-14",
+        "S3-12"
+      ]
+    },
+    {
+      "id": "EV-043",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-043-baseline-evidence-retry-meta.json",
+      "sha256": "b146a20b54bafcc36a0a0f5beedba37e6c240b4192c924d9abb48b266ffe94df",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.827443+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-11",
+        "S2-14",
+        "S3-12"
+      ]
+    },
+    {
+      "id": "EV-044",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-044-baseline-smoke.log",
+      "sha256": "3ffdff13e1ba481b4ac09b42b55fbb798bae3532a379d61e822615372ff0d95f",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.827443+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-045",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-045-baseline-smoke-meta.json",
+      "sha256": "54e389a9df98c3c16c18f97575f67fa9eecfddc84b1434c22450b3b2a15fc482",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.827443+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-046",
+      "kind": "STATE_FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-046-baseline-http-trace.json",
+      "sha256": "c48d0eea3e762b02a6d66ca6d41c30441ae19135759caa6572118f1ef57eddb3",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.830443+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-047",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-047-baseline-server.log",
+      "sha256": "1fe12a45cdb79dd5871073cd45e64da600fa3f9fcbd2a44272f4456f5305c4cb",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.830443+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-048",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-048-baseline-concurrency.json",
+      "sha256": "43193ab723c9efb3819fc6764b1ac2a11b47b0b7cf4e6a3eb80ef5374b2c0501",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.831443+08:00",
+      "checkIds": [
+        "G-10",
+        "S1-06",
+        "S2-07",
+        "S3-04"
+      ]
+    },
+    {
+      "id": "EV-049",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-049-baseline-browser-verified.log",
+      "sha256": "e268b389d4ebc305b361c23c797d59b1f9e3abdee3fbd88ec22694e450cda390",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.831443+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-050",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-050-baseline-browser-verified-meta.json",
+      "sha256": "df0a4c82bbabc889f4e18779b57e1ce194aa39e9b01e0be02dc2f703fdbd0246",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.831443+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-051",
+      "kind": "SCREENSHOT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-051-baseline-browser.png",
+      "sha256": "df955aebcab0ef2c8e0780b59ef09a6f69e7de53dc5375c1a6dad2774fbd59f5",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.832443+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-052",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-052-baseline-query-objective.log",
+      "sha256": "9b2a9cb0730577ee67a39a20fa63ff2fbeeab0411bb8b5d9ef81233d65876d16",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.833444+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K",
+        "S3-08"
+      ]
+    },
+    {
+      "id": "EV-053",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-053-baseline-query-objective-meta.json",
+      "sha256": "bf51fdea9c482dd86d6b45ee316ad312c068db31f24ee74c3d3f69a3e8d4b8bb",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.833444+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K",
+        "S3-08"
+      ]
+    },
+    {
+      "id": "EV-054",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-054-TEST-com.trs.studio.ReviewerQueryObjectiveTest.xml",
+      "sha256": "9969e5c0fb2299fb690defd729bcda01cb98fe75f2e5ff5c3debfd2ca728d67d",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.833444+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K",
+        "S3-08"
+      ]
+    },
+    {
+      "id": "EV-055",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-055-ReviewerQueryObjectiveTest.java",
+      "sha256": "883400ae2c479b13b23ce48191c40e6ebbadb06d70efea3ce26aeb9d8e4e0f85",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.834443+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K",
+        "S3-08"
+      ]
+    },
+    {
+      "id": "EV-056",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-056-candidate-maven.log",
+      "sha256": "e1f460c270c4243d3f232b8ed8286538bc3c33ebc8c9f08e9cd5d1d1f2a628c9",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.836443+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-057",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-057-candidate-maven-meta.json",
+      "sha256": "2c7f4085d164a9c957f531bc7ac3bf72d5457426b7dd3c5f3b4f97001481f2c2",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.836443+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-058",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-058-TEST-com.trs.simulation.agent.WorkerToolsTest.xml",
+      "sha256": "cb95478c46ad8b2d70c05ef0296d0fd38c997c6ad7a42aaef893665c8d939fa1",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.837443+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-059",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-059-TEST-com.trs.studio.ActionLibraryIntegrationTest.xml",
+      "sha256": "528af5f86f5d285e58d1ecf5e3280cf61847f0512d379f30c0755bdc512be774",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.837443+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-060",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-060-TEST-com.trs.studio.AgentScopeContractTest.xml",
+      "sha256": "20fd28dd7eeaa289d3b76cbddd6aeda41b6177d39a4071e0fc61d131acaf3929",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.838453+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-061",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-061-TEST-com.trs.studio.AuthIntegrationTest.xml",
+      "sha256": "96adb9c97860c9f2b1e3a0a53476f5a847c2cf8feef79b61a1f804943f6bc78d",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.838453+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-062",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-062-TEST-com.trs.studio.ContinuationIntegrationTest.xml",
+      "sha256": "5aaa908fd1d02077c07cb8660fecb7bddf06bc42ccb8967f98ca4f5128ef8d1f",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.838453+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-063",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-063-TEST-com.trs.studio.DeclarativeActionEngineTest.xml",
+      "sha256": "1852921c36ac09e2d3be9d6c6ccbfbb83e55c3569271bf89e05e46b2d73bd060",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.839444+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-064",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-064-TEST-com.trs.studio.EventClockIntegrationTest.xml",
+      "sha256": "faa8fabdd66e4ef40154f3f00e01c1b29dc89ac3340b3015e837b6072463df4e",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.839444+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-065",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-065-TEST-com.trs.studio.HierarchicalFrameworkIntegrationTest.xml",
+      "sha256": "20651af2f2892473410ece16951a3a1a5a741fbe324dfcccd565ace78b8366b2",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.840441+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-066",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-066-TEST-com.trs.studio.HierarchyGatewayIntegrationTest.xml",
+      "sha256": "ff29b7398eb8b34f0e55991b04f7562b38b7d1a42b22eb146f8be52cfbf9e437",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.840441+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-067",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-067-TEST-com.trs.studio.HierarchyModelContractTest.xml",
+      "sha256": "5566256a88f3336cc2c82d331451c24c19fa58e2d977b95a9eb7cca5180cf774",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.840441+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-068",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-068-TEST-com.trs.studio.InformationObjectActionsTest.xml",
+      "sha256": "a48aa0a1ad53bf9f29bc2b05c868bf86231a7fdf3f77a5feea7b296810c18c1e",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.841442+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-069",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-069-TEST-com.trs.studio.ModelEditingIntegrationTest.xml",
+      "sha256": "be8f563ab264e2a0f847736b1ccebd130ae208fdc58e89ed194065678d90e8d8",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.841442+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-070",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-070-TEST-com.trs.studio.ModelKeyPersistenceTest.xml",
+      "sha256": "d474eabbd2d8bee0937a80b8254a98fc001f04d0a2b030e13fec5402446b6762",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.842442+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-071",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-071-TEST-com.trs.studio.ObjectActionRuntimeIntegrationTest.xml",
+      "sha256": "89899680ba759146d077684dd2ab2c51b5c58a0feae50a777809dfad31369d0d",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.842442+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-072",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-072-TEST-com.trs.studio.ObjectiveGraphQueryTest.xml",
+      "sha256": "723ce4d1ec4681a35d25baca27e952ccae8c5be69c14afd028213ed71c27fb5e",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.842442+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-073",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-073-TEST-com.trs.studio.ObjectOwnedRelationActionsTest.xml",
+      "sha256": "3992799c909eac0278491cec1e11f4d2539f58a0e9463d8b950e8af0d329b3e7",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.843442+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-074",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-074-TEST-com.trs.studio.RunDeletionIntegrationTest.xml",
+      "sha256": "44e215c0eb1430960b038bb99e924f62222f0657683b95f9c2792cd6a7a5abdd",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.843442+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-075",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-075-TEST-com.trs.studio.RunTerminationIntegrationTest.xml",
+      "sha256": "bfd68e768405f49dc99ec3fe8b6104daf1a46747e8ecc794d2edc3384bc1ee90",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.843442+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-076",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-076-TEST-com.trs.studio.ScenarioDeletionIntegrationTest.xml",
+      "sha256": "5d32838edf70a03020231108361aeb7d82386c26e45adffc0fd083ed2cd88693",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.844442+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-077",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-077-TEST-com.trs.studio.SimulationIntegrationTest.xml",
+      "sha256": "c0e6f8a851e9debea761057547356ffe14b6f8d16f47cd2280dc839e1d5210fe",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.844442+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-078",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-078-TEST-com.trs.studio.WorldCatalogMigrationTest.xml",
+      "sha256": "bc99e0bb3813141d54ee1b1c15d74676a402cdcb124395f6468266ad22a52e5c",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.845442+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-079",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-079-TEST-com.trs.studio.WorldMaintenanceIntegrationTest.xml",
+      "sha256": "46f08345bee025b73068ef054b1ca4793aeaf8e5840ff949e09be58688a9ca1f",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.845442+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-080",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-080-candidate-env.log",
+      "sha256": "be3610ec36b5393dbf11f5696037ebaca3801d368edf9a2fdc3c4740516b8dfb",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.855446+08:00",
+      "checkIds": [
+        "G-03"
+      ]
+    },
+    {
+      "id": "EV-081",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-081-candidate-env-meta.json",
+      "sha256": "350badabcd4f21fb107f2aae5774cd4dd3c04d96f5e356bfd0b308f4a3139e2d",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.855446+08:00",
+      "checkIds": [
+        "G-03"
+      ]
+    },
+    {
+      "id": "EV-082",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-082-candidate-pnpm-retry-install.log",
+      "sha256": "da3fe54ab3ec8f6c6bcabc1461f5c565d13ab7b371a7853a44af7f09bdfbccc4",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.855446+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-083",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-083-candidate-pnpm-retry-install-meta.json",
+      "sha256": "47a54261e7e6fb454ef60c10375be4deebdbcfbbb5d4f2ab93561b3ad1a9698a",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.856446+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-084",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-084-candidate-pnpm-retry-test.log",
+      "sha256": "d57c921e5084ff1da9d9de3fc74b442aa84ad9839997509261657bc9f9e7b303",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.856446+08:00",
+      "checkIds": [
+        "G-04",
+        "G-06",
+        "G-12",
+        "S1-15"
+      ]
+    },
+    {
+      "id": "EV-085",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-085-candidate-pnpm-retry-test-meta.json",
+      "sha256": "71531b24afff722cecbb84923811aeaddc0897ffdeed1b117136294f2eb34572",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.857446+08:00",
+      "checkIds": [
+        "G-04",
+        "G-06",
+        "G-12",
+        "S1-15"
+      ]
+    },
+    {
+      "id": "EV-086",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-086-candidate-vitest.xml",
+      "sha256": "3cffa956ce25caaf92940eca6e467289948f5f7bdabf8cd615229ae506be709d",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.857446+08:00",
+      "checkIds": [
+        "G-04",
+        "G-06",
+        "G-12",
+        "S1-15"
+      ]
+    },
+    {
+      "id": "EV-087",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-087-candidate-pnpm-retry-build.log",
+      "sha256": "2a0bf90a09b11e0be28a5bd812122393a8784ddd57ffde4f3e9df73ae3b0a178",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.858446+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-088",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-088-candidate-pnpm-retry-build-meta.json",
+      "sha256": "bc3729a298a537e690ef19e84c3fbc3c620713a3e9ef216e1b9b59c12cb143c2",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.858446+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-089",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-089-candidate-graph.log",
+      "sha256": "72d6ab275d60c1505d4ea2557eca1412c8ee6d25125ec0dc95439274932f1064",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.859446+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-10",
+        "S1-11",
+        "E2E-K",
+        "S2-10",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-090",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-090-candidate-graph-meta.json",
+      "sha256": "800217bc1270bdc6214415fdcae44af093badd0f1de7385fbf49339950025cb5",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.859446+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-10",
+        "S1-11",
+        "E2E-K",
+        "S2-10",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-091",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-091-candidate-evidence-retry.log",
+      "sha256": "adf556e154cae31ab5651e4aeef28dabf29c736e65fefc262b3fe0d1197ac2a8",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.859446+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-11",
+        "S2-14",
+        "S3-12"
+      ]
+    },
+    {
+      "id": "EV-092",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-092-candidate-evidence-retry-meta.json",
+      "sha256": "b6034aa0485159ece622bc2348c3cc11d2e4bc199a6c65519c0d473e7c402b35",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.859446+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-11",
+        "S2-14",
+        "S3-12"
+      ]
+    },
+    {
+      "id": "EV-093",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-093-candidate-smoke.log",
+      "sha256": "17d56aa8ffc37e4c6cac8060825667bf71ba142bbd4e2e30a77188dc5b35a219",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.860950+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-094",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-094-candidate-smoke-meta.json",
+      "sha256": "f5770e69e11fdeafd3c878cbe37e233e6f6948cf86bd973c1e45d9bc57a6e253",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.860950+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-095",
+      "kind": "STATE_FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-095-candidate-http-trace.json",
+      "sha256": "0422b086e70598f482612a050c733b750590f6db33f4dc0565f6a8667cc3c792",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.863291+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-096",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-096-candidate-server.log",
+      "sha256": "0c4e520f57773a01864aca97db2c8c54f536160028192c3bf4a7b577ed76a122",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.863795+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-097",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-097-candidate-concurrency.json",
+      "sha256": "cfa2eb7dfeea3f77cd8aeac20e5f7c1ac819cfb270b7f2dbfeb91c9e4c9ea63a",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.863795+08:00",
+      "checkIds": [
+        "G-10",
+        "S1-06",
+        "S2-07",
+        "S3-04"
+      ]
+    },
+    {
+      "id": "EV-098",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-098-candidate-browser-verified.log",
+      "sha256": "e268b389d4ebc305b361c23c797d59b1f9e3abdee3fbd88ec22694e450cda390",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.864799+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-099",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-099-candidate-browser-verified-meta.json",
+      "sha256": "5494d717a2c28ded76b9216a0243e0fc928c0f637829f40b42c47fac1fdc90d1",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.864799+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-100",
+      "kind": "SCREENSHOT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-100-candidate-browser.png",
+      "sha256": "df955aebcab0ef2c8e0780b59ef09a6f69e7de53dc5375c1a6dad2774fbd59f5",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.864799+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-101",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-101-candidate-query-objective.log",
+      "sha256": "a4bbbecc56bd743d0b187a53eebfc2096b2a754da276c41459d420271e3dd72d",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.865799+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K",
+        "S3-08"
+      ]
+    },
+    {
+      "id": "EV-102",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-102-candidate-query-objective-meta.json",
+      "sha256": "e50fad5490dc6ee7faabf703cdd8743911d6a23afb9e47e1ef47114a60ab1254",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.865799+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K",
+        "S3-08"
+      ]
+    },
+    {
+      "id": "EV-103",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-103-TEST-com.trs.studio.ReviewerQueryObjectiveTest.xml",
+      "sha256": "614f95e9408a72412d5da236634ec178e97333fb094c993bfdffc5f9952205c4",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.866799+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K",
+        "S3-08"
+      ]
+    },
+    {
+      "id": "EV-104",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-104-ReviewerQueryObjectiveTest.java",
+      "sha256": "883400ae2c479b13b23ce48191c40e6ebbadb06d70efea3ce26aeb9d8e4e0f85",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.866799+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K",
+        "S3-08"
+      ]
+    },
+    {
+      "id": "EV-105",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-105-candidate-review-ontology.log",
+      "sha256": "cccd0aae77efffe07e4cb898c3787fb53e7412a159b72c965bc0d9f1539ef204",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.867799+08:00",
+      "checkIds": [
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-106",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-106-candidate-review-ontology-meta.json",
+      "sha256": "a00f5ba8f1f1fc517a1574d3f6b2c803858e82e5e75e3d2f093a92167239e79c",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.867799+08:00",
+      "checkIds": [
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-107",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-107-TEST-com.trs.studio.ReviewerStage2OntologyTest.xml",
+      "sha256": "f817c5539a74967f7aea0a124c35587fa6e6e0f52bba6c6a64314799be040a7a",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.868800+08:00",
+      "checkIds": [
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-108",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-108-ReviewerStage2OntologyTest.java",
+      "sha256": "cfc62d56bc28e48065ab5f0c3fdc7194cc78c0a7ba1d7338d1edc3d3747acf19",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.868800+08:00",
+      "checkIds": [
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-109",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-109-candidate-review-commit.log",
+      "sha256": "94c2dd732dcda388e4810c74bd3e250022fb75a3687f692407eb2969d5dd64cf",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.869799+08:00",
+      "checkIds": [
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-13"
+      ]
+    },
+    {
+      "id": "EV-110",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-110-candidate-review-commit-meta.json",
+      "sha256": "345b2d613a74db3b5acc6f14e8edade128eed89eaa026a00f55e174727ae494b",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.869799+08:00",
+      "checkIds": [
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-13"
+      ]
+    },
+    {
+      "id": "EV-111",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-111-TEST-com.trs.studio.ReviewerStage2CommitTest.xml",
+      "sha256": "35476d044db685e6d95e5fcf97f4b40d9a82a887ff4ce51039a85c92edf18584",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.870799+08:00",
+      "checkIds": [
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-13"
+      ]
+    },
+    {
+      "id": "EV-112",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-112-ReviewerStage2CommitTest.java",
+      "sha256": "4b5b723aff13197bf0ff798311bcda7467d3779c629e89600343faafb5f9a306",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.870799+08:00",
+      "checkIds": [
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-13"
+      ]
+    },
+    {
+      "id": "EV-113",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-113-candidate-review-visibility.log",
+      "sha256": "ba842369bbac586d65a2035b659efa09fae04b95b2f6e1c209010cbb88a8b8c9",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.871799+08:00",
+      "checkIds": [
+        "S2-09",
+        "S2-10",
+        "S2-11"
+      ]
+    },
+    {
+      "id": "EV-114",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-114-candidate-review-visibility-meta.json",
+      "sha256": "38d5186b77a269aaa62544027830963d37bb79564865eccfaae92803b9da3a7f",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.871799+08:00",
+      "checkIds": [
+        "S2-09",
+        "S2-10",
+        "S2-11"
+      ]
+    },
+    {
+      "id": "EV-115",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-115-TEST-com.trs.studio.ReviewerStage2VisibilityTest.xml",
+      "sha256": "9cafab6f7a69323cc41f91dfc0609f046579edba76fd6d222edcd5eaf0b333f1",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.872799+08:00",
+      "checkIds": [
+        "S2-09",
+        "S2-10",
+        "S2-11"
+      ]
+    },
+    {
+      "id": "EV-116",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-116-ReviewerStage2VisibilityTest.java",
+      "sha256": "90bf7717a23365857a644177c24df6541eda035ca1ae32799cba434047e5d915",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.872799+08:00",
+      "checkIds": [
+        "S2-09",
+        "S2-10",
+        "S2-11"
+      ]
+    },
+    {
+      "id": "EV-117",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-117-candidate-review-evidence.log",
+      "sha256": "e29901ffadb672c3f223ed1b525d70ed5123d9d72b6409ecba94013eb574568f",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.873800+08:00",
+      "checkIds": [
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-118",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-118-candidate-review-evidence-meta.json",
+      "sha256": "71b5932d739e1fc5b3ba246d7ac46e17f5d4f0eaadef70664347ed57dc89cdcd",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.873800+08:00",
+      "checkIds": [
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-119",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-119-TEST-com.trs.studio.ReviewerStage2EvidenceTest.xml",
+      "sha256": "e419bdba85572af9aabb7c24d6db21bff38e8db6e3c4bb9c527773e9ac3bd291",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.874799+08:00",
+      "checkIds": [
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-120",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-120-ReviewerStage2EvidenceTest.java",
+      "sha256": "284caa113e9b7804cd805c951cb45861b9f796e4bbcf3b669a9f7c7484d6c46f",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.874799+08:00",
+      "checkIds": [
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-121",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-121-candidate-stage3-scheduler.log",
+      "sha256": "b2abfbdc28ea9ebd595400f9326f60508fe5053be805d4921315eab4eb95a9f2",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.875799+08:00",
+      "checkIds": [
+        "S3-01",
+        "S3-02",
+        "S3-03",
+        "S3-07",
+        "S3-10",
+        "S3-11",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-122",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-122-candidate-stage3-scheduler-meta.json",
+      "sha256": "47cd800a77c0492ee3cf299200c1858c526859ef0ddedc30b43736c5a06c45cd",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.875799+08:00",
+      "checkIds": [
+        "S3-01",
+        "S3-02",
+        "S3-03",
+        "S3-07",
+        "S3-10",
+        "S3-11",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-123",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-123-TEST-com.trs.studio.ReviewerStage3SchedulerTest.xml",
+      "sha256": "cd942cde092a80e09fd95d5d0392bc477308949e354c3b71873d982058f3a56b",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.875799+08:00",
+      "checkIds": [
+        "S3-01",
+        "S3-02",
+        "S3-03",
+        "S3-07",
+        "S3-10",
+        "S3-11",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-124",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-124-ReviewerStage3SchedulerTest.java",
+      "sha256": "ba41b96b25345b6387be20a854cd6beb6779a01997a09bb97973eadec9a1b090",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.876799+08:00",
+      "checkIds": [
+        "S3-01",
+        "S3-02",
+        "S3-03",
+        "S3-07",
+        "S3-10",
+        "S3-11",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-125",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-125-candidate-stage3-recovery.log",
+      "sha256": "5e35054961f2ad3ef3469d4f4c7eceac8bbf4881c3979abe2949c4513ac3b63d",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.877800+08:00",
+      "checkIds": [
+        "G-07",
+        "G-10",
+        "S3-04",
+        "S3-05",
+        "S3-06",
+        "S3-10"
+      ]
+    },
+    {
+      "id": "EV-126",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-126-candidate-stage3-recovery-meta.json",
+      "sha256": "5c5f9cf2254ecfa7fb80ef35ca4ca0bab88ca3efa7e89a6cefdb1ea863c0e845",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.877800+08:00",
+      "checkIds": [
+        "G-07",
+        "G-10",
+        "S3-04",
+        "S3-05",
+        "S3-06",
+        "S3-10"
+      ]
+    },
+    {
+      "id": "EV-127",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-127-TEST-com.trs.studio.ReviewerStage3RecoveryTest.xml",
+      "sha256": "cd504afb3e8a60e23243ffb36ebfecaaf635b349dc1b1582bf5925023cec8d98",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.877800+08:00",
+      "checkIds": [
+        "G-07",
+        "G-10",
+        "S3-04",
+        "S3-05",
+        "S3-06",
+        "S3-10"
+      ]
+    },
+    {
+      "id": "EV-128",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-128-ReviewerStage3RecoveryTest.java",
+      "sha256": "b20501a6ed136cad7a78b1fcb8b5569cdce19d1dae708799f65281d1c682f5a3",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.878799+08:00",
+      "checkIds": [
+        "G-07",
+        "G-10",
+        "S3-04",
+        "S3-05",
+        "S3-06",
+        "S3-10"
+      ]
+    },
+    {
+      "id": "EV-129",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-129-candidate-stage3-evaluation.log",
+      "sha256": "c0de335f0a2ded064b36c77ff3379621ba83b3200c7f9b879e10cc021e893369",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.879799+08:00",
+      "checkIds": [
+        "S3-08",
+        "S3-09",
+        "S3-10",
+        "S3-11",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-130",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-130-candidate-stage3-evaluation-meta.json",
+      "sha256": "11046ec908cf0a1dd04db6d86aac75fa9886fa69977591264e7f11115c916972",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.879799+08:00",
+      "checkIds": [
+        "S3-08",
+        "S3-09",
+        "S3-10",
+        "S3-11",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-131",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-131-TEST-com.trs.studio.ReviewerStage3EvaluationTest.xml",
+      "sha256": "b7b36ff4c3a2700498f0b4d9a6ca3489c979e91469ad22edd19c6d8d88c5aa08",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.879799+08:00",
+      "checkIds": [
+        "S3-08",
+        "S3-09",
+        "S3-10",
+        "S3-11",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-132",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-132-ReviewerStage3EvaluationTest.java",
+      "sha256": "c81efe206e99f2c90f716b42fde2820c3f07e5732ebb8a342e68611ad45d5810",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.880799+08:00",
+      "checkIds": [
+        "S3-08",
+        "S3-09",
+        "S3-10",
+        "S3-11",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-133",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-133-candidate-stage3-termination.log",
+      "sha256": "053d49457255fb828a506ea6670f7da8264a5bc18595dd25c0e14ea82bdb5d32",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.881800+08:00",
+      "checkIds": [
+        "S3-09",
+        "S3-10",
+        "S3-12",
+        "E2E-L"
+      ]
+    },
+    {
+      "id": "EV-134",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-134-candidate-stage3-termination-meta.json",
+      "sha256": "c4d337f7c8ad35ca2f44146e987862ceb6b5e38e4f63e4c425b8d86801e1c900",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.881800+08:00",
+      "checkIds": [
+        "S3-09",
+        "S3-10",
+        "S3-12",
+        "E2E-L"
+      ]
+    },
+    {
+      "id": "EV-135",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-135-TEST-com.trs.studio.ReviewerStage3TerminationFlowTest.xml",
+      "sha256": "13c8814dd97ccafe15b06f11f91405562bec3396c81cabb0154c4b6a0e92bd4a",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.881800+08:00",
+      "checkIds": [
+        "S3-09",
+        "S3-10",
+        "S3-12",
+        "E2E-L"
+      ]
+    },
+    {
+      "id": "EV-136",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-136-ReviewerStage3TerminationFlowTest.java",
+      "sha256": "d65ac09e258352bbd31873053bb7104d5570d0f7f62887be2aee85aabafdfb33",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.882799+08:00",
+      "checkIds": [
+        "S3-09",
+        "S3-10",
+        "S3-12",
+        "E2E-L"
+      ]
+    },
+    {
+      "id": "EV-137",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-137-candidate-stage3-pause.log",
+      "sha256": "7a08f4c2836d32766e1e71a17f12c40167cbcdb73b8ca763d0c915e942123763",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.883799+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-138",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-138-candidate-stage3-pause-meta.json",
+      "sha256": "3795f588624dea878f632755df578a3f86b85d97111953b0e8d86537a57ed724",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.883799+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-139",
+      "kind": "TEST_REPORT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-139-TEST-com.trs.studio.ReviewerStage3PauseTest.xml",
+      "sha256": "bde780002fc2c16e7307fee2ca6f6b6992210d8eae5fe854838931616abe8ae9",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.883799+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-140",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-140-ReviewerStage3PauseTest.java",
+      "sha256": "d13bb6869a8aa76357da0374c4f4e67a020692188adf9ffe95913132ebe07afe",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.884799+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-141",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-141-candidate-format.log",
+      "sha256": "9e5f4e76c69156cf6a62ec9a9e4d61d1569c01f97c18c9e613256d1d8696853c",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.885799+08:00",
+      "checkIds": [
+        "G-12"
+      ]
+    },
+    {
+      "id": "EV-142",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-142-candidate-format-meta.json",
+      "sha256": "79cf0b2ebd979db8c4b3acaf533195ad0eb51c7495f34f534b83838acba68a73",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.885799+08:00",
+      "checkIds": [
+        "G-12"
+      ]
+    },
+    {
+      "id": "EV-143",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-143-candidate-gate-tests.log",
+      "sha256": "c56aaa6a985b3bd0844f7c10ca6cbe73c594e866e0462d2d606f6f249746aba3",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.885799+08:00",
+      "checkIds": [
+        "G-01"
+      ]
+    },
+    {
+      "id": "EV-144",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-144-candidate-gate-tests-meta.json",
+      "sha256": "964cbbf0cf67b3c4c3dbaeb029803a4299ee53c921800cc62064323798ff6126",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.886799+08:00",
+      "checkIds": [
+        "G-01"
+      ]
+    },
+    {
+      "id": "EV-145",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-145-http-compare.log",
+      "sha256": "9c0b783a4613b05031cc25d6d121fabb83d00c40687b310a0b4c2535c05616ff",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.886799+08:00",
+      "checkIds": [
+        "G-08",
+        "G-10",
+        "G-11",
+        "S1-05",
+        "S1-07",
+        "S1-08",
+        "S1-14",
+        "E2E-A",
+        "E2E-M",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-146",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-146-http-compare-meta.json",
+      "sha256": "45f5c35ea1f6d5dc013aa280ebcb158955c2b982cee81f0523996212be4cefb1",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.886799+08:00",
+      "checkIds": [
+        "G-08",
+        "G-10",
+        "G-11",
+        "S1-05",
+        "S1-07",
+        "S1-08",
+        "S1-14",
+        "E2E-A",
+        "E2E-M",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-147",
+      "kind": "COMPARISON",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-147-stage2-http-analysis.json",
+      "sha256": "fbe5a46adfbacdadbedac46bbac10ff64fef21929d48335ec770aa3b641488fb",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.887799+08:00",
+      "checkIds": [
+        "G-08",
+        "G-10",
+        "G-11",
+        "S1-05",
+        "S1-07",
+        "S1-08",
+        "S1-14",
+        "E2E-A",
+        "E2E-M",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-148",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-148-stage2_http_compare.py",
+      "sha256": "ef38586109ce271eee61e73fbdae9a434f56dd2d32d57d81afaef24282ee556f",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.887799+08:00",
+      "checkIds": [
+        "G-08",
+        "G-10",
+        "G-11",
+        "S1-05",
+        "S1-07",
+        "S1-08",
+        "S1-14",
+        "E2E-A",
+        "E2E-M",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-149",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-149-historical-reopen.log",
+      "sha256": "cb2dc368c8adb11cc6cbe4f90bcea7627846d544f315d399f26277823e2fac96",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.888799+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-150",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-150-historical-reopen-meta.json",
+      "sha256": "60ca00ff6ad46e2151912ae1b529150b28d0263c350e3dc83d31b1e05b8fa461",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.888799+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-151",
+      "kind": "COMPARISON",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-151-candidate-reopen-comparison.json",
+      "sha256": "820d764333efe8f9337e9482e0cbaed2381f98195e2f4b18bf01feeabc77e354",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.888799+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-152",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-152-candidate-reopen-server.log",
+      "sha256": "5e1fbc2101d70af7457305b5f32dc79602828a2b433decc5194b3c82615e9fb6",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.888799+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-153",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-153-GraphFixture.java",
+      "sha256": "06750b0ef1eca840eccb4b2c4cbb1d004b5bb177bf32cc85aaeecba63d237b73",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.889799+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-10",
+        "S1-11",
+        "E2E-K",
+        "S2-10",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-154",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-154-graph_fixture.py",
+      "sha256": "d8cefd59a81ead331b84d07c1d3ead439eacdd4c621cfc53a81ba5063690fc1e",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.889799+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-10",
+        "S1-11",
+        "E2E-K",
+        "S2-10",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-155",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-155-EvidenceFixture.java",
+      "sha256": "597f80f02e9a6bdfe54ab5d735f828d081f8281c614b7bd12d87c731b84d8f38",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.889799+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-11",
+        "S2-14",
+        "S3-12"
+      ]
+    },
+    {
+      "id": "EV-156",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-156-evidence_retry.py",
+      "sha256": "5a486210929b5c979a943c7ae5be871b590d5f70283b18486159e2195a404863",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.890799+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-11",
+        "S2-14",
+        "S3-12"
+      ]
+    },
+    {
+      "id": "EV-157",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-157-http_fixture.py",
+      "sha256": "b30ad93a2c3d62bf29ce5bdad64a30c4ba5d8484bb32cd756c6baaa79ea8eaf2",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.890799+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-158",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-158-concurrency_fixture.py",
+      "sha256": "0b60935d4f2cc6dfff7d327a62cddd1469dee50cb09e42889843f652cbc4918c",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.891386+08:00",
+      "checkIds": [
+        "G-10",
+        "S1-06",
+        "S2-07",
+        "S3-04"
+      ]
+    },
+    {
+      "id": "EV-159",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-159-browser-fixture-verified.mjs",
+      "sha256": "2d900d4bc8d63a424dbf5dc632b1432399a4f2135b81cd935096a25a3564e235",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.891890+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-160",
+      "kind": "FROZEN_INPUT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-160-check-manifest.json",
+      "sha256": "3ce65d029034063d1761976e4d6d7dfa7528f3b4efc9750192a03decb7647c3b",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.891890+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-161",
+      "kind": "FROZEN_INPUT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-161-check-manifest.sha256",
+      "sha256": "7b6a2436cd82acee4eaca764ad46b9a80667bb3d56560f9b68c7453e03d5cbdd",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.891890+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-162",
+      "kind": "FROZEN_INPUT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-162-baseline.json",
+      "sha256": "ac68761f1fc702a41b5cd324ab86a11520be778b916286dca11340d8c061ff09",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.892895+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-163",
+      "kind": "FROZEN_INPUT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-163-candidate.json",
+      "sha256": "f195b48dbb6d28cb6c9f4ed6022bc61acf40bbd46735f078ba88ac369c1d6878",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.892895+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-164",
+      "kind": "FROZEN_INPUT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-164-gate-report.json",
+      "sha256": "12b5438479d4ce38412f77f25705d138141c3b0678c84fe846e846b37ee20fe7",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.892895+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-165",
+      "kind": "FROZEN_INPUT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-165-gate-report.json",
+      "sha256": "65c137a6219fb1cba7fa25ab2f1e4b17c6a070625698c33394a795f7a9da3f3d",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.893895+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-166",
+      "kind": "FROZEN_INPUT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-166-development.md",
+      "sha256": "4566124f6c745e709b5bb781891b516441c30748903695a4380d578df75c5b0d",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.893895+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-167",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-167-run_review.py",
+      "sha256": "a327b3d412192a7e29f76878d8f91a925d83e066ccc4c6514433a330d7bf9d41",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.893895+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "S3-05",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-168",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-168-replay_original.py",
+      "sha256": "678be8fa63c008056a310a99e108bb8ef439b806d7843fe30c6e1b3ececb8ff8",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.894895+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K",
+        "S3-08"
+      ]
+    },
+    {
+      "id": "EV-169",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-169-ReviewerStage3Support.java",
+      "sha256": "9cfe2c08a3750efd0f1c896258e6444a91b6c5bb2987c8880d28dbfbd0478ed6",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.896893+08:00",
+      "checkIds": [
+        "G-07",
+        "G-10",
+        "S3-01",
+        "S3-02",
+        "S3-03",
+        "S3-04",
+        "S3-05",
+        "S3-06",
+        "S3-07",
+        "S3-08",
+        "S3-09",
+        "S3-10",
+        "S3-11",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-170",
+      "kind": "RETRY_EVIDENCE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-170-static-unconfigured-crlf.log",
+      "sha256": "10e59711e6dc9d62c8466149b113bad1f946b20914e8ea0d4fe52a3f527b4b02",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.897902+08:00",
+      "checkIds": [
+        "G-01",
+        "G-02",
+        "G-03",
+        "G-04",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-12",
+        "G-13",
+        "S1-01",
+        "S1-02",
+        "S1-03",
+        "S1-05",
+        "S1-06",
+        "S1-16",
+        "S3-03",
+        "S3-09"
+      ]
+    },
+    {
+      "id": "EV-171",
+      "kind": "RETRY_EVIDENCE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-171-static-unconfigured-crlf-meta.json",
+      "sha256": "7ed520e17dae9b980feb6659a3d870503419fe19884a49704cc0ca06e750859f",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.897902+08:00",
+      "checkIds": [
+        "G-01",
+        "G-02",
+        "G-03",
+        "G-04",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-12",
+        "G-13",
+        "S1-01",
+        "S1-02",
+        "S1-03",
+        "S1-05",
+        "S1-06",
+        "S1-16",
+        "S3-03",
+        "S3-09"
+      ]
+    },
+    {
+      "id": "EV-172",
+      "kind": "RETRY_EVIDENCE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-172-candidate-gate-tests-original-line-endings.log",
+      "sha256": "0b980bea8462839032ef9efc3080e4338b39058718a191fc6fd31b68fa9a5a54",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.898893+08:00",
+      "checkIds": [
+        "G-01"
+      ]
+    },
+    {
+      "id": "EV-173",
+      "kind": "RETRY_EVIDENCE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-173-candidate-gate-tests-original-line-endings-meta.json",
+      "sha256": "a6b958ebb900f50829d64c2cd44287745d3eeb420136acf265a5161fd4d52102",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.898893+08:00",
+      "checkIds": [
+        "G-01"
+      ]
+    },
+    {
+      "id": "EV-174",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-174-strict-restart-http.log",
+      "sha256": "8328052d31591d8207768beb13f0063e303fde6af29a431d6c24f9b39d36804b",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.898893+08:00",
+      "checkIds": [
+        "G-07",
+        "S1-05",
+        "S1-08",
+        "S2-01",
+        "S2-12",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-175",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-175-strict-restart-http-meta.json",
+      "sha256": "2ce15cd2cf6a9be7f502baf8a333f415ac6c87f84744d6388ba03fa1c01b1acb",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.899893+08:00",
+      "checkIds": [
+        "G-07",
+        "S1-05",
+        "S1-08",
+        "S2-01",
+        "S2-12",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-176",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-176-review_restart.py",
+      "sha256": "1890f919c8d528f2337425400ad65afa9cb7a9231e952c6e784ed7e2fa242aab",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.899893+08:00",
+      "checkIds": [
+        "G-07",
+        "S1-05",
+        "S1-08",
+        "S2-01",
+        "S2-12",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-177",
+      "kind": "STATE_FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-177-strict-restart-result.json",
+      "sha256": "5f699c3731e8d440bb330257c1b58b352882d675ef5bac69781616b9a91a6684",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.899893+08:00",
+      "checkIds": [
+        "G-07",
+        "S1-05",
+        "S1-08",
+        "S2-01",
+        "S2-12",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-178",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-178-strict-restart-before-server.log",
+      "sha256": "26cc6e16a7472f2fb7bfedceca8633edc1250260aaf76f1d87e2651212e4456a",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.900893+08:00",
+      "checkIds": [
+        "G-07",
+        "S1-05",
+        "S1-08",
+        "S2-01",
+        "S2-12",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-179",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-179-strict-restart-after-server.log",
+      "sha256": "3860a118b439bae155f94ddf4aa3aefaa506eb6da71eda3ffefd756dc862a3c6",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.900893+08:00",
+      "checkIds": [
+        "G-07",
+        "S1-05",
+        "S1-08",
+        "S2-01",
+        "S2-12",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-180",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-180-pending-restart.log",
+      "sha256": "942ff81c2badf2845d8d5886a89155a9c105da3ade464c0e0747c98045bd7058",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.901893+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05",
+        "S3-10",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-181",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-181-pending-restart-meta.json",
+      "sha256": "5dcdd3a57c6ba780a77d462f77b45d882657388f61aa557f2dd9a836b1e94770",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.901893+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05",
+        "S3-10",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-182",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-182-pending_restart.py",
+      "sha256": "b854bc6bb38ffdc0155dcbb743d5b36db18cf374f12abeb2082b8a7400713f5b",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.901893+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05",
+        "S3-10",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-183",
+      "kind": "STATE_FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-183-pending-restart-trace.json",
+      "sha256": "8885aefe32228d43c9f6c2748ee43fd2175b1b4d673988f023b6e57f62be1e09",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.902893+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05",
+        "S3-10",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-184",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-184-pending-before-restart-server.log",
+      "sha256": "34694c1dd91eba5290594fefc04d30ae4fa4ab8ae780bd56385719cb63c550e1",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.902893+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05",
+        "S3-10",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-185",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-185-pending-after-restart-server.log",
+      "sha256": "1e394e185b7d683c866575575c8b4703ea3a94305fd3e55b900884218f16ac4e",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.903893+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05",
+        "S3-10",
+        "S3-12",
+        "S3-13"
+      ]
+    },
+    {
+      "id": "EV-186",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-186-task-restart.log",
+      "sha256": "e96be4c61da7549eb7d1bb411d0369d073834c759301068a95e279cf55065031",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.903893+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-187",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-187-task-restart-meta.json",
+      "sha256": "2803538790c898ed347de34025a378e469888b823659e2b41ed68cbdaed3697d",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.903893+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-188",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-188-task_restart.py",
+      "sha256": "db31996139c49423ecf99eb3cdb004d2b2b4674a45a7b16b5daaec6d753cbbfe",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.904893+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-189",
+      "kind": "STATE_FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-189-task-restart-trace.json",
+      "sha256": "a39ef7c9266f69f0a4446b8553a168bea94cb72a8ea231f383cf9efade99123d",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.904893+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-190",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-190-task-before-restart-server.log",
+      "sha256": "4bd721a8fb7554931e01a55917f37d252233c4bc5d30fb3eb9642ec117de5590",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.904893+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-191",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-191-task-after-restart-server.log",
+      "sha256": "3957f7e14deddd2ef2041b65c2a71ad1fd4abaa70699efe13823d132b9683ec7",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.904893+08:00",
+      "checkIds": [
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-192",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-192-v11-upgrade-http.log",
+      "sha256": "37b92c13d68db402494a207d7099ad5c0db5a729f4a51f6d0db01afab00cd35b",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.904893+08:00",
+      "checkIds": [
+        "G-07",
+        "S1-05",
+        "S1-08",
+        "S2-01",
+        "S2-12",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-193",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-193-v11-upgrade-http-meta.json",
+      "sha256": "f031e7f915f6429df69b1be12ed4324eeeb3cc39193b711e448e88f3a00e06ff",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.906397+08:00",
+      "checkIds": [
+        "G-07",
+        "S1-05",
+        "S1-08",
+        "S2-01",
+        "S2-12",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-194",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-194-review_v11_upgrade.py",
+      "sha256": "659ff38150afb699e8d3c55fa33b7dd750810d270bc6ee32138ea9d010add41f",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.906909+08:00",
+      "checkIds": [
+        "G-07",
+        "S1-05",
+        "S1-08",
+        "S2-01",
+        "S2-12",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-195",
+      "kind": "STATE_FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-195-v11-upgrade-result.json",
+      "sha256": "5b5c29d22624bf9497b69dc30c92b737ebab098c1fea279562f25d50fcae15ca",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.906909+08:00",
+      "checkIds": [
+        "G-07",
+        "S1-05",
+        "S1-08",
+        "S2-01",
+        "S2-12",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-196",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-196-v11-before-upgrade-server.log",
+      "sha256": "0c0b1bb4e747f5db93b8bc4ff55bd4514d86db0e5445cc54c341297c4f2a81a8",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.906909+08:00",
+      "checkIds": [
+        "G-07",
+        "S1-05",
+        "S1-08",
+        "S2-01",
+        "S2-12",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-197",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-197-v12-after-upgrade-server.log",
+      "sha256": "55acab1cd4bfc013a8d89bd3ef1068126201027a61877b1560dc23e8e8208e72",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.907911+08:00",
+      "checkIds": [
+        "G-07",
+        "S1-05",
+        "S1-08",
+        "S2-01",
+        "S2-12",
+        "S3-06",
+        "S3-07"
+      ]
+    },
+    {
+      "id": "EV-198",
+      "kind": "SOURCE_REVIEW",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-198-baseline-fixtures.json",
+      "sha256": "eb34e6231da2ccc28a1a81784dc5c1f45886349701e27a72255775d2b430b702",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.907911+08:00",
+      "checkIds": [
+        "G-01",
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-199",
+      "kind": "SOURCE_REVIEW",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-199-candidate-fixtures.json",
+      "sha256": "f042492108b9d8e185aa52e5dfb300f13b24c81202ea1e0326c661ccab8354cf",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.907911+08:00",
+      "checkIds": [
+        "G-01",
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-200",
+      "kind": "SOURCE_REVIEW",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-200-original-fixtures.json",
+      "sha256": "4b7e361fff5f10e860e4cf1e6e053bdfad7b1f94fad3be2b99aad0214372907c",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:34.908912+08:00",
+      "checkIds": [
+        "G-01",
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-201",
+      "kind": "REPAIR_COMPARISON",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-201-before-after-recovery.json",
+      "sha256": "c1478e180977cbb2d26ec6f2e4f49a15981dbabe5f7028566cc3ba02916d285a",
+      "sourceCommits": [
+        "9a266333d0a7f5c08282068643da6840d1a42d9b",
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:35.082799+08:00",
+      "checkIds": [
+        "G-01",
+        "G-10",
+        "S3-04",
+        "S3-05"
+      ]
+    },
+    {
+      "id": "EV-202",
+      "kind": "COMMAND_LOG",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-202-evidence-review.log",
+      "sha256": "1868ab7ae30400af225432f2cfa0703dd33b70f5f3bff0ce904dc02daf939413",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:35.265968+08:00",
+      "checkIds": [
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-203",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-203-evidence-review-meta.json",
+      "sha256": "6e4dffcda9ae24f3a61f6a4249bae67f259f086f34d6941296e9edb5dbca923b",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:35.267009+08:00",
+      "checkIds": [
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-204",
+      "kind": "FIXTURE",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-204-check_attempt02_evidence.py",
+      "sha256": "96b77913285dfc60bcf84e9e88168256cd89d973baebfb5c2f2eec2c0cf06da6",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:35.267667+08:00",
+      "checkIds": [
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-205",
+      "kind": "COMPARISON",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/EV-205-evidence-precheck.json",
+      "sha256": "e8cea86de2c645d261d4c4e5b6a563836ef2a9bb545a23723316a04b125356c2",
+      "sourceCommits": [
+        "68898b543c680ea926b61b06569b2bd0c2c9a750"
+      ],
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "capturedAt": "2026-11-26T17:12:35.269351+08:00",
+      "checkIds": [
+        "G-13",
+        "S1-16"
+      ]
+    }
+  ],
+  "previousCandidateEvidence": [
+    {
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/original/attempt01-candidate.json",
+      "sha256": "96597c6612dd66f0bd26e55c4b0cb4fdbb24a9d0b23eead738cfbd397f2f4103",
+      "candidateCommit": "2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90",
+      "kind": "FROZEN_ORIGINAL_REFERENCE"
+    },
+    {
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/original/attempt01-development.md",
+      "sha256": "a54c92535900142c8bf50e52fcdb5e52d2ecaefb8faf5b10a0acade40d247434",
+      "candidateCommit": "2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90",
+      "kind": "FROZEN_ORIGINAL_REFERENCE"
+    },
+    {
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/original/ReviewerStage3RecoveryTest.java",
+      "sha256": "b20501a6ed136cad7a78b1fcb8b5569cdce19d1dae708799f65281d1c682f5a3",
+      "candidateCommit": "2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90",
+      "kind": "FIXTURE"
+    },
+    {
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/original/ReviewerStage3Support.java",
+      "sha256": "9cfe2c08a3750efd0f1c896258e6444a91b6c5bb2987c8880d28dbfbd0478ed6",
+      "candidateCommit": "2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90",
+      "kind": "FIXTURE"
+    },
+    {
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/original/original-stage3-recovery.log",
+      "sha256": "6092463224ae0074ead53a79113c53cb3b096eb06329505f2c6de2f842f494c1",
+      "candidateCommit": "2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90",
+      "kind": "COMMAND_LOG"
+    },
+    {
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/original/original-stage3-recovery-meta.json",
+      "sha256": "550b89a186268d39e4b72c1fa192039a6f67c81ec386061add5fbaab2a391423",
+      "candidateCommit": "2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90",
+      "kind": "COMMAND_METADATA"
+    },
+    {
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/original/TEST-com.trs.studio.ReviewerStage3RecoveryTest.xml",
+      "sha256": "f3e66519d0585082a09e09922d9e62d3831991a2b3ed579a8cf032172f21413e",
+      "candidateCommit": "2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90",
+      "kind": "TEST_REPORT"
+    },
+    {
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/original/ReviewerStage3PauseTest.java",
+      "sha256": "d13bb6869a8aa76357da0374c4f4e67a020692188adf9ffe95913132ebe07afe",
+      "candidateCommit": "2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90",
+      "kind": "FIXTURE"
+    },
+    {
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/original/original-stage3-pause.log",
+      "sha256": "e39609e754b0cff113986b7ec96af08fbbdbfe379c94abee8c0e23d0a26d895f",
+      "candidateCommit": "2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90",
+      "kind": "COMMAND_LOG"
+    },
+    {
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/original/original-stage3-pause-meta.json",
+      "sha256": "a9cc31828849896a66db35640a6103441c9ba90b6b2736f9c4eec4bbf5aacf6f",
+      "candidateCommit": "2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90",
+      "kind": "COMMAND_METADATA"
+    },
+    {
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-03/attempt-02/target/evidence/original/TEST-com.trs.studio.ReviewerStage3PauseTest.xml",
+      "sha256": "723a9cbf2fe8178529e26549c3da3ccb95ceefbbde0d14f310866d3b78bc25b2",
+      "candidateCommit": "2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90",
+      "kind": "TEST_REPORT"
+    }
+  ]
+}

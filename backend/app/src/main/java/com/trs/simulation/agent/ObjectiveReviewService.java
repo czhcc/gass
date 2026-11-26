@@ -49,7 +49,7 @@ final class ObjectiveReviewService {
         var completion = history.reversed().stream()
                 .filter(e -> ObjectiveEvidence.COMPLETION_EVENT.equals(e.eventType())
                         && e.payload().get("round") instanceof Number round
-                        && round.intValue() == outcome.evaluatedRound()
+                        && (host.scenario().eventDriven() || round.intValue() == outcome.evaluatedRound())
                         && e.payload().get("version") instanceof Number version
                         && version.longValue() == state.version())
                 .findFirst();

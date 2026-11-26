@@ -32,7 +32,14 @@ class WorldCatalogMigrationTest {
                     INSERT INTO simulation_event VALUES ('existing',1,'ACTION_ACCEPTED',0,'legacy','{"targetId":"root"}')
                     """);
         }
-        assertEquals(1, Flyway.configure().dataSource(url, null, null).load().migrate().migrationsExecuted);
+        assertEquals(
+                1,
+                Flyway.configure()
+                        .dataSource(url, null, null)
+                        .target("10")
+                        .load()
+                        .migrate()
+                        .migrationsExecuted);
         try (var connection = DriverManager.getConnection(url);
                 var sql = connection.createStatement();
                 var snapshot = sql.executeQuery("SELECT state_json FROM simulation_snapshot WHERE run_id='existing'")) {
@@ -44,6 +51,47 @@ class WorldCatalogMigrationTest {
                 assertTrue(event.next());
                 assertEquals("{\"targetId\":\"root\"}", event.getString(1));
             }
+        }
+    }
+
+    @Test
+    void v11KeepsTheLegacyScenarioAndDeliveryMarkersOnDisk() throws Exception {
+        String url = "jdbc:sqlite:" + directory.resolve("v10.db");
+        Flyway.configure().dataSource(url, null, null).target("10").load().migrate();
+        try (var connection = DriverManager.getConnection(url);
+                var sql = connection.createStatement()) {
+            sql.executeUpdate("""
+                    INSERT INTO simulation_run(id,scenario_json,status,state_json,created_at)
+                    VALUES ('legacy','{"name":"old"}','PAUSED','{}',0)
+                    """);
+            sql.executeUpdate("""
+                    INSERT INTO simulation_scheduled_event
+                        (run_id,event_id,simulation_time,payload_json,delivered,created_sequence)
+                    VALUES ('legacy','done',1,'{}',1,4),('legacy','waiting',2,'{}',0,5)
+                    """);
+        }
+        var migration =
+                Flyway.configure().dataSource(url, null, null).target("11").load();
+        assertEquals(1, migration.migrate().migrationsExecuted);
+        assertEquals(0, migration.migrate().migrationsExecuted);
+        try (var connection = DriverManager.getConnection(url);
+                var sql = connection.createStatement();
+                var rows = sql.executeQuery("""
+                        SELECT scenario_json,event_id,delivered,work_status,enqueue_sequence
+                        FROM simulation_run JOIN simulation_scheduled_event ON id=run_id
+                        ORDER BY enqueue_sequence
+                        """)) {
+            assertTrue(rows.next());
+            assertEquals("{\"name\":\"old\"}", rows.getString(1));
+            assertEquals("done", rows.getString(2));
+            assertEquals(1, rows.getInt(3));
+            assertEquals("COMPLETED", rows.getString(4));
+            assertEquals(4, rows.getLong(5));
+            assertTrue(rows.next());
+            assertEquals("waiting", rows.getString(2));
+            assertEquals(0, rows.getInt(3));
+            assertEquals("PENDING", rows.getString(4));
+            assertEquals(5, rows.getLong(5));
         }
     }
 

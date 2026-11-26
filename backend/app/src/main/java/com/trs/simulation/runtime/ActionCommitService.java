@@ -23,6 +23,8 @@ final class ActionCommitService {
     private final JdbcTemplate db;
     private final TransactionTemplate tx;
     private final RunStateRepository store;
+    private final EventClockScheduler eventClock;
+    private final DurableReasoning reasoning;
 
     /** An Action request whose selector and original payload are stable on retry. @author czhcc-trsdsj\codexsandboxoffline */
     record Command(
@@ -53,10 +55,17 @@ final class ActionCommitService {
     /** Stored receipt envelope and its immutable snapshot reference. @author czhcc-trsdsj\codexsandboxoffline */
     private record StoredReceipt(String requestJson, String receiptJson, long version, long clock) {}
 
-    ActionCommitService(JdbcTemplate db, TransactionTemplate tx, RunStateRepository store) {
+    ActionCommitService(
+            JdbcTemplate db,
+            TransactionTemplate tx,
+            RunStateRepository store,
+            EventClockScheduler eventClock,
+            DurableReasoning reasoning) {
         this.db = db;
         this.tx = tx;
         this.store = store;
+        this.eventClock = eventClock;
+        this.reasoning = reasoning;
     }
 
     Receipt retry(Command command) {
@@ -97,6 +106,7 @@ final class ActionCommitService {
                     ? current
                     : new State(
                             id, current.simulationTime(), current.version() + 1, graph.entities(), graph.relations());
+            int stateChangeSequence = 0;
             if (!diff.isEmpty()) {
                 OntologyConstraints.validateCandidate(store.frozenWorld(id), current, next);
                 int updated = db.update(
@@ -146,6 +156,7 @@ final class ActionCommitService {
                             "targetId",
                             targetId),
                     meta);
+            int verdictSequence = store.eventCount(id);
             if (!diff.isEmpty()) {
                 var changed = new LinkedHashMap<String, Object>(Map.of(
                         "before",
@@ -162,6 +173,7 @@ final class ActionCommitService {
                     changed.put("inputEventId", command.inputEventId() == null ? "" : command.inputEventId());
                 }
                 append(command, current, "WORLD_STATE_CHANGED", changed, meta);
+                stateChangeSequence = store.eventCount(id);
             }
             var receipt = new LinkedHashMap<>(meta);
             receipt.put("accepted", accepted);
@@ -195,6 +207,18 @@ final class ActionCommitService {
                                     next.version()));
                 }
             }
+            if (store.scenario(id).eventDriven()) {
+                if (accepted && command.taskId() != null && command.inputEventId() != null) {
+                    eventClock.acknowledge(
+                            id,
+                            command.inputEventId(),
+                            stateChangeSequence == 0 ? store.eventCount(id) : stateChangeSequence);
+                }
+                if (!diff.isEmpty()) {
+                    eventClock.enqueueDomainEvent(
+                            id, current.simulationTime(), (String) meta.get("actionRunId"), next.version());
+                }
+            }
             db.update(
                     "INSERT INTO simulation_action_receipt VALUES (?,?,?,?,?,?,?,?)",
                     id,
@@ -205,6 +229,14 @@ final class ActionCommitService {
                     Json.write(receipt),
                     next.version(),
                     next.simulationTime());
+            if (store.scenario(id).eventDriven()) {
+                reasoning.recordAction(
+                        command,
+                        decision,
+                        targetKind(decision, current),
+                        stateChangeSequence == 0 ? verdictSequence : stateChangeSequence,
+                        receipt);
+            }
             // Return the same JSON representations on first response and every subsequent retry.
             return new Receipt(Json.read(Json.write(next), State.class), Json.read(Json.write(receipt), Map.class));
         });
@@ -269,7 +301,7 @@ final class ActionCommitService {
         store.append(command.runId(), type, current.simulationTime(), command.actorId(), payload);
     }
 
-    private String targetKind(Decision decision, State state) {
+    String targetKind(Decision decision, State state) {
         if (decision.targetKind() != null) {
             return decision.targetKind();
         }

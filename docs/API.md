@@ -79,6 +79,36 @@ Entry 包含 id、domainCode、ownerType、revision（同编码修订号）、st
 
 `SIMULATE_PROPAGATION` 参数为 `{"sourceId":"document_f"}`，targetId 指向接收对象。`REVOKE_SHARING` 的 targetId 为共享来源人员，参数为 `{"recipientId":"接收对象ID"}`；`DISABLE_SYNC` 的 targetId 为同步来源系统，参数为 `{"destinationId":"同步目标对象ID"}`。`MARK_REVIEWED`、`ANALYZE_RELATIONS` 参数必须为 `{}`。相关对象必须来自能力列表的 `parameterOptions`；传播必须有启用的直接关系，并在结果中标记为 SIMULATED。
 
+## 模拟时钟、工作队列和评价
+
+场景创建和编辑接受可选的 `scheduling` 和 `evaluationPolicy`。两者随运行创建冻结。现有场景及带旧版 `EVENT_DRIVEN` 审计标签的运行继续按轮次执行。`scheduling` 取 `null` 或显式选择 `TASK_DRIVEN` 时也使用轮次时钟。以下配置启用严格事件时间。
+
+```json
+{
+  "scheduling": {
+    "contractVersion": 1,
+    "mode": "EVENT_DRIVEN",
+    "timeUnit": "TICK",
+    "maxWorkPerTime": 40
+  },
+  "evaluationPolicy": {
+    "mode": "TEXT_ONLY",
+    "earliestRound": 1,
+    "earliestSimulationTime": 9,
+    "horizonSimulationTime": 20,
+    "requireQuiescence": true,
+    "completionMode": "OBJECTIVE"
+  }
+}
+```
+
+- `POST /api/runs/{id}/inject` 的 `simulationTime` 是到期时刻。严格模式可传整数 `priority`，范围 −1000 至 1000，默认 0。调度按到期时间升序、优先级降序、入队序号升序、工作项 ID 排序。未来输入可以排在 horizon 之外。相同输入和幂等键重试沿用原记录。
+- `POST /api/runs/{id}/step` 在严格模式推进一个逻辑时点或执行当前时点的研判。有待确认的输入时，可在同一时点进行后续研判。研判轮次只在调用 Agent 时增加。`SIMULATION_CLOCK_ADVANCED` 即使没有图谱变更也会保存，SSE 和按事件序号回放均可读取。
+- `GET /api/runs/{id}/scheduling` 返回时钟模式和当前逻辑时间。严格模式还返回冻结配置、研判轮次、图谱版本、队列状态及各工作项的 `id`、`type`、`dueTime`、`priority`、`enqueueSequence`、`status` 和 `attempts`。`AWAITING_ACTION` 表示已送达且仍等候符合冻结权限和绑定的 Action。
+- 严格模式下，常规输入在等待研判时为 `PROCESSING`。原步进键的重试或恢复运行会继续已持久化的未完成研判。该轮次完成后，重复的步进键返回当前状态。
+- `evaluationPolicy.mode` 默认按有无 CEL 条件推断为 `CONDITIONS` 或 `TEXT_ONLY`。缺省的最早轮次和时点均为 0，`requireQuiescence` 为 true。`completionMode` 默认 `QUIESCENCE`，也可选 `HORIZON` 或 `OBJECTIVE`。选择 `HORIZON` 需指定逻辑时点或轮次之一。选择 `OBJECTIVE` 要求配置文字目标。
+- 最早轮次和最早逻辑时点共同约束评价。`complete_objective` 可先记录文字结论，评价和运行结束仍由队列与冻结策略决定。空队列可记录 `QUIESCENT`。到达 horizon 时，先处理该时点内的工作，保留 horizon 外待办，再记录 `HORIZON_REACHED`。明确允许非静止时完成的文字策略会记录剩余工作。
+
 ## 模拟模型、实时、分支与银行
 
 | 方法 | 路径 | 说明 |

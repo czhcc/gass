@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "stage": 3,
+  "attempt": 2,
+  "status": "PASSED",
+  "exitCode": 0,
+  "nextStageAllowed": true,
+  "startedAt": "2026-11-26T09:13:14.585142+00:00",
+  "endedAt": "2026-11-26T09:13:15.022877+00:00",
+  "reason": null,
+  "baselineCommit": "9a266333d0a7f5c08282068643da6840d1a42d9b",
+  "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+  "checkoutHead": "4c3d6eb4bb4491a841692f9f79b10b4b1b890385",
+  "checkManifestSha256": "3ce65d029034063d1761976e4d6d7dfa7528f3b4efc9750192a03decb7647c3b",
+  "evidenceIndexSha256": "18bf9bd53687fa8467b7efabde07172006fdc408c76d3639ea7b63cd92f613cc",
+  "reviewerPayloadSha256": "1ab32f2ee2853eda3454d5a64abdbb3ccd17bf8af5e3a8f73a8bb6a005d0dcd3",
+  "gateImplementationSha256": "9feda735b046d99383f5c97ffd7c82e68a4dd09b78f76ea5c6e4d6d322d11cfe",
+  "reviewerSessionId": "gass-s3-attempt02-a9b48c38",
+  "requiredChecks": 60,
+  "requiredCommandRuns": 37,
+  "verifiedEvidenceFiles": 205,
+  "testReports": {
+    "CMD-BASELINE-PNPM-RETRY-TEST": {
+      "total": 82,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 13
+    },
+    "CMD-CANDIDATE-PNPM-RETRY-TEST": {
+      "total": 83,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 13
+    },
+    "CMD-BASELINE-MAVEN": {
+      "total": 109,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 21
+    },
+    "CMD-CANDIDATE-MAVEN": {
+      "total": 123,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 22
+    },
+    "CMD-BASELINE-QUERY-OBJECTIVE": {
+      "total": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-QUERY-OBJECTIVE": {
+      "total": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-REVIEW-COMMIT": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-REVIEW-EVIDENCE": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-REVIEW-ONTOLOGY": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-REVIEW-VISIBILITY": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-STAGE3-EVALUATION": {
+      "total": 4,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-STAGE3-RECOVERY": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-STAGE3-SCHEDULER": {
+      "total": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-STAGE3-TERMINATION": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    }
+  }
+}

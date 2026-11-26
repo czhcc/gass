@@ -38,6 +38,7 @@ final class HierarchyRuntimeHost implements HierarchyHost {
     private final ModelService models;
     private final RunStateRepository store;
     private final ActionCommitService commits;
+    private final DurableReasoning reasoning;
 
     HierarchyRuntimeHost(
             RunService runs,
@@ -46,6 +47,7 @@ final class HierarchyRuntimeHost implements HierarchyHost {
             ModelService models,
             RunStateRepository store,
             ActionCommitService commits,
+            DurableReasoning reasoning,
             String id,
             Lease lease,
             boolean reviewOnly) {
@@ -55,6 +57,7 @@ final class HierarchyRuntimeHost implements HierarchyHost {
         this.models = models;
         this.store = store;
         this.commits = commits;
+        this.reasoning = reasoning;
         this.id = id;
         this.lease = lease;
         this.reviewOnly = reviewOnly;
@@ -151,8 +154,19 @@ final class HierarchyRuntimeHost implements HierarchyHost {
                 }
                 return previous;
             }
-            if (store.decisionCount(id, agent.id()) >= agent.maxDecisions())
-                throw new IllegalStateException("Agent task budget exhausted");
+            int decisions = store.decisionCount(id, agent.id());
+            if (lease.recoveryThrough >= 0) {
+                var interrupted = runs.tasks(id).stream()
+                        .filter(task -> task.round() == round()
+                                && task.createdSequence() <= lease.recoveryThrough
+                                && agent.id().equals(task.agentId())
+                                && (parentId == null) == (task.parentTaskId() == null)
+                                && task.request().equals(request)
+                                && "CANCELLED".equals(task.status()))
+                        .toList();
+                decisions -= interrupted.size();
+            }
+            if (decisions >= agent.maxDecisions()) throw new IllegalStateException("Agent task budget exhausted");
             if (parentId != null
                     && runs.tasks(id).stream()
                             .noneMatch(t -> t.taskId().equals(parentId)
@@ -327,19 +341,43 @@ final class HierarchyRuntimeHost implements HierarchyHost {
                         false,
                         "INPUT_ACTION_MISMATCH",
                         List.of());
-            else if (inputEventId != null
-                    && TaskEvidence.handledInputs(history()).contains(inputEventId))
-                result = new Outcome(
-                        false,
-                        "Input already has an accepted Action receipt",
-                        current,
-                        false,
-                        "INPUT_ALREADY_HANDLED",
-                        List.of());
-            else if (receipts.size() >= team.maxActionsPerRound())
-                result = new Outcome(
-                        false, "Round Action attempt limit reached", current, false, "ROUND_ACTION_LIMIT", List.of());
-            else result = plugin.execute(world, effective, plugin.normalizeDecision(decision, current), current);
+            else {
+                var normalized = plugin.normalizeDecision(decision, current);
+                if (lease.recoveryThrough >= 0 && effective.allowedActions().contains(normalized.actionType())) {
+                    var settled = reasoning.priorAction(
+                            command,
+                            normalized,
+                            commits.targetKind(normalized, current),
+                            round(),
+                            lease.recoveryThrough,
+                            visibleIds(effective));
+                    if (settled != null) {
+                        receipts.put(task.taskId(), settled);
+                        return settled;
+                    }
+                }
+                if (inputEventId != null
+                        && TaskEvidence.handledInputs(history()).contains(inputEventId)) {
+                    result = new Outcome(
+                            false,
+                            "Input already has an accepted Action receipt",
+                            current,
+                            false,
+                            "INPUT_ALREADY_HANDLED",
+                            List.of());
+                } else {
+                    int attempts = scene.eventDriven() ? reasoning.actionAttempts(id, round()) : receipts.size();
+                    result = attempts >= team.maxActionsPerRound()
+                            ? new Outcome(
+                                    false,
+                                    "Round Action attempt limit reached",
+                                    current,
+                                    false,
+                                    "ROUND_ACTION_LIMIT",
+                                    List.of())
+                            : plugin.execute(world, effective, normalized, current);
+                }
+            }
             var receipt = commits.commit(command, decision, current, result).details();
             receipts.put(task.taskId(), receipt);
             return receipt;
