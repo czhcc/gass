@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -202,10 +203,9 @@ class EventClockIntegrationTest {
     }
 
     private String create(int budget, Long horizon) {
-        var legacy = new Scenario(
-                null,
-                "Clock",
-                world,
+        return create(
+                budget,
+                horizon,
                 List.of(new AgentDefinition(
                         "reviewer",
                         "Review",
@@ -213,9 +213,11 @@ class EventClockIntegrationTest {
                         "model",
                         List.of("ANALYZE_RELATIONS"),
                         List.of("document_f"),
-                        20)),
-                20,
-                2000);
+                        20)));
+    }
+
+    private String create(int budget, Long horizon, List<AgentDefinition> agents) {
+        var legacy = new Scenario(null, "Clock", world, agents, 20, 2000);
         var body = new java.util.LinkedHashMap<>(Json.read(Json.write(legacy), Map.class));
         body.put(
                 "scheduling",
@@ -247,5 +249,138 @@ class EventClockIntegrationTest {
         return runs.events(id, 0).stream()
                 .filter(event -> event.eventType().equals("SIMULATION_EVENT_CREATED"))
                 .toList();
+    }
+
+    @Test
+    void recoversDeliveredWorkAtTheSameTimeAndOnlyForksWorkOutstandingAtTheSelectedSequence() {
+        var id = reviewRun();
+        inject(id, "review-note", 2, 0);
+        inject(id, "future", 100, 0);
+        when(decisions.decide(any(), any())).thenReturn(reviewDecision());
+
+        fault("REASONING_ROUND_STARTED", () -> runs.step(id, "same-key"));
+        var deliveredAt = delivered(id).getFirst().sequence();
+        assertEquals(2L, runs.state(id).simulationTime());
+        assertEquals(0L, runs.state(id).version());
+        assertEquals(0, runs.get(id).step());
+        var branch = history.fork(id, deliveredAt, "delivered before review", "before-review");
+
+        runs.recover();
+        assertEquals(1L, runs.step(id, "same-key").version());
+        assertEquals(2L, runs.state(id).simulationTime());
+        assertEquals(1, runs.get(id).step());
+        assertEquals(1L, runs.step(id, "same-key").version());
+        assertEquals(1, delivered(id).size());
+        assertEquals(0L, history.stateAt(id, deliveredAt).version());
+        assertEquals("PAUSED", runs.get(id).status());
+        assertEquals(1L, runs.step(branch.id(), "continue-branch").version());
+        assertEquals(2L, runs.state(branch.id()).simulationTime());
+        assertEquals(1, delivered(branch.id()).size());
+    }
+
+    @Test
+    void resumesAUserPausedReasoningRoundWithoutRedeliveryOrEarlyCompletion() throws Exception {
+        var id = reviewRun();
+        inject(id, "review-note", 2, 0);
+        var entered = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var calls = new AtomicInteger();
+        when(decisions.decide(any(), any())).thenAnswer(call -> {
+            if (calls.incrementAndGet() == 1) {
+                entered.countDown();
+                assertTrue(release.await(10, TimeUnit.SECONDS));
+            }
+            return reviewDecision();
+        });
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var step = executor.submit(() -> runs.step(id, "interrupted"));
+            try {
+                assertTrue(entered.await(10, TimeUnit.SECONDS));
+                assertEquals("PAUSED", runs.pause(id).status());
+            } finally {
+                release.countDown();
+            }
+            assertEquals(0L, step.get(10, TimeUnit.SECONDS).version());
+        }
+        assertEquals("NOT_EVALUATED", runs.outcome(id).result());
+        runs.resume(id);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while ("RUNNING".equals(runs.get(id).status()) && System.nanoTime() < deadline) {
+            TimeUnit.MILLISECONDS.sleep(10);
+        }
+        assertEquals("COMPLETED", runs.get(id).status());
+        assertEquals(2, calls.get());
+        assertEquals(1L, runs.state(id).version());
+        assertEquals(2L, runs.state(id).simulationTime());
+        assertEquals(1, runs.get(id).step());
+        assertEquals(1, delivered(id).size());
+    }
+
+    @Test
+    void recoversAfterCommittedActionWithoutCallingTheAgentOrRepeatingTheEffect() {
+        var id = reviewRun();
+        inject(id, "review-note", 2, 0);
+        var calls = new AtomicInteger();
+        when(decisions.decide(any(), any())).thenAnswer(call -> {
+            calls.incrementAndGet();
+            return reviewDecision();
+        });
+
+        fault("REASONING_ROUND_FINISHED", () -> runs.step(id, "interrupted"));
+        assertEquals(1L, runs.state(id).version());
+        assertEquals("NOT_EVALUATED", runs.outcome(id).result());
+        long commit = runs.events(id, 0).stream()
+                .filter(e -> "WORLD_STATE_CHANGED".equals(e.eventType()))
+                .findFirst()
+                .orElseThrow()
+                .sequence();
+        var fork = history.fork(id, commit, "after Action before completion", "after-action");
+        runs.recover();
+        assertEquals(1L, runs.step(id, "interrupted").version());
+        assertEquals("COMPLETED", runs.get(id).status());
+        assertEquals(1, calls.get());
+        assertEquals(1, delivered(id).size());
+        assertEquals(
+                1,
+                runs.events(id, 0).stream()
+                        .filter(e -> "ACTION_ACCEPTED".equals(e.eventType()))
+                        .count());
+        assertEquals(
+                1,
+                runs.events(id, 0).stream()
+                        .filter(e -> "REASONING_ROUND_FINISHED".equals(e.eventType()))
+                        .count());
+        assertEquals(1L, runs.step(fork.id(), "finish-inherited-work").version());
+        assertEquals("COMPLETED", runs.get(fork.id()).status());
+        assertEquals(1, calls.get());
+        assertTrue(runs.events(fork.id(), 0).stream().noneMatch(e -> "WORLD_STATE_CHANGED".equals(e.eventType())));
+    }
+
+    private String reviewRun() {
+        return create(
+                20,
+                null,
+                List.of(new AgentDefinition(
+                        "reviewer",
+                        "Review",
+                        "Review document",
+                        "model",
+                        List.of("MARK_REVIEWED"),
+                        List.of("document_f"),
+                        1)));
+    }
+
+    private Decision reviewDecision() {
+        return new Decision("MARK_REVIEWED", "document_f", Map.of(), "apply delivered note");
+    }
+
+    private void fault(String event, Runnable operation) {
+        db.execute("CREATE TRIGGER reject_reasoning BEFORE INSERT ON simulation_event WHEN NEW.event_type='" + event
+                + "' BEGIN SELECT RAISE(ABORT, 'reasoning interrupted'); END");
+        try {
+            assertThrows(DataAccessException.class, operation::run);
+        } finally {
+            db.execute("DROP TRIGGER reject_reasoning");
+        }
     }
 }

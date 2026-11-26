@@ -205,7 +205,8 @@ public class HistoryService {
                         .toList())
                     append(child, "AGENT_MEMORY_RESTORED", state.simulationTime(), event.agentId(), event.payload());
                 if (scenario.eventDriven()) {
-                    copyPendingWork(parent, child, sequence);
+                    copyPendingWork(parent, child, sequence, scenario.team() == null);
+                    copyPendingReasoning(parent, child, sequence);
                     return runs.get(child);
                 }
                 var pending = db.queryForList(
@@ -240,7 +241,7 @@ public class HistoryService {
                 """, Integer.class, parent, event.get("scheduledEventId"), sequence) > 0;
     }
 
-    private void copyPendingWork(String parent, String child, long sequence) {
+    private void copyPendingWork(String parent, String child, long sequence, boolean plain) {
         db.update("""
                 INSERT INTO simulation_scheduled_event
                     (run_id,event_id,simulation_time,payload_json,delivered,created_sequence,
@@ -248,14 +249,33 @@ public class HistoryService {
                 SELECT ?,work.event_id,work.simulation_time,work.payload_json,
                     CASE WHEN delivered.sequence_no IS NULL THEN 0 ELSE 1 END,0,
                     work.enqueue_sequence,work.priority,work.work_kind,
-                    CASE WHEN delivered.sequence_no IS NULL THEN 'PENDING' ELSE 'AWAITING_ACTION' END
+                    CASE WHEN delivered.sequence_no IS NULL THEN 'PENDING' ELSE ? END
                 FROM simulation_scheduled_event work
                 LEFT JOIN simulation_event delivered ON delivered.run_id=work.run_id
                     AND delivered.event_type='SIMULATION_EVENT_CREATED' AND delivered.sequence_no<=?
                     AND JSON_EXTRACT(delivered.payload_json,'$.scheduledEventId')=work.event_id
                 WHERE work.run_id=? AND work.created_sequence<=?
                     AND (work.completed_sequence IS NULL OR work.completed_sequence>?)
+                """, child, plain ? "PROCESSING" : "AWAITING_ACTION", sequence, parent, sequence, sequence);
+    }
+
+    private void copyPendingReasoning(String parent, String child, long sequence) {
+        db.update("""
+                INSERT INTO simulation_reasoning_round
+                    (run_id,round,simulation_time,input_version,created_sequence,started_sequence)
+                SELECT ?,round,simulation_time,input_version,0,
+                    CASE WHEN started_sequence<=? THEN 0 END
+                FROM simulation_reasoning_round
+                WHERE run_id=? AND created_sequence<=? AND (completed_sequence IS NULL OR completed_sequence>?)
                 """, child, sequence, parent, sequence, sequence);
+        db.update("""
+                INSERT INTO simulation_reasoning_action
+                    (run_id,round,sequence_no,agent_id,command_id,selector_json,receipt_json)
+                SELECT ?,action.round,0,action.agent_id,action.command_id,action.selector_json,action.receipt_json
+                FROM simulation_reasoning_action action
+                JOIN simulation_reasoning_round fork ON fork.run_id=? AND fork.round=action.round
+                WHERE action.run_id=? AND action.sequence_no<=?
+                """, child, child, parent, sequence);
     }
 
     /**

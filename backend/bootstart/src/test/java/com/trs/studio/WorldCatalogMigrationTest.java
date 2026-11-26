@@ -70,7 +70,8 @@ class WorldCatalogMigrationTest {
                     VALUES ('legacy','done',1,'{}',1,4),('legacy','waiting',2,'{}',0,5)
                     """);
         }
-        var migration = Flyway.configure().dataSource(url, null, null).load();
+        var migration =
+                Flyway.configure().dataSource(url, null, null).target("11").load();
         assertEquals(1, migration.migrate().migrationsExecuted);
         assertEquals(0, migration.migrate().migrationsExecuted);
         try (var connection = DriverManager.getConnection(url);

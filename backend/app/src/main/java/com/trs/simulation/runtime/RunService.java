@@ -67,6 +67,7 @@ public class RunService {
     private final ActionCommitService commits;
     private final RoundScheduler scheduler;
     private final EventClockScheduler eventClock;
+    private final DurableReasoning reasoning;
     private final EventRunPolicy eventPolicy;
     private final RunTerminationPolicy termination;
     private final TransactionTemplate tx;
@@ -77,6 +78,7 @@ public class RunService {
     private final Map<String, Lease> invocations = new HashMap<>();
     /** Cancellation ownership for one round, shared by every nested task. @author czhcc-trsdsj\codexsandboxoffline */
     static final class Lease {
+        long recoveryThrough = -1;
         private final reactor.core.publisher.Sinks.One<Void> cancellation = reactor.core.publisher.Sinks.one();
         private volatile boolean cancelled;
 
@@ -108,8 +110,9 @@ public class RunService {
         this.db = db;
         this.store = new RunStateRepository(db);
         this.eventClock = new EventClockScheduler(db, tx, store);
-        this.eventPolicy = new EventRunPolicy(eventClock, store);
-        this.commits = new ActionCommitService(db, tx, store, eventClock);
+        this.reasoning = new DurableReasoning(db, tx, store);
+        this.eventPolicy = new EventRunPolicy(eventClock, store, reasoning);
+        this.commits = new ActionCommitService(db, tx, store, eventClock, reasoning);
         this.scheduler = new RoundScheduler(db, tx, store);
         this.termination = new RunTerminationPolicy(db, tx, store, scheduler, this::get);
         this.tx = tx;
@@ -263,6 +266,8 @@ public class RunService {
             db.update("DELETE FROM simulation_branch WHERE run_id=?", id);
             db.update("DELETE FROM simulation_scheduled_event WHERE run_id=?", id);
             db.update("DELETE FROM simulation_command WHERE run_id=?", id);
+            db.update("DELETE FROM simulation_reasoning_action WHERE run_id=?", id);
+            db.update("DELETE FROM simulation_reasoning_round WHERE run_id=?", id);
             db.update("DELETE FROM simulation_action_receipt WHERE run_id=?", id);
             db.update("DELETE FROM simulation_snapshot WHERE run_id=?", id);
             db.update("DELETE FROM simulation_event WHERE run_id=?", id);
@@ -358,7 +363,8 @@ public class RunService {
                 .map(event -> (String) event.payload().get("queueState"))
                 .filter(java.util.Objects::nonNull)
                 .findFirst()
-                .orElseGet(() -> eventClock.unfinished(id) == 0 ? "QUIESCENT" : "PENDING");
+                .orElseGet(() ->
+                        eventClock.unfinished(id) == 0 && reasoning.pending(id) == null ? "QUIESCENT" : "PENDING");
         return Map.of(
                 "mode",
                 "EVENT_DRIVEN",
@@ -444,12 +450,7 @@ public class RunService {
         synchronized (this) {
             if (workerToken != null
                     && (!workerToken.equals(active.get(id)) || !get(id).status().equals("RUNNING"))) return state(id);
-            if (db.queryForObject(
-                            "SELECT COUNT(*) FROM simulation_command WHERE run_id=? AND command_id=?",
-                            Integer.class,
-                            id,
-                            command)
-                    > 0) return state(id);
+            if (reasoning.finishedCommand(id, command)) return state(id);
             if (!List.of("PAUSED", "RUNNING").contains(get(id).status()))
                 throw new IllegalStateException("Run is terminal");
             if (invocations.containsKey(id)) throw new IllegalStateException("Run is already computing a round");
@@ -476,64 +477,41 @@ public class RunService {
     }
 
     private State stepEventClock(String id, String command, Scenario scene, Lease lease) {
-        boolean reason;
-        long inputVersion;
+        DurableReasoning.Pending round;
         synchronized (this) {
             if (lease.cancelled || checkTermination(id, scene, false)) return state(id);
-            long time = eventPolicy.nextTime(get(id), scene, state(id));
-            var slice = eventClock.advance(id, command, time, scene);
-            if (stopOnWorkBudget(id, scene, slice)) return state(id);
-            inputVersion = state(id).version();
-            reason = eventClock.awaitingAction(id) > 0
-                    || eventPolicy.needsObjectiveRound(get(id), scene, state(id))
-                    || (scene.team() == null
-                            && slice.externalInputs() > 0
-                            && scene.agents().stream()
-                                    .anyMatch(a -> !store.hasEnded(id, a.id())
-                                            && store.decisionCount(id, a.id()) < a.maxDecisions()));
-            if (reason) {
-                if (get(id).step() >= scene.maxSteps()) {
-                    termination.finish(
-                            id, "MAX_STEPS", get(id).step(), scene.maxSteps(), "Maximum reasoning rounds reached", "");
-                    return state(id);
-                }
-                tx.executeWithoutResult(status -> {
-                    db.update("UPDATE simulation_run SET step=step+1 WHERE id=?", id);
-                    store.append(
-                            id,
-                            "REASONING_ROUND_STARTED",
-                            time,
-                            null,
-                            Map.of("round", get(id).step(), "inputVersion", inputVersion));
-                });
+            round = reasoning.pending(id);
+            if (round == null) {
+                long time = eventPolicy.nextTime(get(id), scene, state(id));
+                var slice = eventClock.advance(
+                        id, time, scene, false, delivered -> queueReasoning(id, command, scene, time, delivered));
+                if (stopOnWorkBudget(id, scene, slice)) return state(id);
+                round = reasoning.pending(id);
+            }
+            if (round != null) {
+                if (round.started()) lease.recoveryThrough = store.eventCount(id);
+                reasoning.start(id, command, round);
             }
         }
-        if (reason) {
+        if (round != null) {
             try {
-                if (scene.team() == null) legacyRound(id, scene, state(id).simulationTime(), lease);
-                else runHierarchy(id, lease);
+                if (scene.team() == null) {
+                    legacyRound(id, scene, round.time(), lease);
+                } else if (!reasoning.succeededMaster(id, round.number())) {
+                    runHierarchy(id, lease);
+                }
             } catch (CancellationException ex) {
                 return state(id);
             }
         }
         synchronized (this) {
             if (lease.cancelled || checkTermination(id, scene, false)) return state(id);
-            if (reason) {
-                store.append(
-                        id,
-                        "REASONING_ROUND_FINISHED",
-                        state(id).simulationTime(),
-                        null,
-                        Map.of(
-                                "round",
-                                get(id).step(),
-                                "inputVersion",
-                                inputVersion,
-                                "stateVersion",
-                                state(id).version()));
-                var slice = eventClock.advance(id, null, state(id).simulationTime(), scene);
+            if (round != null) {
+                var slice = eventClock.advance(id, round.time(), scene, true, delivered -> {});
+                reasoning.finish(id, round, eventClock);
                 if (stopOnWorkBudget(id, scene, slice)) return state(id);
             }
+            if (checkTermination(id, scene, false)) return state(id);
             var verdict = eventPolicy.verdict(get(id), scene, state(id));
             if (verdict != null) {
                 termination.concludeEventRun(
@@ -542,6 +520,33 @@ public class RunService {
         }
         reviewAtHorizon(id, scene, lease);
         return state(id);
+    }
+
+    // The scheduler calls this within the same transaction as clock advancement and delivery.
+    private void queueReasoning(String id, String command, Scenario scene, long time, EventClockScheduler.Slice slice) {
+        var run = get(id);
+        int nextRound = run.step() + 1;
+        boolean plainInput = scene.team() == null
+                && slice.firstExternalSequence() != null
+                && scene.agents().stream()
+                        .anyMatch(a -> !store.hasEnded(id, a.id())
+                                && reasoning.priorLegacyRounds(id, a.id(), nextRound) < a.maxDecisions());
+        boolean needsRound = !slice.interrupted()
+                && (plainInput
+                        || eventClock.awaitingAction(id) > 0
+                        || eventPolicy.needsObjectiveRound(run, scene, state(id)));
+        if (!needsRound) {
+            reasoning.trackCommand(id, command, null);
+            return;
+        }
+        if (run.step() >= scene.maxSteps()) {
+            reasoning.trackCommand(id, command, null);
+            termination.finish(id, "MAX_STEPS", run.step(), scene.maxSteps(), "Maximum reasoning rounds reached", "");
+            return;
+        }
+        reasoning.queue(id, nextRound, time, state(id).version(), slice.firstExternalSequence());
+        if (plainInput) eventClock.waitForReasoning(id, slice.firstExternalSequence());
+        reasoning.trackCommand(id, command, nextRound);
     }
 
     private boolean stopOnWorkBudget(String id, Scenario scene, EventClockScheduler.Slice slice) {
@@ -594,6 +599,7 @@ public class RunService {
         } catch (CancellationException ex) {
             /* Pause, stop and shared budgets preserve their authoritative lifecycle status. */
         } catch (RuntimeException ex) {
+            if (store.scenario(id).eventDriven() && ex instanceof org.springframework.dao.DataAccessException) throw ex;
             synchronized (this) {
                 if (List.of("PAUSED", "RUNNING").contains(get(id).status()) && !lease.cancelled) {
                     db.update(
@@ -640,13 +646,18 @@ public class RunService {
         var world = store.frozenWorld(id);
         var plugin = domains.get(world.domainCode());
         if (plugin == null) throw new IllegalStateException("Domain plugin unavailable");
+        int round = get(id).step();
         for (var agent : scenario.agents()) {
-            int count = db.queryForObject(
-                    "SELECT COUNT(*) FROM simulation_event WHERE run_id=? AND agent_id=? AND"
-                            + " event_type='AGENT_STARTED'",
-                    Integer.class,
-                    id,
-                    agent.id());
+            String commandId = "legacy:" + clock + ":" + (scenario.eventDriven() ? round + ":" : "") + agent.id();
+            if (scenario.eventDriven() && reasoning.hasDecision(id, commandId, round)) continue;
+            int count = scenario.eventDriven()
+                    ? reasoning.priorLegacyRounds(id, agent.id(), round)
+                    : db.queryForObject(
+                            "SELECT COUNT(*) FROM simulation_event WHERE run_id=? AND agent_id=? AND"
+                                    + " event_type='AGENT_STARTED'",
+                            Integer.class,
+                            id,
+                            agent.id());
             if (count >= agent.maxDecisions() || store.hasEnded(id, agent.id())) continue;
             // Legacy budget estimates reserve six requests and 6144 output tokens per decision.
             if (!scenario.eventDriven() && checkTermination(id, scenario, false)) break;
@@ -686,14 +697,11 @@ public class RunService {
                             """, Long.class, id);
                     if (termination.checkLegacyEstimate(id, limits(), total)) return state(id);
                 }
-                store.append(
-                        id,
-                        "AGENT_STARTED",
-                        clock,
-                        agent.id(),
-                        Map.of(
-                                "modelMode",
-                                Optional.ofNullable(decisions.mode(agent)).orElse("UNKNOWN")));
+                var started = new LinkedHashMap<String, Object>();
+                started.put(
+                        "modelMode", Optional.ofNullable(decisions.mode(agent)).orElse("UNKNOWN"));
+                if (scenario.eventDriven()) started.put("round", round);
+                store.append(id, "AGENT_STARTED", clock, agent.id(), started);
                 store.append(id, "AGENT_OBSERVATION", clock, agent.id(), Map.of("observation", observation));
             }
             Decision proposal;
@@ -733,14 +741,7 @@ public class RunService {
                 var d = plugin.normalizeDecision(proposal, current);
                 var outcome = plugin.execute(world, agent, d, current);
                 var action = new ActionCommitService.Command(
-                        id,
-                        "legacy:" + clock + ":" + (scenario.eventDriven() ? get(id).step() + ":" : "") + agent.id(),
-                        agent.id(),
-                        current.version(),
-                        proposal,
-                        "AGENT_ACTION",
-                        null,
-                        null);
+                        id, commandId, agent.id(), current.version(), proposal, "AGENT_ACTION", null, null);
                 commits.commit(action, d, current, outcome);
             }
         }
@@ -794,7 +795,7 @@ public class RunService {
         var normalized = plugin.normalizeDecision(decision, current);
         var outcome = plugin.execute(world, agent, normalized, current);
         return tx.execute(t -> {
-            db.update("INSERT INTO simulation_command VALUES (?,?)", id, key);
+            db.update("INSERT INTO simulation_command (run_id,command_id) VALUES (?,?)", id, key);
             return commits.commit(action, normalized, current, outcome).state();
         });
     }
@@ -901,7 +902,10 @@ public class RunService {
                             "Stopped by user",
                             "activeRuntimeMs",
                             r.activeRuntimeMs()));
-            if (store.scenario(id).eventDriven()) eventClock.cancel(id);
+            if (store.scenario(id).eventDriven()) {
+                eventClock.cancel(id);
+                reasoning.closePending(id);
+            }
         });
         return get(id);
     }
@@ -1000,7 +1004,7 @@ public class RunService {
     }
 
     private HierarchyRuntimeHost hierarchyHost(String id, Lease lease, boolean reviewOnly) {
-        return new HierarchyRuntimeHost(this, db, tx, models, store, commits, id, lease, reviewOnly);
+        return new HierarchyRuntimeHost(this, db, tx, models, store, commits, reasoning, id, lease, reviewOnly);
     }
 
     void checkInvocation(String id, Lease lease, boolean reviewOnly) {

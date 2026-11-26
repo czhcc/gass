@@ -64,7 +64,7 @@ final class RoundScheduler {
     void advance(String id, String command, int step) {
         long clock = baseTime(id) + step + 1;
         tx.executeWithoutResult(t -> {
-            db.update("INSERT INTO simulation_command VALUES (?,?)", id, command);
+            db.update("INSERT INTO simulation_command (run_id,command_id) VALUES (?,?)", id, command);
             db.update("UPDATE simulation_run SET step=step+1 WHERE id=?", id);
         });
         tx.executeWithoutResult(t -> {

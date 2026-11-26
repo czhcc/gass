@@ -39,6 +39,8 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 /** Exercises both domains through the same SDK hierarchy and durable execution gateway. @author czhcc-trsdsj\codexsandboxoffline */
 @SpringBootTest(
@@ -64,6 +66,74 @@ class HierarchicalFrameworkIntegrationTest {
 
     @Autowired
     ObjectiveDraftService drafts;
+
+    @Autowired
+    JdbcTemplate jdbc;
+
+    @Test
+    void recoversAnInterruptedMasterWithoutRepeatingCommittedBankEffects() {
+        var world = worlds.create(Examples.bankTransfer());
+        var template = profiles.scenario("bank", world, models.mock().id(), "Interrupted transfer", 4);
+        var base = template.team();
+        var team = new TeamConfig(
+                base.rootAgentId(),
+                base.maxDelegationsPerRound(),
+                base.maxActionsPerRound(),
+                base.mockRules().stream()
+                        .filter(rule -> "TRANSFER".equals(rule.actionType()))
+                        .toList(),
+                base.conditions(),
+                base.inputActions());
+        var scene = worlds.scenario(new Scenario(
+                null,
+                template.name(),
+                world.id(),
+                template.agents(),
+                4,
+                2000,
+                team,
+                null,
+                new SchedulingPolicy(1, "EVENT_DRIVEN", "TICK", 20),
+                null));
+        var id = runs.create(scene.id()).id();
+        var input = profiles.initialInput(world);
+        runs.inject(id, "transfer", new ScheduledInput(input.eventType(), input.targetId(), 2, input.parameters()));
+        jdbc.execute("""
+                CREATE TRIGGER reject_master_completion BEFORE INSERT ON simulation_event
+                WHEN NEW.event_type='MASTER_TASK_COMPLETED'
+                BEGIN SELECT RAISE(ABORT, 'master completion interrupted'); END
+                """);
+        try {
+            assertThrows(DataAccessException.class, () -> runs.step(id, "interrupted-master"));
+        } finally {
+            jdbc.execute("DROP TRIGGER reject_master_completion");
+        }
+        var committed = runs.state(id);
+        assertEquals(1L, committed.version());
+        assertEquals("NOT_EVALUATED", runs.outcome(id).result());
+        assertTrue(runs.tasks(id).stream()
+                .anyMatch(task -> task.parentTaskId() == null && "RUNNING".equals(task.status())));
+        runs.recover();
+        assertEquals(committed, runs.step(id, "interrupted-master"));
+        assertEquals(1, runs.get(id).step());
+        assertEquals("COMPLETED", runs.get(id).status());
+        assertEquals(
+                1L,
+                committed.entities().stream()
+                        .filter(e -> "TRANSACTION".equals(e.type()))
+                        .count());
+        assertEquals(
+                1200000000L,
+                committed.entities().stream()
+                        .filter(e -> "BANK_ACCOUNT".equals(e.type()))
+                        .mapToLong(e -> ((Number) e.properties().get("balanceMinor")).longValue())
+                        .sum());
+        assertEquals(
+                1L,
+                runs.events(id, 0).stream()
+                        .filter(e -> "ACTION_INPUT_HANDLED".equals(e.eventType()))
+                        .count());
+    }
 
     @Test
     void configuredLeakObjectiveFreezesEditedRulesAndRecordsAnEvidenceBackedMasterReview() {

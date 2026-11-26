@@ -7,6 +7,7 @@ import com.trs.simulation.common.Json;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -24,7 +25,10 @@ final class EventClockScheduler {
     }
 
     void recoverClaims() {
-        db.update("UPDATE simulation_scheduled_event SET work_status='PENDING' WHERE work_status='PROCESSING'");
+        db.update("""
+                UPDATE simulation_scheduled_event SET work_status='PENDING'
+                WHERE work_status='PROCESSING' AND delivered=0
+                """);
     }
 
     void schedule(String id, String key, ScheduledInput input) {
@@ -101,15 +105,20 @@ final class EventClockScheduler {
     }
 
     /** Summarizes the committed delivery and which constraint interrupted it. @author czhcc-trsdsj\codexsandboxoffline */
-    record Slice(int externalInputs, boolean workLimit, boolean eventLimit) {}
+    record Slice(Long firstExternalSequence, boolean workLimit, boolean eventLimit) {
+        boolean interrupted() {
+            return workLimit || eventLimit;
+        }
+    }
 
-    Slice advance(String id, String command, long time, Scenario scenario) {
+    Slice advance(String id, long time, Scenario scenario, boolean domainOnly, Consumer<Slice> afterDelivery) {
         var rows = db.queryForList("""
                 SELECT event_id,work_kind,payload_json,simulation_time,priority,enqueue_sequence
                 FROM simulation_scheduled_event
-                WHERE run_id=? AND work_status IN ('PENDING','PROCESSING') AND simulation_time<=?
+                WHERE run_id=? AND work_status IN ('PENDING','PROCESSING') AND delivered=0 AND simulation_time<=?
+                    AND (?=0 OR work_kind='DOMAIN_EVENT')
                 ORDER BY simulation_time,priority DESC,enqueue_sequence,event_id
-                """, id, time);
+                """, id, time, domainOnly ? 1 : 0);
         int delivered = db.queryForObject("""
                 SELECT COUNT(*) FROM simulation_scheduled_event
                 WHERE run_id=? AND simulation_time=? AND delivered=1
@@ -146,16 +155,32 @@ final class EventClockScheduler {
                         null,
                         Map.of("previousTime", current.simulationTime(), "stateVersion", current.version()));
             }
-            int external = 0;
+            Long firstExternal = null;
             for (var row : claimed) {
-                if (deliver(id, scenario, time, row)) external++;
+                if (deliver(id, scenario, time, row) && firstExternal == null)
+                    firstExternal = (long) store.eventCount(id);
             }
-            if (command != null) db.update("INSERT INTO simulation_command VALUES (?,?)", id, command);
-            return new Slice(
-                    external,
+            var slice = new Slice(
+                    firstExternal,
                     rows.size() > workRoom && workRoom <= eventRoom,
                     rows.size() > eventRoom && eventRoom < workRoom);
+            afterDelivery.accept(slice);
+            return slice;
         });
+    }
+
+    void waitForReasoning(String id, long firstSequence) {
+        db.update("""
+                UPDATE simulation_scheduled_event SET work_status='PROCESSING',completed_sequence=NULL
+                WHERE run_id=? AND work_kind='EXTERNAL_INPUT' AND completed_sequence>=?
+                """, id, firstSequence);
+    }
+
+    void completeReasoningInputs(String id) {
+        db.update("""
+                UPDATE simulation_scheduled_event SET work_status='COMPLETED',completed_sequence=?
+                WHERE run_id=? AND work_status='PROCESSING' AND delivered=1
+                """, store.eventCount(id), id);
     }
 
     private boolean deliver(String id, Scenario scenario, long time, Map<String, Object> row) {

@@ -12,10 +12,12 @@ final class EventRunPolicy {
     private static final EvaluationPolicy DEFAULT = new EvaluationPolicy(null, null, null, null, null, null, null);
     private final EventClockScheduler queue;
     private final RunStateRepository store;
+    private final DurableReasoning reasoning;
 
-    EventRunPolicy(EventClockScheduler queue, RunStateRepository store) {
+    EventRunPolicy(EventClockScheduler queue, RunStateRepository store, DurableReasoning reasoning) {
         this.queue = queue;
         this.store = store;
+        this.reasoning = reasoning;
     }
 
     long nextTime(Run run, Scenario scene, State current) {
@@ -65,6 +67,7 @@ final class EventRunPolicy {
     record Verdict(String queueState, long remaining, boolean answered, boolean ready) {}
 
     Verdict verdict(Run run, Scenario scene, State current) {
+        if (reasoning.pending(run.id()) != null) return null;
         var policy = policy(scene);
         long time = current.simulationTime();
         var due = queue.nextDue(run.id());
