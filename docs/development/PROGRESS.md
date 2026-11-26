@@ -93,3 +93,17 @@
 - 新增版本化的严格模拟时钟、V11 持久化调度、按审计序号的历史分支与冻结评价策略。保留旧场景轮次契约。
 - 后端 119 项、前端 83 项、门禁自测 32 项通过。Spotless、生产构建、HTTP、SQLite 重开和 SSE 续读通过。
 - [开发报告及证据](acceptance/stage-03/development.md) · [候选登记](acceptance/stage-03/candidate.json) · [冻结清单](acceptance/stage-03/check-manifest.json)
+
+## 第三阶段独立验收（第 1 次）
+
+- 基线 `9a266333d0a7f5c08282068643da6840d1a42d9b`，候选 `2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90`。四份冻结文件、批准记录及两份指南摘要核对通过，第一、第二阶段的准入记录保持原样。
+- 60 项必验全部执行，57 项通过、3 项失败。STAGE03-001 为严格时钟待研判工作在中断或暂停后遗漏，涉及 G-10、S3-04、S3-05。
+- 候选后端 119 项、前端 83 项通过，生产构建成功。Stage Gate 退出 `1`，`nextStageAllowed=false`，第四阶段未获准入。
+- [独立验收报告](acceptance/stage-03/attempt-01/review.md) · [机器可读结果](acceptance/stage-03/attempt-01/result.json) · [证据索引](acceptance/stage-03/attempt-01/evidence-index.json) · [Stage Gate 报告](acceptance/stage-03/attempt-01/gate-report.json)
+
+## 第三阶段 STAGE03-001 修复（待重新验收）
+
+- 首次候选 `2cf4ad3f7d963d9bd32a16b9db38f2652afe4c90`，修复候选 `68898b543c680ea926b61b06569b2bd0c2c9a750`，基线 `9a266333d0a7f5c08282068643da6840d1a42d9b`。
+- 投递审计与待研判检查点同事务保存。恢复原时点、原轮次和未完成的工作，并依据已落盘 Action 检查点保证幂等。未完成研判继续阻止自然终止。
+- 后端 123 项、前端 83 项、门禁自测 32 项和首轮原版 Java 夹具 27 项通过。生产构建、真实进程重启、历史库重开、HTTP、并发、浏览器、图谱及证据回归通过。
+- [修复报告与证据](acceptance/stage-03/development.md#stage03-001-修复与重新验收候选) · [候选登记](acceptance/stage-03/candidate.json) · [首次独立验收](acceptance/stage-03/attempt-01/review.md)
