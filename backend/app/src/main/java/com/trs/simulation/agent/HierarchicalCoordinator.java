@@ -10,6 +10,7 @@ import com.trs.simulation.SimulationTypes.TaskRequest;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.graph.RunGraphReadService;
 import com.trs.simulation.model.ModelService;
+import com.trs.simulation.state.VisibilityPolicy;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.TextBlock;
@@ -186,6 +187,10 @@ public class HierarchicalCoordinator {
         }
 
         private void recordReport(Object report, String source) {
+            var master = host.scenario().agents().stream()
+                    .filter(agent -> agent.id().equals(root.agentId()))
+                    .findFirst()
+                    .orElseThrow();
             host.completeTask(
                     root.taskId(),
                     "SUCCEEDED",
@@ -200,6 +205,8 @@ public class HierarchicalCoordinator {
                             report,
                             "reportSource",
                             source,
+                            "scopeIds",
+                            List.copyOf(host.visibleIds(master)),
                             "version",
                             host.state().version()));
         }
@@ -342,7 +349,12 @@ public class HierarchicalCoordinator {
                                 optionalStringList(input, "scopeIds"),
                                 optionalStringList(input, "allowedActions"),
                                 null);
-                        if (!host.visibleIds(child).containsAll(request.scopeIds())
+                        var master = host.scenario().agents().stream()
+                                .filter(agent -> agent.id().equals(root.agentId()))
+                                .findFirst()
+                                .orElseThrow();
+                        var narrowed = VisibilityPolicy.restrict(child, host.visibleIds(master));
+                        if (!host.visibleIds(narrowed).containsAll(request.scopeIds())
                                 || !child.allowedActions().containsAll(request.allowedActions()))
                             throw new IllegalArgumentException("Task exceeds the child role scope or permissions");
                         var effective = new AgentDefinition(
@@ -351,7 +363,10 @@ public class HierarchicalCoordinator {
                                 child.goal(),
                                 child.modelId(),
                                 request.allowedActions().isEmpty() ? child.allowedActions() : request.allowedActions(),
-                                request.scopeIds().isEmpty() ? child.visibleEntityIds() : request.scopeIds(),
+                                request.scopeIds().isEmpty()
+                                        ? narrowed.visibleEntityIds()
+                                        : VisibilityPolicy.restrict(narrowed, request.scopeIds())
+                                                .visibleEntityIds(),
                                 child.maxDecisions(),
                                 child.runtime());
                         started = host.startTask(taskId, root.taskId(), effective, request);

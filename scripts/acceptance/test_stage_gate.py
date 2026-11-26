@@ -1,5 +1,6 @@
 import copy
 import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,6 +16,47 @@ DIGEST = "c" * 64
 CHECK = {"id": "G-01", "required": True, "status": "PASSED", "evidenceRefs": ["EV-001"]}
 REVIEW = "| G-01 | PASSED |\n"
 CHECKS = {"G-01": {"id": "G-01", "required": True}}
+
+
+class CandidateRegistrationTest(unittest.TestCase):
+    def test_prospective_manifest_resolves_candidate_from_separate_record(self):
+        with tempfile.TemporaryDirectory() as directory:
+            stage_dir = Path(directory)
+            manifest = {
+                "stage": 2, "baselineCommit": BASELINE, "candidateCommit": None, "retrospective": False,
+                "frozenAt": "2026-11-26T11:00:00+08:00",
+            }
+            registration = {
+                "schemaVersion": 1, "stage": 2, "baselineCommit": BASELINE,
+                "candidateCommit": CANDIDATE, "checkManifestSha256": DIGEST,
+                "registeredAt": "2026-11-26T12:00:00+08:00",
+            }
+            path = stage_dir / "candidate.json"
+            path.write_text(json.dumps(registration), encoding="utf-8")
+            self.assertEqual(CANDIDATE, gate.resolve_candidate(stage_dir, manifest, DIGEST))
+            self.assertIsNone(manifest["candidateCommit"])
+            registration["checkManifestSha256"] = "d" * 64
+            path.write_text(json.dumps(registration), encoding="utf-8")
+            with self.assertRaisesRegex(gate.GateError, "registration"):
+                gate.resolve_candidate(stage_dir, manifest, DIGEST)
+
+    def test_historical_manifest_still_resolves_inline_candidate(self):
+        manifest = {"candidateCommit": CANDIDATE, "retrospective": True}
+        self.assertEqual(CANDIDATE, gate.resolve_candidate(Path("."), manifest, DIGEST))
+
+    def test_prerequisite_report_is_pinned_by_hash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            report = repo / "gate-report.json"
+            report.write_text(json.dumps({"stage": 1, "candidateCommit": CANDIDATE}), encoding="utf-8")
+            manifest = {"previousStages": [1], "prerequisiteRecords": [{
+                "stage": 1, "candidateCommit": CANDIDATE,
+                "gateReport": "gate-report.json", "gateReportSha256": gate.sha256(report),
+            }]}
+            self.assertEqual([1], [entry["stage"] for entry in gate.prerequisite_reports(repo, manifest)])
+            report.write_text("{}", encoding="utf-8")
+            with self.assertRaisesRegex(gate.GateError, "hash"):
+                gate.prerequisite_reports(repo, manifest)
 
 
 class ReviewerTest(unittest.TestCase):

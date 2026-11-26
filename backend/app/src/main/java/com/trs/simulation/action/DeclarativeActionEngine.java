@@ -12,6 +12,9 @@ import com.trs.simulation.SimulationTypes.State;
 import com.trs.simulation.SimulationTypes.World;
 import com.trs.simulation.action.expression.CelExpressions;
 import com.trs.simulation.common.Json;
+import com.trs.simulation.state.OntologyConstraints;
+import com.trs.simulation.state.StateDiff;
+import com.trs.simulation.state.VisibilityPolicy;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,11 +29,23 @@ import java.util.TreeSet;
 
 /** Interprets frozen CEL contracts using atomic, permission-checked graph primitives. @author czhcc-trsdsj\czhcc */
 public final class DeclarativeActionEngine {
+    /** Developer-registered operation over an in-memory candidate. @author czhcc-trsdsj\codexsandboxoffline */
+    private interface ActionPrimitive {
+        State apply(
+                World world, AgentDefinition agent, State candidate, Map<String, Object> args, Set<String> affected);
+    }
+
+    private final Map<String, ActionPrimitive> primitives = Map.of(
+            "SET_PROPERTY", (world, agent, state, args, affected) -> setProperty(agent, state, args),
+            "DISABLE_RELATIONS", this::disable,
+            "TRANSFER_MONEY", (world, agent, state, args, affected) -> transfer(world, agent, state, args));
+
     /** Computes only visible object capabilities without side effects. @author czhcc-trsdsj\czhcc */
     public List<ActionCapability> capabilities(World world, AgentDefinition agent, State state) {
         var result = new ArrayList<ActionCapability>();
+        var scope = VisibilityPolicy.readableIds(agent, state);
         for (var entity : state.entities()) {
-            if (!scope(agent, state).contains(entity.id())) continue;
+            if (!scope.contains(entity.id())) continue;
             for (var action : definitions(world, entity)) {
                 if (!agent.allowedActions().contains(action.actionType())) continue;
                 Map<String, List<String>> options = Map.of();
@@ -125,6 +140,7 @@ public final class DeclarativeActionEngine {
                             emptyOptions(a, entry.getKey()));
             var candidate = original;
             var affected = new TreeSet<String>();
+            var explicitEvidence = new HashSet<String>();
             for (var op : a.program().operations()) {
                 var currentTarget = candidate.entities().stream()
                         .filter(e -> e.id().equals(target.id()))
@@ -133,19 +149,20 @@ public final class DeclarativeActionEngine {
                 var vars = variables(agent, currentTarget, d.parameters(), candidate);
                 var args = new LinkedHashMap<String, Object>();
                 op.arguments().forEach((key, expr) -> args.put(key, CelExpressions.evaluate(expr, vars)));
-                candidate = switch (op.op()) {
-                    case "SET_PROPERTY" -> setProperty(agent, candidate, args);
-                    case "DISABLE_RELATIONS" -> disable(world, agent, candidate, args, affected);
-                    case "TRANSFER_MONEY" -> transfer(world, agent, candidate, args);
-                    default -> throw new Failure("ACTION_PROGRAM_INVALID", "Unsupported primitive");
-                };
+                if ("SET_PROPERTY".equals(op.op()) && "simulationEvidence".equals(args.get("property"))) {
+                    explicitEvidence.add(text(args, "object"));
+                }
+                var primitive = primitives.get(op.op());
+                require(primitive != null, "ACTION_PROGRAM_INVALID", "Unsupported primitive");
+                candidate = primitive.apply(world, agent, candidate, args, affected);
             }
-            require(
-                    candidate.entities().size() <= 200 && candidate.relations().size() <= 1000,
-                    "ACTION_PRECONDITION_FAILED",
-                    "Graph budget exceeded");
-            boolean changed = !candidate.entities().equals(original.entities())
-                    || !candidate.relations().equals(original.relations());
+            candidate = discardTransientMarkers(original, candidate, explicitEvidence);
+            try {
+                OntologyConstraints.validateCandidate(world, original, candidate);
+            } catch (IllegalArgumentException | ArithmeticException failure) {
+                return new Outcome(false, failure.getMessage(), original, false, "ONTOLOGY_CONSTRAINT_VIOLATION");
+            }
+            boolean changed = !StateDiff.between(original, candidate).isEmpty();
             var next = changed
                     ? new State(
                             original.runId(),
@@ -170,6 +187,29 @@ public final class DeclarativeActionEngine {
         }
     }
 
+    private State discardTransientMarkers(State original, State candidate, Set<String> explicitEvidence) {
+        var prior = new LinkedHashMap<String, Entity>();
+        original.entities().forEach(entity -> prior.put(entity.id(), entity));
+        var entities = candidate.entities().stream()
+                .map(entity -> {
+                    var before = prior.get(entity.id());
+                    if (before == null || before == entity || explicitEvidence.contains(entity.id())) {
+                        return entity;
+                    }
+                    var actual = new LinkedHashMap<>(entity.properties());
+                    if (before.properties().containsKey("simulationEvidence")) {
+                        actual.put("simulationEvidence", before.properties().get("simulationEvidence"));
+                    } else {
+                        actual.remove("simulationEvidence");
+                    }
+                    // A marker from a transient write cannot turn a restored value into a committed change.
+                    return StateDiff.sameValue(before.properties(), actual) ? before : entity;
+                })
+                .toList();
+        return new State(
+                candidate.runId(), candidate.simulationTime(), candidate.version(), entities, candidate.relations());
+    }
+
     private List<ActionDefinition> definitions(World world, Entity entity) {
         return world.ontology().types().stream()
                 .filter(t -> t.targetKind().equals("ENTITY") && t.type().equals(entity.type()))
@@ -177,41 +217,35 @@ public final class DeclarativeActionEngine {
                 .toList();
     }
 
-    private Set<String> scope(AgentDefinition a, State s) {
-        var ids = new HashSet<>(a.visibleEntityIds());
-        s.entities().stream()
-                .filter(e -> e.type().equals("TRANSACTION")
-                        && ids.contains(e.properties().get("sourceId"))
-                        && ids.contains(e.properties().get("targetId")))
-                .forEach(e -> ids.add(e.id()));
-        return ids;
-    }
-
     private Entity visible(AgentDefinition a, State s, String id) {
         var entity = s.entities().stream().filter(e -> e.id().equals(id)).findFirst();
         require(entity.isPresent(), "ACTION_TARGET_INVALID", "Select an existing owner or related object");
-        require(scope(a, s).contains(id), "ACTION_TARGET_HIDDEN", "Object is outside the agent's visible scope");
+        require(
+                VisibilityPolicy.readableIds(a, s).contains(id),
+                "ACTION_TARGET_HIDDEN",
+                "Object is outside the agent's visible scope");
         return entity.orElseThrow();
     }
 
     private Map<String, Object> variables(
             AgentDefinition a, Entity target, Map<String, Object> parameters, State state) {
-        var ids = scope(a, state);
+        var ids = VisibilityPolicy.readableIds(a, state);
+        var projected = VisibilityPolicy.project(state, ids);
+        var visibleTarget = projected.entities().stream()
+                .filter(e -> e.id().equals(target.id()))
+                .findFirst()
+                .orElseThrow();
         return Map.of(
                 "target",
-                entity(target),
+                entity(visibleTarget),
                 "params",
                 jsonValue(parameters),
                 "version",
                 state.version(),
                 "entities",
-                state.entities().stream()
-                        .filter(e -> ids.contains(e.id()))
-                        .map(this::entity)
-                        .toList(),
+                projected.entities().stream().map(this::entity).toList(),
                 "relations",
-                state.relations().stream()
-                        .filter(r -> ids.contains(r.sourceId()) && ids.contains(r.targetId()))
+                projected.relations().stream()
                         .map(r -> Map.<String, Object>of(
                                 "id",
                                 r.id(),

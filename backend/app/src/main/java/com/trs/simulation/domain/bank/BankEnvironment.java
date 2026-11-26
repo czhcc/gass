@@ -12,7 +12,6 @@ import com.trs.simulation.domain.DomainEnvironment;
 import com.trs.simulation.domain.examples.Examples;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,18 +49,6 @@ public class BankEnvironment implements DomainEnvironment {
                             "Bank accounts require nonnegative integer balanceMinor and three-letter currency");
                 }
             }
-    }
-
-    /** Shows generated transactions only to agents who can see both accounts. @author czhcc-trsdsj\czhcc */
-    @Override
-    public Set<String> observationScope(AgentDefinition agent, State state) {
-        var visible = new HashSet<>(agent.visibleEntityIds());
-        state.entities().stream()
-                .filter(e -> e.type().equals("TRANSACTION")
-                        && visible.contains(e.properties().get("sourceId"))
-                        && visible.contains(e.properties().get("targetId")))
-                .forEach(e -> visible.add(e.id()));
-        return visible;
     }
 
     /** Preserves direct calls through the same declarative engine. @author czhcc-trsdsj\czhcc */

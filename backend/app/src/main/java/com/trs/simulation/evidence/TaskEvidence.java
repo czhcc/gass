@@ -2,6 +2,7 @@ package com.trs.simulation.evidence;
 
 import com.trs.simulation.SimulationTypes.Event;
 import com.trs.simulation.SimulationTypes.TeamConfig;
+import com.trs.simulation.state.VisibilityPolicy;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,14 @@ import java.util.Set;
 /** Interprets durable engine receipts independently of any real or simulated model. @author czhcc-trsdsj\codexsandboxoffline */
 public final class TaskEvidence {
     private TaskEvidence() {}
+
+    /** Authorizes scheduled inputs as a whole before exposing parameters or selectors. @author czhcc-trsdsj\codexsandboxoffline */
+    public static boolean visibleInput(Event event, Set<String> scope, Set<String> hidden) {
+        return "SIMULATION_EVENT_CREATED".equals(event.eventType())
+                && event.payload().get("targetId") instanceof String target
+                && scope.contains(target)
+                && VisibilityPolicy.referencesVisible(event.payload().get("parameters"), hidden);
+    }
 
     /** Determines whether the Action is bound to a scheduled input. @author czhcc-trsdsj\codexsandboxoffline */
     public static boolean requiresInput(TeamConfig team, String action) {

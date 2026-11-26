@@ -1,5 +1,11 @@
 # API（当前实现）
 
+## Action 提交和事件证据
+
+人工干预继续使用已有的 Action 接口与 `Idempotency-Key`。同一运行中新请求以相同键和载荷重试时，返回首次处理的状态。同键不同载荷返回 HTTP 409。升级前已有的命令键继续按旧记录处理。
+
+新 Action 的提议、裁定、状态变化和任务回执共享 `runId`、`actionRunId`、`commandId`、`actorId`、`actionOrigin`、`inputVersion` 和 `outputVersion`。新增的来源字段区分 `AGENT_ACTION`、`USER_INTERVENTION` 与初始化事件中的 `INITIALIZATION`。既有 `origin` 和证据标签继续兼容。仅发生实际变化时写入 `WORLD_STATE_CHANGED`，其 `stateDiff` 按对象或关系列出字段变化，并以 `beforePresent` 和 `afterPresent` 区分缺失与显式 null。旧事件按原内容读取。
+
 业务接口均要求登录会话。登录 API 保持 `/api/auth/login`、`me`、`logout`。API 错误使用 400（参数）、401（未登录）、404（资源不存在）、409（状态/配置冲突），连接测试失败为 502。全部为 JSON，无真实外部业务写入。
 
 | 方法 | 路径 | 说明 |

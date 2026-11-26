@@ -6,6 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.trs.simulation.SimulationTypes.Ontology;
+import com.trs.simulation.SimulationTypes.PropertyDefinition;
+import com.trs.simulation.SimulationTypes.RelationDefinition;
+import com.trs.simulation.SimulationTypes.TypeDefinition;
 import com.trs.simulation.SimulationTypes.World;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.config.DemoService;
@@ -50,6 +54,50 @@ class WorldMaintenanceIntegrationTest {
 
     @LocalServerPort
     int port;
+
+    @Test
+    void templateDefaultsAndRelationsUseTheFrozenConstraintContract() {
+        var base = Examples.informationLeak();
+        var types = base.ontology().types().stream()
+                .map(type -> type.type().equals("DOCUMENT")
+                        ? new TypeDefinition(
+                                type.targetKind(),
+                                type.type(),
+                                type.actions(),
+                                List.of(new PropertyDefinition("priority", "INTEGER", true, false, 2, "value > 0")),
+                                true)
+                        : type)
+                .toList();
+        var allowed = new RelationDefinition("STORED_IN", List.of("DOCUMENT"), List.of("SYSTEM"), 1, null, null, null);
+        var wrongEndpoint =
+                new RelationDefinition("STORED_IN", List.of("DOCUMENT"), List.of("PERSON"), 1, null, null, null);
+        var overLimit =
+                new RelationDefinition("STORED_IN", List.of("DOCUMENT"), List.of("SYSTEM"), 0, null, null, null);
+        java.util.function.Function<RelationDefinition, World> template = rule -> new World(
+                null,
+                "Constrained graph",
+                base.domainCode(),
+                base.entityTypes(),
+                base.relationTypes(),
+                base.entities(),
+                base.relations(),
+                0,
+                new Ontology(3, types, List.of(rule), null));
+        var created = worlds.create(template.apply(allowed));
+        assertEquals(
+                2,
+                worlds.get(created.id()).entities().stream()
+                        .filter(entity -> entity.id().equals("document_f"))
+                        .findFirst()
+                        .orElseThrow()
+                        .properties()
+                        .get("priority"));
+        assertEquals(List.of(allowed), worlds.get(created.id()).ontology().relations());
+        var before = worlds.list().size();
+        assertThrows(IllegalArgumentException.class, () -> worlds.create(template.apply(wrongEndpoint)));
+        assertThrows(IllegalArgumentException.class, () -> worlds.create(template.apply(overLimit)));
+        assertEquals(before, worlds.list().size());
+    }
 
     @Test
     void builtinImportsAreIdempotentAndBothWorldsAreAvailable() {

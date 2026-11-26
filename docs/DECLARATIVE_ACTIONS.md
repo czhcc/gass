@@ -1,5 +1,13 @@
 # CEL 与声明式对象 Action
 
+## 第二阶段本体约束
+
+原有本体和已冻结的 Action 仍可按旧契约读取。世界 JSON 的 `ontology.types[]` 可以追加 `properties` 与 `allowUnknownProperties`。声明属性列表时默认拒绝未知属性，可显式允许。属性定义使用 `code`、`dataType`、`required`、`mutable`、可选 `defaultValue` 和可选 `constraintExpression`。`dataType` 支持 `STRING`、`BOOLEAN`、`INTEGER`、`NUMBER`、`OBJECT`、`ARRAY`、`JSON`。属性 CEL 约束使用 `value`。默认值只在世界模板保存时填补缺失字段，历史快照按原数据读取；`mutable=false` 约束 Action 中的变化，模板编辑仍按模板校验规则生效。
+
+`ontology.relations[]` 可以按关系类型指定 `sourceTypes`、`targetTypes`、可选 `maxOutgoing`、`maxIncoming` 和属性规则。基数按类型分别计算每个对象的启用入边和出边。 `ontology.stateConstraints[]` 接受 `code` 与布尔 CEL `expression`，对最终候选图谱求值。编译错误和不满足约束的候选会被拒绝，运行期 Action 的约束拒绝记录为 `ONTOLOGY_CONSTRAINT_VIOLATION`。
+
+白名单原语为 `SET_PROPERTY`、`DISABLE_RELATIONS`、`TRANSFER_MONEY`。金融余额、币种和交易字段继续受专用原语与领域不变量保护。多步 Action 的约束和版本变化以最终候选为准。最终图谱相同的 Action 保留裁定和收据，图谱版本保持原值。
+
 所有业务 Action 定义在世界的对象类型上；关系类型不拥有 Action。Agent 根据可见状态和参数规范提交决策，执行引擎负责权限、类型、参数、前置条件、关联对象可见性、金融约束与原子提交。`END` 仍为 Agent 生命周期指令。
 
 ## 数据与版本

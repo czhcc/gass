@@ -15,6 +15,7 @@ import com.trs.simulation.common.Json;
 import com.trs.simulation.evidence.TaskEvidence;
 import com.trs.simulation.model.ModelService;
 import com.trs.simulation.runtime.RunService.Lease;
+import com.trs.simulation.state.VisibilityPolicy;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -152,10 +153,8 @@ final class HierarchyRuntimeHost implements HierarchyHost {
                 throw new IllegalArgumentException("Active parent task required");
             if (request.inputEventId() != null
                     && history().stream()
-                            .noneMatch(e -> e.eventType().equals("SIMULATION_EVENT_CREATED")
-                                    && request.inputEventId().equals(e.payload().get("scheduledEventId"))
-                                    && agent.visibleEntityIds()
-                                            .contains(e.payload().get("targetId"))))
+                            .noneMatch(e -> visibleInput(agent, e)
+                                    && request.inputEventId().equals(e.payload().get("scheduledEventId"))))
                 throw new IllegalArgumentException("Task input event is outside the authorized scope");
             tx.executeWithoutResult(t -> {
                 store.append(
@@ -249,23 +248,69 @@ final class HierarchyRuntimeHost implements HierarchyHost {
             TaskRecord task, AgentDefinition agent, Decision decision, long expectedVersion, String inputEventId) {
         synchronized (runs) {
             check();
-            if (receipts.containsKey(task.taskId())) return receipts.get(task.taskId());
-            var current = state();
-            if (!agent.runtime().role().equals("ACTION")
-                    || !task.agentId().equals(agent.id())
+            var activeTask = runs.tasks(id).stream()
+                    .filter(t -> t.taskId().equals(task.taskId()) && t.status().equals("RUNNING"))
+                    .findFirst()
+                    .orElse(null);
+            if (activeTask == null
+                    || !activeTask.agentId().equals(agent.id())
                     || !task.runId().equals(id)
-                    || runs.tasks(id).stream()
-                            .noneMatch(t -> t.taskId().equals(task.taskId())
-                                    && t.status().equals("RUNNING"))
-                    || "END".equals(decision.actionType()))
+                    || decision == null
+                    || "END".equals(decision.actionType())) {
                 throw new IllegalArgumentException("Task lacks mutation authority");
+            }
+            var current = state();
+            var scene = scenario();
+            var team = scene.team();
+            var role = scene.agents().stream()
+                    .filter(member -> member.id().equals(activeTask.agentId()))
+                    .findFirst()
+                    .orElseThrow();
+            if (!role.runtime().role().equals("ACTION") || activeTask.parentTaskId() == null) {
+                throw new IllegalArgumentException("Task lacks mutation authority");
+            }
+            var root = scene.agents().stream()
+                    .filter(member -> member.id().equals(team.rootAgentId()))
+                    .findFirst()
+                    .orElseThrow();
+            var effective = VisibilityPolicy.restrict(role, visibleIds(root));
+            if (!activeTask.request().scopeIds().isEmpty()) {
+                effective = VisibilityPolicy.restrict(
+                        effective, activeTask.request().scopeIds());
+            }
+            if (!activeTask.request().allowedActions().isEmpty()) {
+                effective = new AgentDefinition(
+                        effective.id(),
+                        effective.name(),
+                        effective.goal(),
+                        effective.modelId(),
+                        effective.allowedActions().stream()
+                                .filter(activeTask.request().allowedActions()::contains)
+                                .toList(),
+                        effective.visibleEntityIds(),
+                        effective.maxDecisions(),
+                        effective.runtime());
+            }
             if (decision.reason() == null
                     || decision.reason().length() > 1000
-                    || Json.write(decision).length() > 6000)
+                    || Json.write(decision).length() > 6000) {
                 throw new IllegalArgumentException("Invalid Action request");
+            }
+            var command = new ActionCommitService.Command(
+                    id,
+                    "task:" + task.taskId(),
+                    role.id(),
+                    expectedVersion,
+                    decision,
+                    "AGENT_ACTION",
+                    task.taskId(),
+                    inputEventId);
+            var prior = commits.retry(command);
+            if (prior != null) {
+                return prior.details();
+            }
             var world = store.frozenWorld(id);
             var plugin = runs.domain(world.domainCode());
-            var team = scenario().team();
             Outcome result;
             if (expectedVersion != current.version())
                 result = new Outcome(
@@ -283,9 +328,9 @@ final class HierarchyRuntimeHost implements HierarchyHost {
                         false,
                         "INPUT_REQUIRED",
                         List.of());
-            else if ((task.request().inputEventId() != null
-                            && !task.request().inputEventId().equals(inputEventId))
-                    || (inputEventId != null && !inputMatches(inputEventId, decision, team)))
+            else if ((activeTask.request().inputEventId() != null
+                            && !activeTask.request().inputEventId().equals(inputEventId))
+                    || (inputEventId != null && !inputMatches(inputEventId, decision, team, effective)))
                 result = new Outcome(
                         false,
                         "Action does not match the bound input request",
@@ -305,64 +350,22 @@ final class HierarchyRuntimeHost implements HierarchyHost {
             else if (receipts.size() >= team.maxActionsPerRound())
                 result = new Outcome(
                         false, "Round Action attempt limit reached", current, false, "ROUND_ACTION_LIMIT", List.of());
-            else result = plugin.execute(world, agent, plugin.normalizeDecision(decision, current), current);
-            var details = new LinkedHashMap<>(Map.<String, Object>of(
-                    "taskId",
-                    task.taskId(),
-                    "accepted",
-                    result.accepted(),
-                    "code",
-                    result.code(),
-                    "message",
-                    result.message(),
-                    "actionType",
-                    decision.actionType(),
-                    "targetId",
-                    decision.targetId(),
-                    "parameters",
-                    decision.parameters() == null ? Map.of() : decision.parameters(),
-                    "inputVersion",
-                    current.version(),
-                    "outputVersion",
-                    result.state().version(),
-                    "affectedRelationIds",
-                    result.affectedRelationIds()));
-            if (inputEventId != null) details.put("inputEventId", inputEventId);
-            var receipt = Map.copyOf(details);
-            Outcome outcome = result;
-            tx.executeWithoutResult(t -> {
-                commits.commit(
-                        id,
-                        agent.id(),
-                        decision,
-                        current,
-                        outcome,
-                        "AGENT",
-                        Map.of("taskId", task.taskId(), "inputEventId", inputEventId == null ? "" : inputEventId));
-                store.append(id, "ACTION_TASK_RECEIPT", current.simulationTime(), agent.id(), receipt);
-                if (outcome.accepted() && inputEventId != null)
-                    store.append(
-                            id,
-                            "ACTION_INPUT_HANDLED",
-                            current.simulationTime(),
-                            agent.id(),
-                            Map.of(
-                                    "taskId",
-                                    task.taskId(),
-                                    "inputEventId",
-                                    inputEventId,
-                                    "outputVersion",
-                                    outcome.state().version()));
-            });
+            else result = plugin.execute(world, effective, plugin.normalizeDecision(decision, current), current);
+            var receipt = commits.commit(command, decision, current, result).details();
             receipts.put(task.taskId(), receipt);
             return receipt;
         }
     }
 
-    private boolean inputMatches(String inputId, Decision decision, TeamConfig team) {
+    private boolean visibleInput(AgentDefinition agent, Event event) {
+        var scope = visibleIds(agent);
+        return TaskEvidence.visibleInput(event, scope, VisibilityPolicy.hiddenIds(state(), scope));
+    }
+
+    private boolean inputMatches(String inputId, Decision decision, TeamConfig team, AgentDefinition agent) {
         return history().stream()
-                .anyMatch(e -> e.eventType().equals("SIMULATION_EVENT_CREATED")
-                        && inputId.equals(e.payload().get("scheduledEventId"))
+                .anyMatch(e -> inputId.equals(e.payload().get("scheduledEventId"))
+                        && visibleInput(agent, e)
                         && TaskEvidence.matchesInputType(team, decision.actionType(), e)
                         && Objects.equals(e.payload().get("targetId"), decision.targetId())
                         && Objects.equals(e.payload().get("parameters"), decision.parameters()));

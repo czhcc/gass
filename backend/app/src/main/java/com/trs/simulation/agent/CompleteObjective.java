@@ -94,10 +94,13 @@ final class CompleteObjective implements AgentTool {
                     .findFirst()
                     .orElseThrow();
             var visible = host.visibleIds(master);
-            long version = host.state().version();
+            var state = host.state();
+            long version = state.version();
+            boolean fullScope = state.entities().stream().allMatch(e -> visible.contains(e.id()))
+                    && host.initial().entities().stream().allMatch(e -> visible.contains(e.id()));
             var valid = host.history().stream()
                     .filter(e -> references.contains(e.sequence())
-                            && ObjectiveEvidence.usableForCompletion(e, visible, version))
+                            && ObjectiveEvidence.usableForCompletion(e, visible, version, fullScope))
                     .count();
             if (valid != references.size())
                 return ToolResultBlock.error(

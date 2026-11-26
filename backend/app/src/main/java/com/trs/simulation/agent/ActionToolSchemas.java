@@ -6,6 +6,7 @@ import com.trs.simulation.SimulationTypes.Event;
 import com.trs.simulation.SimulationTypes.TaskRequest;
 import com.trs.simulation.SimulationTypes.TeamConfig;
 import com.trs.simulation.evidence.TaskEvidence;
+import com.trs.simulation.state.VisibilityPolicy;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -40,9 +41,14 @@ final class ActionToolSchemas {
                 .filter(ActionCapability::available)
                 .collect(Collectors.groupingBy(c -> c.action().actionType(), TreeMap::new, Collectors.toList()));
         var team = host.scenario().team();
-        long version = host.state().version();
+        var state = host.state();
+        long version = state.version();
+        var scope = host.visibleIds(agent);
+        var hidden = VisibilityPolicy.hiddenIds(state, scope);
         var pending = capabilities.keySet().stream().anyMatch(action -> TaskEvidence.requiresInput(team, action))
-                ? pendingInputs(host.history(), task.inputEventId())
+                ? pendingInputs(host.history(), task.inputEventId()).stream()
+                        .filter(event -> TaskEvidence.visibleInput(event, scope, hidden))
+                        .toList()
                 : List.<Event>of();
         var submissions = new ArrayList<Submission>();
         capabilities.forEach((action, targets) -> {

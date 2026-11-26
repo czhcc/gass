@@ -1,7 +1,10 @@
 package com.trs.simulation.graph;
 
 import com.trs.simulation.SimulationTypes.AgentDefinition;
+import com.trs.simulation.SimulationTypes.Entity;
+import com.trs.simulation.SimulationTypes.Relation;
 import com.trs.simulation.SimulationTypes.State;
+import com.trs.simulation.state.VisibilityPolicy;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -33,7 +36,7 @@ public class RunGraphReadService {
     public synchronized GraphRead read(AgentDefinition agent, State state, String tool, Map<String, Object> arguments) {
         if (agent.runtime() == null || !agent.runtime().tools().contains(tool) || !TOOLS.contains(tool))
             throw new IllegalArgumentException("Query tool is not permitted for this role");
-        var ids = Set.copyOf(agent.visibleEntityIds());
+        var ids = VisibilityPolicy.readableIds(agent, state);
         var args = normalized(tool, arguments);
         var key = new QueryKey(state.runId(), state.version(), ids, tool, args);
         var previous = cache.get(key);
@@ -70,11 +73,9 @@ public class RunGraphReadService {
     }
 
     private Map<String, Object> query(Set<String> ids, State state, String tool, Map<String, Object> args) {
-        var entities =
-                state.entities().stream().filter(e -> ids.contains(e.id())).toList();
-        var edges = state.relations().stream()
-                .filter(r -> ids.contains(r.sourceId()) && ids.contains(r.targetId()))
-                .toList();
+        var projected = VisibilityPolicy.project(state, ids);
+        var entities = projected.entities();
+        var edges = projected.relations();
         String root = text(args, "entityId"), from = text(args, "from"), to = text(args, "to");
         for (var id : List.of(root, from, to))
             if (!id.isEmpty() && entities.stream().noneMatch(e -> e.id().equals(id)))
@@ -155,7 +156,37 @@ public class RunGraphReadService {
         result.put("truncated", selectedEntities.size() > offset + limit || selectedEdges.size() > offset + limit);
         result.put("offset", offset);
         result.put("limit", limit);
+        return frozenMap(result);
+    }
+
+    private <K> Map<K, Object> frozenMap(Map<K, ?> source) {
+        var result = new LinkedHashMap<K, Object>();
+        source.forEach((key, value) -> result.put(key, frozen(value)));
         return Collections.unmodifiableMap(result);
+    }
+
+    private Object frozen(Object value) {
+        if (value instanceof Entity entity) {
+            return new Entity(entity.id(), entity.type(), entity.name(), frozenMap(entity.properties()));
+        }
+        if (value instanceof Relation edge) {
+            return new Relation(
+                    edge.id(),
+                    edge.sourceId(),
+                    edge.targetId(),
+                    edge.relationType(),
+                    frozenMap(edge.properties()),
+                    edge.enabled(),
+                    edge.evidence(),
+                    edge.source());
+        }
+        if (value instanceof Map<?, ?> map) {
+            return frozenMap(map);
+        }
+        if (value instanceof List<?> list) {
+            return list.stream().map(this::frozen).toList();
+        }
+        return value;
     }
 
     private String text(Map<String, Object> args, String name) {

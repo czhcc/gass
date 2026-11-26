@@ -25,6 +25,7 @@ public final class CelExpressions {
             .setStandardMacros(CelStandardMacro.STANDARD_MACROS)
             .addVar("target", SimpleType.DYN)
             .addVar("params", SimpleType.DYN)
+            .addVar("value", SimpleType.DYN)
             .addVar("entities", ListType.create(SimpleType.DYN))
             .addVar("relations", ListType.create(SimpleType.DYN))
             .addVar("version", SimpleType.INT)

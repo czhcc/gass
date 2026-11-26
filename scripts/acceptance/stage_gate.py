@@ -33,6 +33,11 @@ COMMAND_PATTERNS = {
     "BROWSER": r"node(?:\.exe)? browser-fixture-verified\.mjs$",
     "HTTP-COMPARE": r"python(?:\.exe)? http_fixture\.py compare$",
     "DB-REOPEN": r"python(?:\.exe)? http_fixture\.py reopen$",
+    "STAGE2-ONTOLOGY": r"-Dtest=ReviewerStage2OntologyTest .*test$",
+    "STAGE2-COMMIT": r"-Dtest=ReviewerStage2CommitTest .*test$",
+    "STAGE2-VISIBILITY": r"-Dtest=ReviewerStage2VisibilityTest .*test$",
+    "STAGE2-EVIDENCE": r"-Dtest=ReviewerStage2EvidenceTest .*test$",
+    "GATE-TEST": r"python(?:\.exe)? -m unittest discover -s scripts[/\\]acceptance -p test_stage_gate\.py$",
 }
 REQUIRED_SUITES = {
     "MAVEN": {
@@ -46,6 +51,10 @@ REQUIRED_SUITES = {
     },
     "FRONT-TEST": {f"src/{name}.test.ts" for name in ("RunStudio", "HierarchyTrace", "EventDetails", "ObjectActions")},
     "OBJECTIVE-ALERT": {"com.trs.studio.ReviewerQueryObjectiveTest"},
+    "STAGE2-ONTOLOGY": {"com.trs.studio.ReviewerStage2OntologyTest"},
+    "STAGE2-COMMIT": {"com.trs.studio.ReviewerStage2CommitTest"},
+    "STAGE2-VISIBILITY": {"com.trs.studio.ReviewerStage2VisibilityTest"},
+    "STAGE2-EVIDENCE": {"com.trs.studio.ReviewerStage2EvidenceTest"},
 }
 
 
@@ -120,7 +129,10 @@ def verify_checkout(repo, stage, baseline, candidate):
         if not path.startswith(stage_prefix):
             return False
         name = path.removeprefix(stage_prefix)
-        return name in {"check-manifest.json", "check-manifest.draft.json", "check-manifest.sha256"} or bool(
+        return name in {
+            "check-manifest.json", "check-manifest.draft.json", "check-manifest.sha256",
+            "baseline.json", "candidate.json", "development.md",
+        } or bool(
             re.fullmatch(r"attempt-\d+/(?:review\.md|result\.json|evidence-index\.json|gate-report\.json)", name)
         )
 
@@ -129,12 +141,27 @@ def verify_checkout(repo, stage, baseline, candidate):
     untracked = git(repo, "ls-files", "--others", "--exclude-standard", "-z").stdout.split("\0")
     # Only explicitly named gate implementation files belong to the independent infrastructure task.
     def allowed(path):
-        return acceptance_doc(path) or path in INFRASTRUCTURE
+        return acceptance_doc(path) or (stage == 1 and path in INFRASTRUCTURE)
 
     changes = {path for path in (*tracked, *staged) if path and not allowed(path)}
     changes.update(path for path in untracked if path and not allowed(path) and not path.startswith(".idea/"))
     require(not changes, f"unreviewed checkout files: {', '.join(sorted(changes))}")
     return head
+
+
+def resolve_candidate(stage_dir, manifest, digest):
+    if manifest["candidateCommit"] is not None:
+        require(manifest.get("stage", 1) == 1, "prospective manifests require separate candidate registration")
+        return manifest["candidateCommit"]
+    require(not manifest["retrospective"], "retrospective manifest must pin its candidate")
+    registration = load_json(stage_dir / "candidate.json")
+    require(registration["schemaVersion"] == 1 and registration["stage"] == manifest["stage"]
+            and registration["baselineCommit"] == manifest["baselineCommit"]
+            and registration["checkManifestSha256"] == digest
+            and HEX_40.fullmatch(registration["candidateCommit"])
+            and timestamp(registration["registeredAt"]) >= timestamp(manifest["frozenAt"]),
+            "candidate registration does not match the frozen manifest")
+    return registration["candidateCommit"]
 
 
 def verify_manifest(repo, stage_dir, stage):
@@ -148,7 +175,7 @@ def verify_manifest(repo, stage_dir, stage):
     require(type(manifest["stage"]) is int and manifest["stage"] == stage
             and manifest["schemaVersion"] == manifest["manifestVersion"] == 1
             and manifest["status"] == "FROZEN", "manifest must be frozen for the requested stage")
-    baseline, candidate = manifest["baselineCommit"], manifest["candidateCommit"]
+    baseline, candidate = manifest["baselineCommit"], resolve_candidate(stage_dir, manifest, digest)
     require(HEX_40.fullmatch(baseline) and HEX_40.fullmatch(candidate) and baseline != candidate,
             "full distinct baseline and candidate SHAs are required")
     head = verify_checkout(repo, stage, baseline, candidate)
@@ -166,6 +193,13 @@ def verify_manifest(repo, stage_dir, stage):
     draft = load_json(draft_path)
     for key in ("stage", "candidateCommit", "baselineCommit", "plans", "scope", "checks", "verification", "previousStages"):
         require(draft[key] == manifest[key], f"frozen {key} differs from the approved draft")
+    if stage >= 2:
+        for key in ("baselineRecord", "prerequisiteRecords", "execution", "retrospective"):
+            require(draft[key] == manifest[key], f"frozen {key} differs from the approved draft")
+        baseline_record = manifest["baselineRecord"]
+        baseline_path = (repo / baseline_record["path"]).resolve()
+        require(baseline_path.is_relative_to(stage_dir) and sha256(baseline_path) == baseline_record["sha256"]
+                and load_json(baseline_path)["baselineCommit"] == baseline, "baseline record hash mismatch")
     draft_conditions = index_by_id(draft["conditions"], "draft condition")
     conditions = index_by_id(manifest["conditions"], "condition")
     require(conditions.keys() == draft_conditions.keys()
@@ -175,6 +209,10 @@ def verify_manifest(repo, stage_dir, stage):
     if approved > commit_time:
         require(manifest["retrospective"] is True and "事后补录" in manifest["notice"],
                 "post-candidate approval needs an explicit retrospective record")
+    if manifest["candidateCommit"] is None:
+        registered = timestamp(load_json(stage_dir / "candidate.json")["registeredAt"])
+        require(frozen <= commit_time <= registered <= datetime.now(timezone.utc),
+                "candidate registration chronology is invalid")
     check_ids = index_by_id(manifest["checks"], "frozen check")
     verification = index_by_id(manifest["verification"], "verification")
     require(all(set(check["verificationIds"]) <= verification.keys() and check["verificationIds"]
@@ -187,7 +225,7 @@ def verify_manifest(repo, stage_dir, stage):
             and verification["STAGE-GATE"]["required"] is True
             and verification["STAGE-GATE"]["target"] == "gate",
             "automatic Stage Gate must remain required")
-    return manifest, digest, head
+    return {**manifest, "candidateCommit": candidate}, digest, head
 
 
 def verify_index(index, baseline, candidate):
@@ -393,6 +431,9 @@ def verify_commands(manifest, result, assets):
         if verification == "FORMAT":
             require("BUILD SUCCESS" in log and ":check (default-cli) @ app" in log
                     and ":check (default-cli) @ bootstart" in log, "Spotless did not cover app and bootstart")
+        if verification == "GATE-TEST":
+            require(re.search(r"^Ran [1-9]\d* tests? in ", log, re.M)
+                    and re.search(r"^OK$", log, re.M), "gate regression tests were not confirmed")
         if verification == "ENV":
             require(len(capture["steps"]) == 5 and all(re.search(pattern, log, re.M) for pattern in (
                 r'^(?:openjdk|java) version "21\.', r"^Apache Maven 3\.", r"^v24\.",
@@ -433,6 +474,22 @@ def verify_prerequisites(repo, required, records, candidate):
         earlier = record["candidateCommit"]
         require(HEX_40.fullmatch(earlier) and git_ancestor(repo, earlier, candidate),
                 f"prerequisite stage {stage} is not an ancestor of the candidate")
+
+
+def prerequisite_reports(repo, manifest):
+    if "prerequisiteRecords" not in manifest:
+        return [load_json(repo / f"docs/development/acceptance/stage-{stage:02}/gate-report.json")
+                for stage in manifest["previousStages"]]
+    reports = []
+    for reference in manifest["prerequisiteRecords"]:
+        path = (repo / reference["gateReport"]).resolve()
+        require(path.is_relative_to(repo) and sha256(path) == reference["gateReportSha256"],
+                "prerequisite gate report hash mismatch")
+        report = load_json(path)
+        require(report["stage"] == reference["stage"] and report["candidateCommit"] == reference["candidateCommit"],
+                "prerequisite gate report identity mismatch")
+        reports.append(report)
+    return reports
 
 
 def verify_reuse(original_commands, commands, original_evidence, assets):
@@ -478,8 +535,7 @@ def evaluate(repo, stage, attempt):
         verify_first_attempt(stage_dir, result, assets)
     checks = verify_review(manifest, result, review.read_text(encoding="utf-8-sig"), assets, digest, attempt)
     required = manifest["previousStages"]
-    previous = [load_json(repo/f"docs/development/acceptance/stage-{stage_id:02}/gate-report.json")
-                for stage_id in required]
+    previous = prerequisite_reports(repo, manifest)
     verify_prerequisites(repo, required, previous, manifest["candidateCommit"])
     command_count, tests = verify_commands(manifest, result, assets)
     return {
@@ -504,8 +560,8 @@ def main():
     parser.add_argument("--attempt", type=int, default=2)
     parser.add_argument("--report", type=Path, help="alternate output file, useful for reruns")
     args = parser.parse_args()
-    if args.stage != 1 or args.attempt < 2:
-        parser.error("this gate implementation supports stage 1, attempt 2 or later")
+    if args.stage not in {1, 2} or args.attempt < (2 if args.stage == 1 else 1):
+        parser.error("supported attempts are stage 1 attempt 2+ and stage 2 attempt 1+")
     repo = Path(__file__).resolve().parents[2]
     output = args.report or repo/f"docs/development/acceptance/stage-{args.stage:02}/attempt-{args.attempt:02}/gate-report.json"
     started = datetime.now(timezone.utc).isoformat()

@@ -1,5 +1,6 @@
 package com.trs.simulation;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,10 +55,51 @@ public final class SimulationTypes {
     }
 
     /** Versioned ontology stored with the world and frozen run. @author czhcc-trsdsj\codexsandboxoffline */
-    public record Ontology(int version, List<TypeDefinition> types) {}
+    public record Ontology(
+            int version,
+            List<TypeDefinition> types,
+            @JsonInclude(JsonInclude.Include.NON_NULL) List<RelationDefinition> relations,
+            @JsonInclude(JsonInclude.Include.NON_NULL) List<StateConstraint> stateConstraints) {
+        /** Retains the legacy action-only ontology. @author czhcc-trsdsj\codexsandboxoffline */
+        public Ontology(int version, List<TypeDefinition> types) {
+            this(version, types, null, null);
+        }
+    }
 
     /** Actions owned by entity types; targetKind remains for serialized legacy compatibility. @author czhcc-trsdsj\codexsandboxoffline */
-    public record TypeDefinition(String targetKind, String type, List<ActionDefinition> actions) {}
+    public record TypeDefinition(
+            String targetKind,
+            String type,
+            List<ActionDefinition> actions,
+            @JsonInclude(JsonInclude.Include.NON_NULL) List<PropertyDefinition> properties,
+            @JsonInclude(JsonInclude.Include.NON_NULL) Boolean allowUnknownProperties) {
+        /** Retains a legacy binding without strict property rules. @author czhcc-trsdsj\codexsandboxoffline */
+        public TypeDefinition(String targetKind, String type, List<ActionDefinition> actions) {
+            this(targetKind, type, actions, null, null);
+        }
+    }
+
+    /** A declared field with an optional default and CEL predicate over its value. @author czhcc-trsdsj\codexsandboxoffline */
+    public record PropertyDefinition(
+            String code,
+            String dataType,
+            boolean required,
+            boolean mutable,
+            Object defaultValue,
+            String constraintExpression) {}
+
+    /** Restricts endpoints, enabled-edge cardinality and properties of one relation type. @author czhcc-trsdsj\codexsandboxoffline */
+    public record RelationDefinition(
+            String type,
+            List<String> sourceTypes,
+            List<String> targetTypes,
+            Integer maxOutgoing,
+            Integer maxIncoming,
+            List<PropertyDefinition> properties,
+            Boolean allowUnknownProperties) {}
+
+    /** A CEL invariant evaluated on a complete graph candidate. @author czhcc-trsdsj\codexsandboxoffline */
+    public record StateConstraint(String code, String expression) {}
 
     /** Declarative engine contract; no arbitrary code or state patches. @author czhcc-trsdsj\codexsandboxoffline */
     public record ActionDefinition(

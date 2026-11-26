@@ -139,6 +139,104 @@ class SimulationIntegrationTest {
     }
 
     @Test
+    void interventionPersistsItsReceiptAndRejectsAConflictingRetry() {
+        var world = worlds.create(Examples.informationLeak());
+        var agent = new AgentDefinition(
+                "response",
+                "Response",
+                "Reduce risk",
+                "model",
+                List.of("DISABLE_SYNC", "MARK_REVIEWED"),
+                List.of("system_s", "system_t", "document_f"),
+                10);
+        var scenario = worlds.scenario(new Scenario(null, "receipts", world.id(), List.of(agent), 5, 100));
+        var run = runs.create(scenario.id());
+        runs.pause(run.id());
+        var disable = new Decision("DISABLE_SYNC", "sync_st", Map.of(), "contain spread");
+        var review = new Decision("MARK_REVIEWED", "document_f", Map.of(), "leave evidence");
+
+        long cursor = runs.events(run.id(), 0).getLast().sequence();
+        var first = runs.intervene(run.id(), "disable", agent.id(), disable, 0);
+        var audit = runs.events(run.id(), cursor);
+        var proposal = audit.stream()
+                .filter(e -> e.eventType().equals("ACTION_PROPOSED"))
+                .findFirst()
+                .orElseThrow();
+        var actionRunId = proposal.payload().get("actionRunId");
+        assertTrue(actionRunId instanceof String id && !id.isBlank());
+        for (var event : audit) {
+            assertEquals(actionRunId, event.payload().get("actionRunId"));
+            assertEquals("disable", event.payload().get("commandId"));
+            assertEquals(run.id(), event.payload().get("runId"));
+        }
+        var changed = audit.getLast();
+        assertTrue(changed.payload().containsKey("stateDiff"));
+        var second = runs.intervene(run.id(), "review", agent.id(), review, first.version());
+        assertEquals(2, second.version());
+        runs.recover();
+        assertEquals(first, runs.intervene(run.id(), "disable", agent.id(), disable, 0));
+        assertThrows(IllegalStateException.class, () -> runs.intervene(run.id(), "disable", agent.id(), review, 0));
+        assertEquals(second, runs.state(run.id()));
+    }
+
+    @Test
+    void noOpInterventionRetryRetainsItsClockWithoutAddingASnapshot() {
+        var world = worlds.create(Examples.informationLeak());
+        var agent = new AgentDefinition(
+                "review", "Review", "Review", "model", List.of("ANALYZE_RELATIONS"), List.of("document_f"), 10);
+        var scene = worlds.scenario(new Scenario(null, "No-op", world.id(), List.of(agent), 5, 100));
+        var decision = new Decision("ANALYZE_RELATIONS", "document_f", Map.of(), "Inspect the graph");
+        when(decisions.decide(any(), any())).thenReturn(decision);
+        var run = runs.create(scene.id());
+        runs.step(run.id(), "round-one");
+        var first = runs.intervene(run.id(), "inspect", agent.id(), decision, 0);
+        assertEquals(1, first.simulationTime());
+        assertEquals(0, first.version());
+        assertEquals(0, runs.replay(run.id(), 0).simulationTime());
+        runs.step(run.id(), "round-two");
+        assertEquals(2, runs.state(run.id()).simulationTime());
+        assertEquals(first, runs.intervene(run.id(), "inspect", agent.id(), decision, 0));
+    }
+
+    @Test
+    void failedReceiptWriteRollsBackStateSnapshotAuditAndCommandKey() {
+        var world = worlds.create(Examples.informationLeak());
+        var agent = new AgentDefinition(
+                "response",
+                "Response",
+                "Reduce risk",
+                "model",
+                List.of("DISABLE_SYNC"),
+                List.of("system_s", "system_t"),
+                10);
+        var scenario = worlds.scenario(new Scenario(null, "receipt rollback", world.id(), List.of(agent), 5, 100));
+        var run = runs.create(scenario.id());
+        var before = runs.state(run.id());
+        var audit = runs.events(run.id(), 0);
+        var decision = new Decision("DISABLE_SYNC", "sync_st", Map.of(), "contain spread");
+        jdbc.execute("""
+                CREATE TRIGGER reject_action_receipt BEFORE INSERT ON simulation_action_receipt
+                BEGIN
+                    SELECT RAISE(ABORT, 'receipt rejected by test');
+                END
+                """);
+        try {
+            assertThrows(
+                    DataAccessException.class,
+                    () -> runs.intervene(run.id(), "retry", agent.id(), decision, before.version()));
+            assertEquals(before, runs.state(run.id()));
+            assertEquals(audit, runs.events(run.id(), 0));
+            assertThrows(java.util.NoSuchElementException.class, () -> runs.replay(run.id(), 1));
+        } finally {
+            jdbc.execute("DROP TRIGGER reject_action_receipt");
+        }
+        assertEquals(
+                1,
+                runs.intervene(run.id(), "retry", agent.id(), decision, before.version())
+                        .version());
+    }
+
+    @Test
     void failedSnapshotWriteRollsBackInterventionAndAllowsSameCommandToRetry() {
         var world = worlds.create(Examples.informationLeak());
         var agent = new AgentDefinition(
