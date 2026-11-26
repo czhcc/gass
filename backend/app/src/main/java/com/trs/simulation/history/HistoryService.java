@@ -62,6 +62,11 @@ public class HistoryService {
                         event.sequence(),
                         ((Number) event.payload().get("version")).longValue(),
                         event.simulationTime()));
+            else if (event.eventType().equals("SIMULATION_CLOCK_ADVANCED"))
+                result.add(new Checkpoint(
+                        event.sequence(),
+                        ((Number) event.payload().get("stateVersion")).longValue(),
+                        event.simulationTime()));
         return result;
     }
 
@@ -144,6 +149,18 @@ public class HistoryService {
                 var past = runs.events(parent, 0).stream()
                         .filter(e -> e.sequence() <= sequence)
                         .toList();
+                if (scenario.eventDriven()) {
+                    int round = past.stream()
+                            .filter(e -> "REASONING_ROUND_STARTED".equals(e.eventType())
+                                    || "BRANCH_CLOCK_RESTORED".equals(e.eventType()))
+                            .map(e -> e.payload().get("round"))
+                            .filter(Number.class::isInstance)
+                            .mapToInt(value -> ((Number) value).intValue())
+                            .max()
+                            .orElse(0);
+                    db.update("UPDATE simulation_run SET step=? WHERE id=?", round, child);
+                    append(child, "BRANCH_CLOCK_RESTORED", state.simulationTime(), null, Map.of("round", round));
+                }
                 for (var event : past) {
                     if (event.eventType().equals("WORLD_STATE_CHANGED")
                             && event.payload().get("inputEventId") instanceof String input
@@ -154,7 +171,8 @@ public class HistoryService {
                                 state.simulationTime(),
                                 event.agentId(),
                                 Map.of("inputEventId", input));
-                    if (event.eventType().equals("SIMULATION_EVENT_CREATED")) {
+                    if (event.eventType().equals("SIMULATION_EVENT_CREATED")
+                            && (!scenario.eventDriven() || isUnfinishedDelivery(parent, sequence, event.payload()))) {
                         var payload = new HashMap<>(event.payload());
                         payload.put("inherited", true);
                         append(child, "SIMULATION_EVENT_CREATED", state.simulationTime(), null, payload);
@@ -186,6 +204,10 @@ public class HistoryService {
                                         - 30))
                         .toList())
                     append(child, "AGENT_MEMORY_RESTORED", state.simulationTime(), event.agentId(), event.payload());
+                if (scenario.eventDriven()) {
+                    copyPendingWork(parent, child, sequence);
+                    return runs.get(child);
+                }
                 var pending = db.queryForList(
                         "SELECT event_id,simulation_time,payload_json FROM simulation_scheduled_event"
                                 + " WHERE run_id=? AND created_sequence<=? ORDER BY"
@@ -209,6 +231,31 @@ public class HistoryService {
                 return runs.get(child);
             });
         }
+    }
+
+    private boolean isUnfinishedDelivery(String parent, long sequence, Map<String, Object> event) {
+        return db.queryForObject("""
+                SELECT COUNT(*) FROM simulation_scheduled_event
+                WHERE run_id=? AND event_id=? AND (completed_sequence IS NULL OR completed_sequence>?)
+                """, Integer.class, parent, event.get("scheduledEventId"), sequence) > 0;
+    }
+
+    private void copyPendingWork(String parent, String child, long sequence) {
+        db.update("""
+                INSERT INTO simulation_scheduled_event
+                    (run_id,event_id,simulation_time,payload_json,delivered,created_sequence,
+                     enqueue_sequence,priority,work_kind,work_status)
+                SELECT ?,work.event_id,work.simulation_time,work.payload_json,
+                    CASE WHEN delivered.sequence_no IS NULL THEN 0 ELSE 1 END,0,
+                    work.enqueue_sequence,work.priority,work.work_kind,
+                    CASE WHEN delivered.sequence_no IS NULL THEN 'PENDING' ELSE 'AWAITING_ACTION' END
+                FROM simulation_scheduled_event work
+                LEFT JOIN simulation_event delivered ON delivered.run_id=work.run_id
+                    AND delivered.event_type='SIMULATION_EVENT_CREATED' AND delivered.sequence_no<=?
+                    AND JSON_EXTRACT(delivered.payload_json,'$.scheduledEventId')=work.event_id
+                WHERE work.run_id=? AND work.created_sequence<=?
+                    AND (work.completed_sequence IS NULL OR work.completed_sequence>?)
+                """, child, sequence, parent, sequence, sequence);
     }
 
     /**

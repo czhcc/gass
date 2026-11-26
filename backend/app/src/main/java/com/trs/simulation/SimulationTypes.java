@@ -282,7 +282,55 @@ public final class SimulationTypes {
     /** Business outcome is distinct from execution status and termination reason. @author czhcc-trsdsj\codexsandboxoffline */
     public record BusinessOutcome(String result, int evaluatedRound, long version, List<ConditionResult> conditions) {}
 
-    /** Scenario configuration; independent from mutable execution state. @author agent */
+    /** Selects a versioned clock and bounds work at one logical instant. @author czhcc-trsdsj\codexsandboxoffline */
+    public record SchedulingPolicy(int contractVersion, String mode, String timeUnit, Integer maxWorkPerTime) {
+        /** Validates the frozen mode, unit and per-time budget. @author czhcc-trsdsj\codexsandboxoffline */
+        public SchedulingPolicy {
+            if (contractVersion != 1
+                    || !List.of("TASK_DRIVEN", "EVENT_DRIVEN").contains(mode == null ? "" : mode)
+                    || !"TICK".equals(timeUnit)
+                    || maxWorkPerTime != null && (maxWorkPerTime < 1 || maxWorkPerTime > 100)) {
+                throw new IllegalArgumentException("Invalid scheduling policy");
+            }
+            maxWorkPerTime = maxWorkPerTime == null ? 100 : maxWorkPerTime;
+        }
+
+        /** Identifies the opt-in strict clock contract. @author czhcc-trsdsj\codexsandboxoffline */
+        public boolean eventDriven() {
+            return "EVENT_DRIVEN".equals(mode);
+        }
+    }
+
+    /** Freezes the deterministic prerequisites for assessing a run. @author czhcc-trsdsj\codexsandboxoffline */
+    public record EvaluationPolicy(
+            String mode,
+            Integer earliestRound,
+            Long earliestSimulationTime,
+            Long horizonSimulationTime,
+            Integer horizonRound,
+            Boolean requireQuiescence,
+            String completionMode) {
+        /** Fills defaults and validates the ordering of configured evaluation points. @author czhcc-trsdsj\codexsandboxoffline */
+        public EvaluationPolicy {
+            earliestRound = earliestRound == null ? 0 : earliestRound;
+            earliestSimulationTime = earliestSimulationTime == null ? 0L : earliestSimulationTime;
+            requireQuiescence = requireQuiescence == null || requireQuiescence;
+            completionMode = completionMode == null ? "QUIESCENCE" : completionMode;
+            if (earliestRound < 0
+                    || earliestSimulationTime < 0
+                    || (horizonSimulationTime != null && horizonSimulationTime < earliestSimulationTime)
+                    || (horizonRound != null && (horizonRound < 1 || horizonRound < earliestRound))
+                    || !List.of("QUIESCENCE", "HORIZON", "OBJECTIVE").contains(completionMode)
+                    || ("HORIZON".equals(completionMode) && horizonSimulationTime == null && horizonRound == null)
+                    || (horizonRound != null && horizonSimulationTime != null)
+                    || ("QUIESCENCE".equals(completionMode) && !requireQuiescence)
+                    || (mode != null && !List.of("TEXT_ONLY", "CONDITIONS").contains(mode))) {
+                throw new IllegalArgumentException("Invalid evaluation policy");
+            }
+        }
+    }
+
+    /** Scenario configuration frozen separately from mutable execution state. @author czhcc-trsdsj\codexsandboxoffline */
     public record Scenario(
             String id,
             String name,
@@ -291,7 +339,28 @@ public final class SimulationTypes {
             int maxSteps,
             int maxEvents,
             TeamConfig team,
-            String objective) {
+            String objective,
+
+            @JsonInclude(JsonInclude.Include.NON_NULL) SchedulingPolicy scheduling,
+
+            @JsonInclude(JsonInclude.Include.NON_NULL) EvaluationPolicy evaluationPolicy) {
+        /** Preserves existing scenario callers and their legacy clock semantics. @author czhcc-trsdsj\codexsandboxoffline */
+        public Scenario(
+                String id,
+                String name,
+                String worldId,
+                List<AgentDefinition> agents,
+                int maxSteps,
+                int maxEvents,
+                TeamConfig team,
+                String objective) {
+            this(id, name, worldId, agents, maxSteps, maxEvents, team, objective, null, null);
+        }
+
+        /** Checks the frozen scheduling contract. @author czhcc-trsdsj\codexsandboxoffline */
+        public boolean eventDriven() {
+            return scheduling != null && scheduling.eventDriven();
+        }
         /** Preserves the original hierarchy scenario protocol. @author czhcc-trsdsj\codexsandboxoffline */
         public Scenario(
                 String id,
@@ -369,7 +438,17 @@ public final class SimulationTypes {
 
     /** Validated, delayed user event; effects remain subject to the World Engine. @author agent */
     public record ScheduledInput(
-            String eventType, String targetId, long simulationTime, Map<String, Object> parameters) {}
+            String eventType,
+            String targetId,
+            long simulationTime,
+            Map<String, Object> parameters,
+
+            @JsonInclude(JsonInclude.Include.NON_NULL) Integer priority) {
+        /** Keeps the original scheduled input shape when no priority is supplied. @author czhcc-trsdsj\codexsandboxoffline */
+        public ScheduledInput(String eventType, String targetId, long simulationTime, Map<String, Object> parameters) {
+            this(eventType, targetId, simulationTime, parameters, null);
+        }
+    }
 
     /** Isolated runtime state. @author agent */
     public record State(

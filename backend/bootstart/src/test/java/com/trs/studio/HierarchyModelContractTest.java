@@ -6,10 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.sun.net.httpserver.HttpServer;
 import com.trs.simulation.SimulationTypes.Decision;
+import com.trs.simulation.SimulationTypes.EvaluationPolicy;
 import com.trs.simulation.SimulationTypes.GoalCondition;
 import com.trs.simulation.SimulationTypes.ObjectiveReview;
 import com.trs.simulation.SimulationTypes.RoundReport;
 import com.trs.simulation.SimulationTypes.Scenario;
+import com.trs.simulation.SimulationTypes.ScheduledInput;
+import com.trs.simulation.SimulationTypes.SchedulingPolicy;
 import com.trs.simulation.SimulationTypes.TaskRecord;
 import com.trs.simulation.SimulationTypes.TeamConfig;
 import com.trs.simulation.common.Json;
@@ -29,6 +32,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -51,8 +56,11 @@ class HierarchyModelContractTest {
     @Autowired
     ObjectiveDraftService drafts;
 
-    @Test
-    void endsAnEvidenceBackedTextObjectiveAndReviewsHistorySeparatelyFromFinalState() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"legacy", "strict", "early"})
+    void endsAnEvidenceBackedTextObjectiveAndReviewsHistorySeparatelyFromFinalState(String clockMode) throws Exception {
+        boolean strictClock = !clockMode.equals("legacy");
+        boolean requireQuiescence = !clockMode.equals("early");
         var requests = new CopyOnWriteArrayList<Map<String, Object>>();
         var runId = new java.util.concurrent.atomic.AtomicReference<String>();
         var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -168,7 +176,19 @@ class HierarchyModelContractTest {
                     List.of(),
                     template.inputActions());
             var run = runs.create(worlds.scenario(new Scenario(
-                            null, base.name(), world.id(), base.agents(), 6, 2000, team, "关闭人员 A 到 C 的共享并核对。"))
+                            null,
+                            base.name(),
+                            world.id(),
+                            base.agents(),
+                            6,
+                            2000,
+                            team,
+                            "关闭人员 A 到 C 的共享并核对。",
+                            strictClock ? new SchedulingPolicy(1, "EVENT_DRIVEN", "TICK", 20) : null,
+                            strictClock
+                                    ? new EvaluationPolicy(
+                                            "TEXT_ONLY", 1, 9L, null, null, requireQuiescence, "OBJECTIVE")
+                                    : null))
                     .id());
             runId.set(run.id());
             long initialVersion = runs.state(run.id()).version();
@@ -194,7 +214,24 @@ class HierarchyModelContractTest {
                             "Disable current path",
                             "ENTITY"),
                     initialVersion + 1);
+            if (strictClock) {
+                runs.inject(
+                        run.id(),
+                        "future-note",
+                        new ScheduledInput("USER_NOTE", "person_a", requireQuiescence ? 9 : 90, Map.of()));
+            }
             runs.step(run.id(), "verify");
+            if (strictClock) {
+                assertEquals("PAUSED", runs.get(run.id()).status());
+                assertEquals("NOT_EVALUATED", runs.outcome(run.id()).result());
+                assertEquals(0L, runs.state(run.id()).simulationTime());
+                assertTrue(runs.events(run.id(), 0).stream()
+                        .anyMatch(e -> e.eventType().equals("OBJECTIVE_COMPLETION_RECORDED")));
+                assertEquals(9L, runs.step(run.id(), "deliver-note").simulationTime());
+                assertEquals(
+                        requireQuiescence ? "QUIESCENT" : "PENDING",
+                        runs.scheduling(run.id()).get("queueState"));
+            }
 
             var events = runs.events(run.id(), 0);
             assertEquals("COMPLETED", runs.get(run.id()).status(), Json.write(events));

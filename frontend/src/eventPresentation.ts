@@ -18,6 +18,7 @@ export const terminationMessages: Record<string, [string, string]> = {
   ALL_AGENTS_ENDED: ['所有 Agent 均已成功结束任务', 'All agents submitted accepted END decisions'],
   MAX_STEPS: ['推演轮数达到上限', 'Simulation round limit reached'],
   MAX_EVENTS: ['事件数量达到预算限制（预留 10 条审计事件）', 'Event limit reached (10 audit events reserved)'],
+  MAX_WORK_PER_TIME: ['同一模拟时刻的处理预算已用尽，待办项已保留', 'Work limit for this simulation time reached; pending work is retained'],
   MAX_RUNTIME: ['实际推演耗时达到上限', 'Active computation time limit reached'],
   MAX_AGENT_DECISIONS: ['尚未结束的 Agent 均已耗尽各自的决策次数', 'All remaining agents exhausted their decision limits'],
   MAX_DECISIONS: ['运行总决策次数达到上限', 'Global decision limit reached'],
@@ -25,6 +26,10 @@ export const terminationMessages: Record<string, [string, string]> = {
   TOKEN_BUDGET: ['输出 Token 预算不足以预留下一次决策（按预估用量计算）', 'Insufficient token budget for the next decision (reserved estimate)'],
   MAX_STATE_CHANGES: ['状态变更次数达到上限', 'State change limit reached'],
   USER_STOPPED: ['用户手动停止运行', 'Stopped by user'],
+  QUIESCENT: ['事件队列已静止', 'The event queue is quiescent'],
+  HORIZON_REACHED: ['已到达推演时限，时限外的待办项已保留', 'Simulation horizon reached; work outside the horizon is retained'],
+  EVALUATION_NOT_READY: ['推演结束时尚未满足评价条件', 'The run ended before evaluation prerequisites were met'],
+  SCHEDULED_WORK_INTERRUPTED: ['调度处理中断，待办项已保留，可恢复推演', 'Scheduling was interrupted. Pending work is retained for resume.'],
   MODEL_DECISION_FAILED: ['模型决策失败或超时，请检查模型配置', 'Model decision failed or timed out; verify model configuration'],
   OBJECTIVE_MET: ['已到达设定轮数，场景效果已达成', 'Configured horizon reached; business effects achieved'],
   OBJECTIVE_NOT_MET: ['已到达设定轮数，场景效果未达成', 'Configured horizon reached; business effects not achieved'],
@@ -45,6 +50,10 @@ const titles: Record<string, [string, string]> = {
   AGENT_TOOL_CALL: ['Agent 查询图谱', 'Agent graph query'], USER_INTERVENTION: ['用户提出干预', 'User intervention'], ACTION_PROPOSED: ['行动等待校验', 'Action awaiting validation'],
   ACTION_ACCEPTED: ['行动已接受', 'Action accepted'], ACTION_REJECTED: ['行动被拒绝', 'Action rejected'], WORLD_STATE_CHANGED: ['图谱状态已更新', 'Graph state updated'],
   SIMULATION_EVENT_SCHEDULED: ['已安排输入事件', 'Input event scheduled'], SIMULATION_EVENT_CREATED: ['输入事件已送达', 'Input event delivered'],
+  SIMULATION_CLOCK_ADVANCED: ['已推进模拟时钟', 'Simulation clock advanced'],
+  DOMAIN_EVENT_SCHEDULED: ['已安排领域事件', 'Domain event scheduled'], DOMAIN_EVENT_PROCESSED: ['领域事件已处理', 'Domain event processed'],
+  REASONING_ROUND_STARTED: ['已开始研判轮次', 'Reasoning round started'], REASONING_ROUND_FINISHED: ['研判轮次已结束', 'Reasoning round finished'],
+  BRANCH_CLOCK_RESTORED: ['已继承分支时钟', 'Branch clock restored'],
   BRANCH_CREATED: ['已创建运行分支', 'Branch created'], AGENT_MEMORY_RESTORED: ['Agent 历史已恢复', 'Agent history restored'],
   MASTER_TASK_STARTED: ['主 Agent 开始研判', 'Master started planning'], MASTER_TASK_COMPLETED: ['主 Agent 本轮任务结束', 'Master cycle ended'],
   SUBTASK_DISPATCHED: ['已委派子任务', 'Subtask delegated'], SUBTASK_COMPLETED: ['子任务已返回', 'Subtask returned'],
@@ -68,7 +77,7 @@ const properties: Record<string, [string, string]> = { reviewed: ['审查状态'
 const tools: Record<string, [string, string]> = { graph_search_entity: ['搜索可见对象', 'Search visible objects'], graph_get_entity: ['读取可见对象', 'Read a visible object'], graph_expand_relations: ['查询关系可达范围', 'Expand visible relationships'], graph_find_paths: ['查询图谱路径', 'Find graph paths'], graph_calculate_centrality: ['计算图谱中心性', 'Calculate centrality'], graph_get_subgraph: ['读取局部图谱', 'Read a subgraph'], graph_estimate_impact: ['估计潜在影响范围', 'Estimate potential impact'] };
 
 export function isKeyEvent(event: RunEvent) {
-  return event.eventType.startsWith('RUN_') || ['ACTION_ACCEPTED', 'ACTION_REJECTED', 'WORLD_STATE_CHANGED', 'SIMULATION_EVENT_CREATED', 'SIMULATION_EVENT_SCHEDULED', 'BRANCH_CREATED', 'MASTER_REVIEW', 'SUBTASK_DISPATCHED', 'SUBTASK_COMPLETED', 'SCENARIO_EVALUATED', 'OBJECTIVE_REVIEWED', 'OBJECTIVE_COMPLETION_RECORDED'].includes(event.eventType);
+  return event.eventType.startsWith('RUN_') || ['ACTION_ACCEPTED', 'ACTION_REJECTED', 'WORLD_STATE_CHANGED', 'SIMULATION_EVENT_CREATED', 'SIMULATION_EVENT_SCHEDULED', 'SIMULATION_CLOCK_ADVANCED', 'BRANCH_CREATED', 'MASTER_REVIEW', 'SUBTASK_DISPATCHED', 'SUBTASK_COMPLETED', 'SCENARIO_EVALUATED', 'OBJECTIVE_REVIEWED', 'OBJECTIVE_COMPLETION_RECORDED'].includes(event.eventType);
 }
 
 /** Uses persisted proposals and snapshots only; it never translates by calling a model. */
@@ -171,6 +180,14 @@ export function describeEvent(event: RunEvent, context: EventContext, lang: Lang
     if (event.eventType === 'RUN_COMPLETED' && !code) result.summary = t('历史记录显示运行已结束，未记录可核实的业务完成原因。', 'The legacy record indicates an ended run without a verifiable business-completion reason.');
     if (p.actual !== undefined || p.limit !== undefined) fact(t('触发值 / 限额', 'Trigger value / limit'), `${p.actual ?? '—'} / ${p.limit ?? '—'}`);
     if (typeof p.activeRuntimeMs === 'number') fact(t('实际推演耗时', 'Active computation time'), `${(p.activeRuntimeMs / 1000).toFixed(2)} ${t('秒', 's')}`);
+    if (typeof p.pendingWork === 'number') fact(t('剩余待办项', 'Remaining work'), p.pendingWork);
+  } else if (event.eventType === 'SIMULATION_CLOCK_ADVANCED') {
+    fact(t('模拟时间', 'Simulation time'), `${p.previousTime} → ${event.simulationTime}`);
+    fact(t('图谱版本', 'Graph version'), p.stateVersion);
+  } else if (event.eventType === 'DOMAIN_EVENT_SCHEDULED' || event.eventType === 'DOMAIN_EVENT_PROCESSED') {
+    fact(t('到期时间', 'Due time'), p.dueTime);
+  } else if (['REASONING_ROUND_STARTED', 'REASONING_ROUND_FINISHED', 'BRANCH_CLOCK_RESTORED'].includes(event.eventType)) {
+    fact(t('研判轮次', 'Reasoning round'), p.round);
   } else if (event.eventType === 'AGENT_STARTED') {
     result.summary = t('正在根据当前可见状态决定下一步行动。', 'Choosing the next action from the current visible state.');
     fact(t('决策模型', 'Decision model'), modelModeLabel(p.modelMode, lang));

@@ -66,6 +66,8 @@ public class RunService {
     private final RunStateRepository store;
     private final ActionCommitService commits;
     private final RoundScheduler scheduler;
+    private final EventClockScheduler eventClock;
+    private final EventRunPolicy eventPolicy;
     private final RunTerminationPolicy termination;
     private final TransactionTemplate tx;
     private final WorldService worlds;
@@ -105,7 +107,9 @@ public class RunService {
             ModelService models) {
         this.db = db;
         this.store = new RunStateRepository(db);
-        this.commits = new ActionCommitService(db, tx, store);
+        this.eventClock = new EventClockScheduler(db, tx, store);
+        this.eventPolicy = new EventRunPolicy(eventClock, store);
+        this.commits = new ActionCommitService(db, tx, store, eventClock);
         this.scheduler = new RoundScheduler(db, tx, store);
         this.termination = new RunTerminationPolicy(db, tx, store, scheduler, this::get);
         this.tx = tx;
@@ -120,6 +124,7 @@ public class RunService {
     @jakarta.annotation.PostConstruct
     public synchronized void recover() {
         db.update("UPDATE simulation_run SET status='PAUSED' WHERE status='RUNNING'");
+        eventClock.recoverClaims();
         var interrupted =
                 db.queryForList("SELECT DISTINCT run_id FROM simulation_task WHERE status='RUNNING'", String.class);
         for (var id : interrupted)
@@ -196,7 +201,9 @@ public class RunService {
                     null,
                     Map.of(
                             "mode",
-                            "EVENT_DRIVEN",
+                            scenario.scheduling() == null
+                                    ? "EVENT_DRIVEN"
+                                    : scenario.scheduling().mode(),
                             "status",
                             "PAUSED",
                             "actionOrigin",
@@ -339,12 +346,46 @@ public class RunService {
         return store.events(id, after);
     }
 
+    /** Reports strict scheduling metadata and work status without executing the queue. @author czhcc-trsdsj\codexsandboxoffline */
+    public synchronized Map<String, Object> scheduling(String id) {
+        var scene = store.scenario(id);
+        var current = state(id);
+        if (!scene.eventDriven()) {
+            return Map.of("mode", "TASK_DRIVEN", "simulationTime", current.simulationTime());
+        }
+        String queueState = events(id, 0).reversed().stream()
+                .filter(event -> "SCENARIO_EVALUATED".equals(event.eventType()))
+                .map(event -> (String) event.payload().get("queueState"))
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
+                .orElseGet(() -> eventClock.unfinished(id) == 0 ? "QUIESCENT" : "PENDING");
+        return Map.of(
+                "mode",
+                "EVENT_DRIVEN",
+                "policy",
+                scene.scheduling(),
+                "evaluationPolicy",
+                eventPolicy.policy(scene),
+                "simulationTime",
+                current.simulationTime(),
+                "round",
+                get(id).step(),
+                "stateVersion",
+                current.version(),
+                "queueState",
+                queueState,
+                "work",
+                eventClock.queue(id));
+    }
+
     /**
      * Schedules an idempotent event; no state changes occur outside domain validation. @author agent
      */
     public synchronized void inject(String id, String key, ScheduledInput event) {
         var run = get(id);
-        if (!List.of("PAUSED", "RUNNING").contains(run.status())) throw new IllegalStateException("Run is terminal");
+        var scenario = store.scenario(id);
+        if (!scenario.eventDriven() && !List.of("PAUSED", "RUNNING").contains(run.status()))
+            throw new IllegalStateException("Run is terminal");
         if (key == null
                 || key.isBlank()
                 || key.length() > 100
@@ -354,12 +395,16 @@ public class RunService {
                         || store.scenario(id).team() != null
                                 && store.scenario(id).team().inputActions().containsKey(event.eventType()))
                 || event.parameters() == null
-                || event.simulationTime() < state(id).simulationTime()
-                || event.simulationTime() > scheduler.baseTime(id) + run.maxSteps()
+                || !scenario.eventDriven() && event.simulationTime() < state(id).simulationTime()
+                || !scenario.eventDriven() && event.simulationTime() > scheduler.baseTime(id) + run.maxSteps()
+                || scenario.eventDriven() && key.startsWith("domain:")
+                || event.priority() != null
+                        && (!scenario.eventDriven() || event.priority() < -1000 || event.priority() > 1000)
                 || Json.write(event).length() > 4000) throw new IllegalArgumentException("Invalid scheduled event");
-        if (state(id).entities().stream().noneMatch(e -> e.id().equals(event.targetId())))
+        if (!scenario.eventDriven() && state(id).entities().stream().noneMatch(e -> e.id().equals(event.targetId())))
             throw new IllegalArgumentException("Event target not found");
-        if (scheduler.size(id) >= 100) throw new IllegalStateException("Event queue budget reached");
+        if (!scenario.eventDriven() && scheduler.size(id) >= 100)
+            throw new IllegalStateException("Event queue budget reached");
         String payload = Json.write(event);
         var existing = scheduler.existing(id, key);
         if (!existing.isEmpty()) {
@@ -367,9 +412,21 @@ public class RunService {
                 throw new IllegalStateException("Idempotency key already used for another event");
             return;
         }
+        if (scenario.eventDriven()) {
+            if (!List.of("PAUSED", "RUNNING").contains(run.status()))
+                throw new IllegalStateException("Run is terminal");
+            var current = state(id);
+            if (event.simulationTime() < current.simulationTime())
+                throw new IllegalArgumentException("Invalid scheduled event");
+            if (current.entities().stream().noneMatch(e -> e.id().equals(event.targetId())))
+                throw new IllegalArgumentException("Event target not found");
+        }
+        if (scenario.eventDriven() && scheduler.size(id) >= 100)
+            throw new IllegalStateException("Event queue budget reached");
         if (store.eventCount(id) >= store.scenario(id).maxEvents() - 1)
             throw new IllegalStateException("Event budget exhausted");
-        scheduler.schedule(id, key, event, payload);
+        if (scenario.eventDriven()) eventClock.schedule(id, key, event);
+        else scheduler.schedule(id, key, event, payload);
     }
 
     /**
@@ -400,7 +457,9 @@ public class RunService {
             activeStarts.put(id, nanoClock.getAsLong());
         }
         try {
-            if (store.scenario(id).team() == null) {
+            var scenario = store.scenario(id);
+            if (scenario.eventDriven()) return stepEventClock(id, command, scenario, lease);
+            if (scenario.team() == null) {
                 synchronized (this) {
                     return stepRound(id, command);
                 }
@@ -416,6 +475,96 @@ public class RunService {
         }
     }
 
+    private State stepEventClock(String id, String command, Scenario scene, Lease lease) {
+        boolean reason;
+        long inputVersion;
+        synchronized (this) {
+            if (lease.cancelled || checkTermination(id, scene, false)) return state(id);
+            long time = eventPolicy.nextTime(get(id), scene, state(id));
+            var slice = eventClock.advance(id, command, time, scene);
+            if (stopOnWorkBudget(id, scene, slice)) return state(id);
+            inputVersion = state(id).version();
+            reason = eventClock.awaitingAction(id) > 0
+                    || eventPolicy.needsObjectiveRound(get(id), scene, state(id))
+                    || (scene.team() == null
+                            && slice.externalInputs() > 0
+                            && scene.agents().stream()
+                                    .anyMatch(a -> !store.hasEnded(id, a.id())
+                                            && store.decisionCount(id, a.id()) < a.maxDecisions()));
+            if (reason) {
+                if (get(id).step() >= scene.maxSteps()) {
+                    termination.finish(
+                            id, "MAX_STEPS", get(id).step(), scene.maxSteps(), "Maximum reasoning rounds reached", "");
+                    return state(id);
+                }
+                tx.executeWithoutResult(status -> {
+                    db.update("UPDATE simulation_run SET step=step+1 WHERE id=?", id);
+                    store.append(
+                            id,
+                            "REASONING_ROUND_STARTED",
+                            time,
+                            null,
+                            Map.of("round", get(id).step(), "inputVersion", inputVersion));
+                });
+            }
+        }
+        if (reason) {
+            try {
+                if (scene.team() == null) legacyRound(id, scene, state(id).simulationTime(), lease);
+                else runHierarchy(id, lease);
+            } catch (CancellationException ex) {
+                return state(id);
+            }
+        }
+        synchronized (this) {
+            if (lease.cancelled || checkTermination(id, scene, false)) return state(id);
+            if (reason) {
+                store.append(
+                        id,
+                        "REASONING_ROUND_FINISHED",
+                        state(id).simulationTime(),
+                        null,
+                        Map.of(
+                                "round",
+                                get(id).step(),
+                                "inputVersion",
+                                inputVersion,
+                                "stateVersion",
+                                state(id).version()));
+                var slice = eventClock.advance(id, null, state(id).simulationTime(), scene);
+                if (stopOnWorkBudget(id, scene, slice)) return state(id);
+            }
+            var verdict = eventPolicy.verdict(get(id), scene, state(id));
+            if (verdict != null) {
+                termination.concludeEventRun(
+                        id, scene, verdict.queueState(), verdict.remaining(), verdict.answered(), verdict.ready());
+            }
+        }
+        reviewAtHorizon(id, scene, lease);
+        return state(id);
+    }
+
+    private boolean stopOnWorkBudget(String id, Scenario scene, EventClockScheduler.Slice slice) {
+        if (slice.workLimit()) {
+            int limit = scene.scheduling().maxWorkPerTime();
+            return termination.finish(
+                    id,
+                    "MAX_WORK_PER_TIME",
+                    limit,
+                    limit,
+                    "Same-time work budget reached; remaining entries were preserved",
+                    "");
+        }
+        return slice.eventLimit()
+                && termination.finish(
+                        id,
+                        "MAX_EVENTS",
+                        store.eventCount(id),
+                        scene.maxEvents(),
+                        "Event budget reached; remaining entries were preserved",
+                        "");
+    }
+
     private State stepRound(String id, String command) {
         Lease lease;
         synchronized (this) {
@@ -428,21 +577,7 @@ public class RunService {
             return state(id);
         }
         if (scenario.team() != null) {
-            var host = hierarchyHost(id, lease, false);
-            try {
-                hierarchy.run(host);
-            } catch (CancellationException ex) {
-                /* Pause, stop and shared budgets preserve their authoritative lifecycle status. */
-            } catch (RuntimeException ex) {
-                synchronized (this) {
-                    if (List.of("PAUSED", "RUNNING").contains(get(id).status()) && !lease.cancelled) {
-                        db.update(
-                                "UPDATE simulation_run SET status='FAILED',termination_reason='MODEL_DECISION_FAILED' WHERE id=?",
-                                id);
-                        store.append(id, "RUN_FAILED", state(id).simulationTime(), null, hierarchyFailure(ex));
-                    }
-                }
-            }
+            runHierarchy(id, lease);
             synchronized (this) {
                 if (!lease.cancelled) checkTermination(id, scenario, true);
             }
@@ -450,7 +585,24 @@ public class RunService {
             return state(id);
         }
         long clock = scheduler.baseTime(id) + get(id).step();
-        return legacyRound(id, scenario, clock);
+        return legacyRound(id, scenario, clock, lease);
+    }
+
+    private void runHierarchy(String id, Lease lease) {
+        try {
+            hierarchy.run(hierarchyHost(id, lease, false));
+        } catch (CancellationException ex) {
+            /* Pause, stop and shared budgets preserve their authoritative lifecycle status. */
+        } catch (RuntimeException ex) {
+            synchronized (this) {
+                if (List.of("PAUSED", "RUNNING").contains(get(id).status()) && !lease.cancelled) {
+                    db.update(
+                            "UPDATE simulation_run SET status='FAILED',termination_reason='MODEL_DECISION_FAILED' WHERE id=?",
+                            id);
+                    store.append(id, "RUN_FAILED", state(id).simulationTime(), null, hierarchyFailure(ex));
+                }
+            }
+        }
     }
 
     private Map<String, Object> hierarchyFailure(RuntimeException failure) {
@@ -484,7 +636,7 @@ public class RunService {
         scheduler.advance(id, command, run.step());
     }
 
-    private State legacyRound(String id, Scenario scenario, long clock) {
+    private State legacyRound(String id, Scenario scenario, long clock, Lease lease) {
         var world = store.frozenWorld(id);
         var plugin = domains.get(world.domainCode());
         if (plugin == null) throw new IllegalStateException("Domain plugin unavailable");
@@ -497,7 +649,7 @@ public class RunService {
                     agent.id());
             if (count >= agent.maxDecisions() || store.hasEnded(id, agent.id())) continue;
             // Legacy budget estimates reserve six requests and 6144 output tokens per decision.
-            if (checkTermination(id, scenario, false)) break;
+            if (!scenario.eventDriven() && checkTermination(id, scenario, false)) break;
             var before = state(id);
             var visible = plugin.observationScope(agent, before);
             var projected = VisibilityPolicy.project(before, visible);
@@ -526,58 +678,73 @@ public class RunService {
                             .toList(),
                     plugin.capabilities(world, agent, before),
                     world.domainCode());
-            store.append(
-                    id,
-                    "AGENT_STARTED",
-                    clock,
-                    agent.id(),
-                    Map.of(
-                            "modelMode",
-                            Optional.ofNullable(decisions.mode(agent)).orElse("UNKNOWN")));
-            store.append(id, "AGENT_OBSERVATION", clock, agent.id(), Map.of("observation", observation));
+            synchronized (this) {
+                if (scenario.eventDriven()) {
+                    checkInvocation(id, lease, false);
+                    long total = db.queryForObject("""
+                            SELECT COUNT(*) FROM simulation_event WHERE run_id=? AND event_type='AGENT_STARTED'
+                            """, Long.class, id);
+                    if (termination.checkLegacyEstimate(id, limits(), total)) return state(id);
+                }
+                store.append(
+                        id,
+                        "AGENT_STARTED",
+                        clock,
+                        agent.id(),
+                        Map.of(
+                                "modelMode",
+                                Optional.ofNullable(decisions.mode(agent)).orElse("UNKNOWN")));
+                store.append(id, "AGENT_OBSERVATION", clock, agent.id(), Map.of("observation", observation));
+            }
             Decision proposal;
             try {
                 proposal = decisions.decide(agent, Json.read(Json.write(observation), Observation.class));
                 if (proposal == null) throw new IllegalArgumentException();
             } catch (Exception ex) {
-                decisions
-                        .drainToolCalls()
-                        .forEach(call -> store.append(id, "AGENT_TOOL_CALL", clock, agent.id(), call));
-                store.append(
-                        id,
-                        "RUN_FAILED",
-                        clock,
-                        agent.id(),
-                        Map.of(
-                                "reason",
-                                "Model decision failed or timed out; verify model configuration",
-                                "reasonCode",
-                                "MODEL_DECISION_FAILED",
-                                "activeRuntimeMs",
-                                get(id).activeRuntimeMs()));
-                db.update(
-                        "UPDATE simulation_run SET status='FAILED',termination_reason='MODEL_DECISION_FAILED' WHERE id=?",
-                        id);
+                synchronized (this) {
+                    var calls = decisions.drainToolCalls();
+                    if (scenario.eventDriven()) checkInvocation(id, lease, false);
+                    calls.forEach(call -> store.append(id, "AGENT_TOOL_CALL", clock, agent.id(), call));
+                    store.append(
+                            id,
+                            "RUN_FAILED",
+                            clock,
+                            agent.id(),
+                            Map.of(
+                                    "reason",
+                                    "Model decision failed or timed out; verify model configuration",
+                                    "reasonCode",
+                                    "MODEL_DECISION_FAILED",
+                                    "activeRuntimeMs",
+                                    get(id).activeRuntimeMs()));
+                    db.update(
+                            "UPDATE simulation_run SET status='FAILED',termination_reason='MODEL_DECISION_FAILED' WHERE id=?",
+                            id);
+                }
                 return state(id);
             }
-            decisions.drainToolCalls().forEach(call -> store.append(id, "AGENT_TOOL_CALL", clock, agent.id(), call));
-            // Normalize through JSON to prevent a provider retaining references to mutable proposal maps.
-            proposal = Json.read(Json.write(proposal), Decision.class);
-            var current = new State(id, clock, before.version(), before.entities(), before.relations());
-            var d = plugin.normalizeDecision(proposal, current);
-            var outcome = plugin.execute(world, agent, d, current);
-            var action = new ActionCommitService.Command(
-                    id,
-                    "legacy:" + clock + ":" + agent.id(),
-                    agent.id(),
-                    current.version(),
-                    proposal,
-                    "AGENT_ACTION",
-                    null,
-                    null);
-            commits.commit(action, d, current, outcome);
+            synchronized (this) {
+                var calls = decisions.drainToolCalls();
+                if (scenario.eventDriven()) checkInvocation(id, lease, false);
+                calls.forEach(call -> store.append(id, "AGENT_TOOL_CALL", clock, agent.id(), call));
+                // Normalize through JSON to prevent a provider retaining references to mutable proposal maps.
+                proposal = Json.read(Json.write(proposal), Decision.class);
+                var current = new State(id, clock, before.version(), before.entities(), before.relations());
+                var d = plugin.normalizeDecision(proposal, current);
+                var outcome = plugin.execute(world, agent, d, current);
+                var action = new ActionCommitService.Command(
+                        id,
+                        "legacy:" + clock + ":" + (scenario.eventDriven() ? get(id).step() + ":" : "") + agent.id(),
+                        agent.id(),
+                        current.version(),
+                        proposal,
+                        "AGENT_ACTION",
+                        null,
+                        null);
+                commits.commit(action, d, current, outcome);
+            }
         }
-        checkTermination(id, scenario, true);
+        if (!scenario.eventDriven()) checkTermination(id, scenario, true);
         return state(id);
     }
 
@@ -645,7 +812,7 @@ public class RunService {
         if (r.status().equals("PAUSED")) return r;
         db.update("UPDATE simulation_run SET status='PAUSED' WHERE id=?", id);
         active.remove(id);
-        store.append(id, "RUN_PAUSED", r.step(), null, Map.of());
+        store.append(id, "RUN_PAUSED", termination.auditTime(id), null, Map.of());
         return get(id);
     }
 
@@ -657,7 +824,7 @@ public class RunService {
         if (invocations.containsKey(id))
             throw new IllegalStateException("A round is still active; wait for it to finish");
         db.update("UPDATE simulation_run SET status='RUNNING' WHERE id=?", id);
-        store.append(id, "RUN_RESUMED", r.step(), null, Map.of());
+        store.append(id, "RUN_RESUMED", termination.auditTime(id), null, Map.of());
         UUID workerToken = UUID.randomUUID();
         if (active.putIfAbsent(id, workerToken) == null)
             workers.submit(() -> {
@@ -676,6 +843,29 @@ public class RunService {
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
                             break;
+                        }
+                    }
+                } catch (RuntimeException failure) {
+                    synchronized (RunService.this) {
+                        if (workerToken.equals(active.get(id))
+                                && get(id).status().equals("RUNNING")
+                                && store.scenario(id).eventDriven()) {
+                            tx.executeWithoutResult(status -> {
+                                db.update("UPDATE simulation_run SET status='PAUSED' WHERE id=?", id);
+                                store.append(
+                                        id,
+                                        "RUN_PAUSED",
+                                        state(id).simulationTime(),
+                                        null,
+                                        Map.of(
+                                                "reasonCode",
+                                                "SCHEDULED_WORK_INTERRUPTED",
+                                                "exceptionType",
+                                                failure.getClass().getSimpleName()));
+                            });
+                            active.remove(id, workerToken);
+                        } else {
+                            throw failure;
                         }
                     }
                 } finally {
@@ -697,19 +887,22 @@ public class RunService {
             lease.cancel();
             accumulateInterval(id);
         }
-        db.update("UPDATE simulation_run SET status='STOPPED',termination_reason='USER_STOPPED' WHERE id=?", id);
-        store.append(
-                id,
-                "RUN_STOPPED",
-                r.step(),
-                null,
-                Map.of(
-                        "reasonCode",
-                        "USER_STOPPED",
-                        "reason",
-                        "Stopped by user",
-                        "activeRuntimeMs",
-                        r.activeRuntimeMs()));
+        tx.executeWithoutResult(status -> {
+            db.update("UPDATE simulation_run SET status='STOPPED',termination_reason='USER_STOPPED' WHERE id=?", id);
+            store.append(
+                    id,
+                    "RUN_STOPPED",
+                    termination.auditTime(id),
+                    null,
+                    Map.of(
+                            "reasonCode",
+                            "USER_STOPPED",
+                            "reason",
+                            "Stopped by user",
+                            "activeRuntimeMs",
+                            r.activeRuntimeMs()));
+            if (store.scenario(id).eventDriven()) eventClock.cancel(id);
+        });
         return get(id);
     }
 
@@ -776,7 +969,11 @@ public class RunService {
     private void reviewAtHorizon(String id, Scenario scene, Lease lease) {
         if (scene.objective() == null || lease.cancelled) return;
         var run = get(id);
-        if (run.step() != scene.maxSteps() && !"OBJECTIVE_REVIEW_COMPLETED".equals(run.terminationReason())) return;
+        if (scene.eventDriven()) {
+            if (!List.of("COMPLETED", "FAILED").contains(run.status())) return;
+        } else if (run.step() != scene.maxSteps() && !"OBJECTIVE_REVIEW_COMPLETED".equals(run.terminationReason())) {
+            return;
+        }
         var outcome = outcome(id);
         if ("NOT_EVALUATED".equals(outcome.result())) return;
         var root = scene.agents().stream()

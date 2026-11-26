@@ -3,6 +3,7 @@ package com.trs.simulation.world;
 import com.trs.simulation.ActionPrograms;
 import com.trs.simulation.SimulationTypes.ActionDefinition;
 import com.trs.simulation.SimulationTypes.Entity;
+import com.trs.simulation.SimulationTypes.EvaluationPolicy;
 import com.trs.simulation.SimulationTypes.Relation;
 import com.trs.simulation.SimulationTypes.Scenario;
 import com.trs.simulation.SimulationTypes.World;
@@ -340,6 +341,30 @@ public class WorldService {
                     "Unknown action permission");
         }
         ScenarioProfiles.validate(s);
+        var evaluation = s.evaluationPolicy();
+        boolean hasConditions = s.team() != null && !s.team().conditions().isEmpty();
+        if (evaluation != null) {
+            require(
+                    s.eventDriven()
+                            && evaluation.earliestRound() <= s.maxSteps()
+                            && (evaluation.horizonRound() == null || evaluation.horizonRound() <= s.maxSteps())
+                            && (evaluation.mode() == null || hasConditions == "CONDITIONS".equals(evaluation.mode()))
+                            && (!"OBJECTIVE".equals(evaluation.completionMode()) || s.objective() != null),
+                    "Evaluation policy does not match the scenario");
+        }
+        if (s.eventDriven() && (evaluation == null || evaluation.mode() == null)) {
+            String mode = hasConditions ? "CONDITIONS" : "TEXT_ONLY";
+            evaluation = evaluation == null
+                    ? new EvaluationPolicy(mode, null, null, null, null, null, null)
+                    : new EvaluationPolicy(
+                            mode,
+                            evaluation.earliestRound(),
+                            evaluation.earliestSimulationTime(),
+                            evaluation.horizonSimulationTime(),
+                            evaluation.horizonRound(),
+                            evaluation.requireQuiescence(),
+                            evaluation.completionMode());
+        }
         require(Json.write(s).length() < 200000, "Scenario configuration too large");
         if (s.id() != null) scenario(s.id());
         var result = new Scenario(
@@ -350,7 +375,9 @@ public class WorldService {
                 s.maxSteps(),
                 s.maxEvents(),
                 s.team(),
-                s.objective() == null ? null : s.objective().strip());
+                s.objective() == null ? null : s.objective().strip(),
+                s.scheduling(),
+                evaluation);
         db.update(
                 "INSERT INTO scenario VALUES (?,?) ON CONFLICT(id) DO UPDATE SET"
                         + " definition_json=excluded.definition_json",

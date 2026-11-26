@@ -35,6 +35,17 @@ it('shows the specific runtime diagnosis for a recorded model timeout', () => {
   expect(screen.getByText('TimeoutException')).toBeTruthy();
 });
 
+it('shows logical clock jumps separately from committed graph versions', () => {
+  const jump = { ...event(3, 'SIMULATION_CLOCK_ADVANCED', { previousTime: 2, stateVersion: 4 }, null), simulationTime: 100 };
+  const description = describeEvent(jump, context, 'en');
+  expect(description.title).toBe('Simulation clock advanced');
+  expect(description.facts).toContainEqual({ label: 'Simulation time', value: '2 → 100' });
+  expect(description.facts).toContainEqual({ label: 'Graph version', value: '4' });
+  const horizon = event(4, 'RUN_COMPLETED', { reasonCode: 'HORIZON_REACHED', pendingWork: 3 }, null);
+  expect(describeEvent(horizon, context, 'zh').summary).toContain('时限');
+  expect(describeEvent(horizon, context, 'en').facts).toContainEqual({ label: 'Remaining work', value: '3' });
+});
+
 it('explains the actor, owner, related object and verdict while preserving raw data in a closed disclosure', async () => {
   render(EventDetails, { props: { event: accepted, context, lang: 'zh' } });
   expect(screen.getByRole('heading', { name: '行动已接受' })).toBeTruthy();

@@ -252,7 +252,16 @@ public class SimulationController {
     @PutMapping("/scenarios/{id}")
     public Scenario update(@PathVariable String id, @RequestBody Scenario s) {
         return worlds.scenario(new Scenario(
-                id, s.name(), s.worldId(), s.agents(), s.maxSteps(), s.maxEvents(), s.team(), s.objective()));
+                id,
+                s.name(),
+                s.worldId(),
+                s.agents(),
+                s.maxSteps(),
+                s.maxEvents(),
+                s.team(),
+                s.objective(),
+                s.scheduling(),
+                s.evaluationPolicy()));
     }
 
     /** Creates a paused run for inspection or single-step. @author agent */
@@ -284,6 +293,12 @@ public class SimulationController {
     @GetMapping({"/runs/{id}/state", "/runs/{id}/graph"})
     public State state(@PathVariable String id, @RequestParam(required = false) Long version) {
         return version == null ? runs.state(id) : runs.replay(id, version);
+    }
+
+    /** Reads the frozen clock selection and current work status. @author czhcc-trsdsj\codexsandboxoffline */
+    @GetMapping("/runs/{id}/scheduling")
+    public Map<String, Object> scheduling(@PathVariable String id) {
+        return runs.scheduling(id);
     }
 
     /** Returns durable event history. @author agent */

@@ -59,6 +59,33 @@ class CandidateRegistrationTest(unittest.TestCase):
                 gate.prerequisite_reports(repo, manifest)
 
 
+class StageThreeGateTest(unittest.TestCase):
+    def test_stage_three_runs_through_the_same_evaluator(self):
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "report.json"
+            with patch("sys.argv", ["stage_gate.py", "--stage", "3", "--attempt", "1", "--report", str(report)]):
+                with patch.object(gate, "evaluate", return_value={"requiredChecks": 60}) as evaluate:
+                    self.assertEqual(0, gate.main())
+            self.assertEqual((3, 1), evaluate.call_args.args[1:])
+            self.assertTrue(json.loads(report.read_text(encoding="utf-8"))["nextStageAllowed"])
+
+    def test_stage_three_suites_cannot_be_omitted(self):
+        stage_checks = {
+            "STAGE3-SCHEDULER": "ReviewerStage3SchedulerTest",
+            "STAGE3-RECOVERY": "ReviewerStage3RecoveryTest",
+            "STAGE3-EVALUATION": "ReviewerStage3EvaluationTest",
+            "STAGE3-TERMINATION-E2E": "ReviewerStage3TerminationFlowTest",
+        }
+        definitions = []
+        for ident, suite in stage_checks.items():
+            self.assertRegex(f"mvn -Dtest={suite} -Dsurefire.failIfNoSpecifiedTests=false test",
+                             gate.COMMAND_PATTERNS[ident])
+            self.assertEqual({f"com.trs.studio.{suite}"}, gate.REQUIRED_SUITES[ident])
+            definitions.append({"id": ident, "target": "candidate", "required": True})
+        with self.assertRaisesRegex(gate.GateError, "missing required command runs"):
+            gate.match_commands(definitions, [])
+
+
 class ReviewerTest(unittest.TestCase):
     def setUp(self):
         self.result = {

@@ -18,6 +18,8 @@ import com.trs.simulation.SimulationTypes.ObjectiveReview;
 import com.trs.simulation.SimulationTypes.Ontology;
 import com.trs.simulation.SimulationTypes.Relation;
 import com.trs.simulation.SimulationTypes.Scenario;
+import com.trs.simulation.SimulationTypes.ScheduledInput;
+import com.trs.simulation.SimulationTypes.SchedulingPolicy;
 import com.trs.simulation.SimulationTypes.TeamConfig;
 import com.trs.simulation.SimulationTypes.TypeDefinition;
 import com.trs.simulation.SimulationTypes.World;
@@ -119,6 +121,93 @@ class HierarchicalFrameworkIntegrationTest {
                 .allMatch(sequence ->
                         events.stream().anyMatch(e -> e.sequence() == sequence && sequence < reviewEvent.sequence())));
         assertEquals(objective, runs.get(run.id()).objective());
+    }
+
+    @Test
+    void strictClockReassessesTheGraphAfterAnActionChangesItDuringReasoning() {
+        var world = worlds.create(Examples.bankTransfer());
+        var template = profiles.scenario("bank", world, models.mock().id(), "Reassess after transfer", 5);
+        var base = template.team();
+        var team = new TeamConfig(
+                base.rootAgentId(),
+                base.maxDelegationsPerRound(),
+                base.maxActionsPerRound(),
+                base.mockRules().stream()
+                        .filter(rule -> "TRANSFER".equals(rule.actionType()))
+                        .toList(),
+                base.conditions(),
+                base.inputActions());
+        var scene = worlds.scenario(new Scenario(
+                null,
+                template.name(),
+                world.id(),
+                template.agents(),
+                5,
+                2000,
+                team,
+                "Inspect the current simulated account balances.",
+                new SchedulingPolicy(1, "EVENT_DRIVEN", "TICK", 20),
+                null));
+        var id = runs.create(scene.id()).id();
+        runs.seedInput(id, profiles);
+        runs.inject(id, "next", new ScheduledInput("USER_NOTE", "account_a", 50, Map.of()));
+        var afterAction = runs.step(id, "transfer");
+        assertTrue(afterAction.version() > 0);
+        assertEquals("NOT_EVALUATED", runs.outcome(id).result());
+        assertEquals(0L, runs.step(id, "reassess").simulationTime());
+        assertEquals(2, runs.get(id).step());
+        assertEquals(50L, runs.step(id, "to-next-event").simulationTime());
+        assertEquals(
+                1L,
+                runs.state(id).entities().stream()
+                        .filter(e -> "TRANSACTION".equals(e.type()))
+                        .count());
+    }
+
+    @Test
+    void strictClockCommitsBoundInputAndDerivedEventsExactlyOnce() {
+        var world = worlds.create(Examples.bankTransfer());
+        var template = profiles.scenario("bank", world, models.mock().id(), "Scheduled transfer", 4);
+        var scene = worlds.scenario(new Scenario(
+                null,
+                template.name(),
+                world.id(),
+                template.agents(),
+                4,
+                2000,
+                template.team(),
+                null,
+                new SchedulingPolicy(1, "EVENT_DRIVEN", "TICK", 20),
+                null));
+        var id = runs.create(scene.id()).id();
+        var input = profiles.initialInput(world);
+        runs.inject(id, "transfer", new ScheduledInput(input.eventType(), input.targetId(), 2, input.parameters()));
+        runs.inject(id, "future", new ScheduledInput("USER_NOTE", input.targetId(), 50, Map.of()));
+        var state = runs.step(id, "to-transfer");
+        assertEquals(2L, state.simulationTime());
+        assertEquals(
+                1L,
+                state.entities().stream()
+                        .filter(e -> "TRANSACTION".equals(e.type()))
+                        .count());
+        var queue = (List<Map<String, Object>>) runs.scheduling(id).get("work");
+        assertEquals("COMPLETED", queue.getFirst().get("status"));
+        assertTrue(queue.stream()
+                .anyMatch(work -> "DOMAIN_EVENT".equals(work.get("type")) && "COMPLETED".equals(work.get("status"))));
+        var audit = runs.events(id, 0);
+        assertEquals(
+                1,
+                audit.stream()
+                        .filter(e -> "ACTION_INPUT_HANDLED".equals(e.eventType())
+                                && "transfer".equals(e.payload().get("inputEventId")))
+                        .count());
+        assertEquals(state, runs.step(id, "to-transfer"));
+        assertEquals(50L, runs.step(id, "to-future").simulationTime());
+        assertEquals(
+                1L,
+                runs.state(id).entities().stream()
+                        .filter(e -> "TRANSACTION".equals(e.type()))
+                        .count());
     }
 
     @Test

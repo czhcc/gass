@@ -37,6 +37,10 @@ COMMAND_PATTERNS = {
     "STAGE2-COMMIT": r"-Dtest=ReviewerStage2CommitTest .*test$",
     "STAGE2-VISIBILITY": r"-Dtest=ReviewerStage2VisibilityTest .*test$",
     "STAGE2-EVIDENCE": r"-Dtest=ReviewerStage2EvidenceTest .*test$",
+    "STAGE3-SCHEDULER": r"-Dtest=ReviewerStage3SchedulerTest .*test$",
+    "STAGE3-RECOVERY": r"-Dtest=ReviewerStage3RecoveryTest .*test$",
+    "STAGE3-EVALUATION": r"-Dtest=ReviewerStage3EvaluationTest .*test$",
+    "STAGE3-TERMINATION-E2E": r"-Dtest=ReviewerStage3TerminationFlowTest .*test$",
     "GATE-TEST": r"python(?:\.exe)? -m unittest discover -s scripts[/\\]acceptance -p test_stage_gate\.py$",
 }
 REQUIRED_SUITES = {
@@ -55,6 +59,10 @@ REQUIRED_SUITES = {
     "STAGE2-COMMIT": {"com.trs.studio.ReviewerStage2CommitTest"},
     "STAGE2-VISIBILITY": {"com.trs.studio.ReviewerStage2VisibilityTest"},
     "STAGE2-EVIDENCE": {"com.trs.studio.ReviewerStage2EvidenceTest"},
+    "STAGE3-SCHEDULER": {"com.trs.studio.ReviewerStage3SchedulerTest"},
+    "STAGE3-RECOVERY": {"com.trs.studio.ReviewerStage3RecoveryTest"},
+    "STAGE3-EVALUATION": {"com.trs.studio.ReviewerStage3EvaluationTest"},
+    "STAGE3-TERMINATION-E2E": {"com.trs.studio.ReviewerStage3TerminationFlowTest"},
 }
 
 
@@ -560,8 +568,8 @@ def main():
     parser.add_argument("--attempt", type=int, default=2)
     parser.add_argument("--report", type=Path, help="alternate output file, useful for reruns")
     args = parser.parse_args()
-    if args.stage not in {1, 2} or args.attempt < (2 if args.stage == 1 else 1):
-        parser.error("supported attempts are stage 1 attempt 2+ and stage 2 attempt 1+")
+    if args.stage not in {1, 2, 3} or args.attempt < (2 if args.stage == 1 else 1):
+        parser.error("supported attempts are stage 1 attempt 2+ and stages 2–3 attempt 1+")
     repo = Path(__file__).resolve().parents[2]
     output = args.report or repo/f"docs/development/acceptance/stage-{args.stage:02}/attempt-{args.attempt:02}/gate-report.json"
     started = datetime.now(timezone.utc).isoformat()
