@@ -17,8 +17,10 @@ import com.trs.simulation.agent.DecisionProvider;
 import com.trs.simulation.agent.HierarchicalCoordinator;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.domain.DomainEnvironment;
+import com.trs.simulation.evidence.TaskEvidence;
 import com.trs.simulation.model.ModelService;
 import com.trs.simulation.scenario.ScenarioProfiles;
+import com.trs.simulation.state.VisibilityPolicy;
 import com.trs.simulation.world.WorldService;
 import jakarta.annotation.PreDestroy;
 import java.util.HashMap;
@@ -187,7 +189,20 @@ public class RunService {
                     Json.write(world));
             db.update("INSERT INTO simulation_snapshot VALUES (?,?,?)", id, 0, Json.write(state));
             db.update("INSERT INTO simulation_usage(run_id) VALUES (?)", id);
-            store.append(id, "RUN_STARTED", 0, null, Map.of("mode", "EVENT_DRIVEN", "status", "PAUSED"));
+            store.append(
+                    id,
+                    "RUN_STARTED",
+                    0,
+                    null,
+                    Map.of(
+                            "mode",
+                            "EVENT_DRIVEN",
+                            "status",
+                            "PAUSED",
+                            "actionOrigin",
+                            "INITIALIZATION",
+                            "outputVersion",
+                            0));
         });
         return get(id);
     }
@@ -241,6 +256,7 @@ public class RunService {
             db.update("DELETE FROM simulation_branch WHERE run_id=?", id);
             db.update("DELETE FROM simulation_scheduled_event WHERE run_id=?", id);
             db.update("DELETE FROM simulation_command WHERE run_id=?", id);
+            db.update("DELETE FROM simulation_action_receipt WHERE run_id=?", id);
             db.update("DELETE FROM simulation_snapshot WHERE run_id=?", id);
             db.update("DELETE FROM simulation_event WHERE run_id=?", id);
             db.update("DELETE FROM simulation_task WHERE run_id=?", id);
@@ -484,28 +500,27 @@ public class RunService {
             if (checkTermination(id, scenario, false)) break;
             var before = state(id);
             var visible = plugin.observationScope(agent, before);
+            var projected = VisibilityPolicy.project(before, visible);
+            var hidden = VisibilityPolicy.hiddenIds(before, visible);
             var history = events(id, Math.max(0, store.eventCount(id) - 30)).stream()
                     .filter(e -> agent.id().equals(e.agentId())
                             && (e.eventType().equals("ACTION_ACCEPTED")
                                     || e.eventType().equals("ACTION_REJECTED")
                                     || e.eventType().equals("AGENT_MEMORY_RESTORED")))
+                    .filter(e -> e.payload().get("relatedIds") instanceof List<?> ids
+                            ? visible.containsAll(ids)
+                            : hidden.isEmpty())
                     .map(e -> Json.write(e.payload()))
                     .toList();
             var observation = new Observation(
                     id,
                     clock,
                     before.version(),
-                    before.entities().stream()
-                            .filter(e -> visible.contains(e.id()))
-                            .toList(),
-                    before.relations().stream()
-                            .filter(e -> visible.contains(e.sourceId()) && visible.contains(e.targetId()))
-                            .toList(),
+                    projected.entities(),
+                    projected.relations(),
                     history,
                     events(id, 0).stream()
-                            .filter(e -> e.eventType().equals("SIMULATION_EVENT_CREATED")
-                                    && visible.contains(
-                                            String.valueOf(e.payload().get("targetId"))))
+                            .filter(e -> TaskEvidence.visibleInput(e, visible, hidden))
                             .map(Event::payload)
                             .limit(20)
                             .toList(),
@@ -551,7 +566,16 @@ public class RunService {
             var current = new State(id, clock, before.version(), before.entities(), before.relations());
             var d = plugin.normalizeDecision(proposal, current);
             var outcome = plugin.execute(world, agent, d, current);
-            commits.commit(id, agent.id(), d, current, outcome, "AGENT");
+            var action = new ActionCommitService.Command(
+                    id,
+                    "legacy:" + clock + ":" + agent.id(),
+                    agent.id(),
+                    current.version(),
+                    proposal,
+                    "AGENT_ACTION",
+                    null,
+                    null);
+            commits.commit(action, d, current, outcome);
         }
         checkTermination(id, scenario, true);
         return state(id);
@@ -565,13 +589,21 @@ public class RunService {
             String id, String key, String agentId, Decision decision, long expectedVersion) {
         if (key == null || key.isBlank() || key.length() > 100)
             throw new IllegalArgumentException("Idempotency key required");
+        if (decision == null) {
+            throw new IllegalArgumentException("Decision required");
+        }
+        var action = new ActionCommitService.Command(
+                id, key, agentId, expectedVersion, decision, "USER_INTERVENTION", null, null);
+        var prior = commits.retry(action);
+        if (prior != null) {
+            return prior.state();
+        }
         if (db.queryForObject(
                         "SELECT COUNT(*) FROM simulation_command WHERE run_id=? AND command_id=?",
                         Integer.class,
                         id,
                         key)
                 > 0) return state(id);
-        if (decision == null) throw new IllegalArgumentException("Decision required");
         var run = get(id);
         if (!run.status().equals("PAUSED")) throw new IllegalStateException("Interventions require a paused run");
         if (invocations.containsKey(id))
@@ -594,11 +626,10 @@ public class RunService {
         var plugin = domains.get(world.domainCode());
         var normalized = plugin.normalizeDecision(decision, current);
         var outcome = plugin.execute(world, agent, normalized, current);
-        tx.executeWithoutResult(t -> {
+        return tx.execute(t -> {
             db.update("INSERT INTO simulation_command VALUES (?,?)", id, key);
-            commits.commit(id, agent.id(), normalized, current, outcome, "USER");
+            return commits.commit(action, normalized, current, outcome).state();
         });
-        return state(id);
     }
 
     /** Pauses automatic computation; historical replay is unaffected. @author agent */

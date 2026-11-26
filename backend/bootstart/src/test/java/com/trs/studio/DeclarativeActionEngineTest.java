@@ -15,12 +15,15 @@ import com.trs.simulation.SimulationTypes.AgentDefinition;
 import com.trs.simulation.SimulationTypes.Decision;
 import com.trs.simulation.SimulationTypes.Entity;
 import com.trs.simulation.SimulationTypes.Ontology;
+import com.trs.simulation.SimulationTypes.PropertyDefinition;
 import com.trs.simulation.SimulationTypes.State;
+import com.trs.simulation.SimulationTypes.StateConstraint;
 import com.trs.simulation.SimulationTypes.TypeDefinition;
 import com.trs.simulation.SimulationTypes.World;
 import com.trs.simulation.action.DeclarativeActionEngine;
 import com.trs.simulation.action.expression.CelExpressions;
 import com.trs.simulation.domain.examples.Examples;
+import com.trs.simulation.state.StateDiff;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -152,6 +155,29 @@ class DeclarativeActionEngineTest {
     }
 
     @Test
+    void transferRejectsOverflowWithoutMutatingEitherAccount() {
+        var bank = Examples.bankTransfer();
+        var entities = bank.entities().stream()
+                .map(account -> account.id().equals("account_b")
+                        ? new Entity(
+                                account.id(),
+                                account.type(),
+                                account.name(),
+                                Map.of("currency", "CNY", "balanceMinor", Long.MAX_VALUE))
+                        : account)
+                .toList();
+        var original = new State("bank", 0, 0, entities, bank.relations());
+        var result = engine.execute(
+                bank,
+                agent(bank, "TRANSFER"),
+                decision("TRANSFER", "account_b", Map.of("sourceId", "account_a", "amount", "0.01", "currency", "CNY")),
+                original);
+        assertFalse(result.accepted());
+        assertEquals("ACTION_PRECONDITION_FAILED", result.code());
+        assertEquals(original, result.state());
+    }
+
+    @Test
     void customCelCanCalculatePropertiesWithoutWritingJavaAndFailuresRollBackAllOperations() {
         var w = Examples.informationLeak();
         var action = new ActionDefinition(
@@ -221,6 +247,118 @@ class DeclarativeActionEngineTest {
         assertFalse(denied.accepted());
         assertEquals(state(badWorld), denied.state());
         assertFalse(w.entities().getFirst().properties().containsKey("score"));
+    }
+
+    @Test
+    void diffDistinguishesAbsentFieldsFromNullAndTreatsEquivalentNumbersAsEqual() {
+        var after = new java.util.LinkedHashMap<String, Object>();
+        after.put("numeric", 2L);
+        after.put("explicitNull", null);
+        var beforeState =
+                new State("test", 0, 0, List.of(new Entity("e", "DOCUMENT", "E", Map.of("numeric", 2))), List.of());
+        var afterState = new State("test", 0, 0, List.of(new Entity("e", "DOCUMENT", "E", after)), List.of());
+        var changes = StateDiff.between(beforeState, afterState);
+        assertEquals(1, changes.size());
+        assertEquals(
+                List.of(new StateDiff.FieldChange("properties.explicitNull", false, null, true, null)),
+                changes.getFirst().fields());
+    }
+
+    @Test
+    void temporaryPropertyWriteAndRestoreDoesNotCreateProvenanceOrIncrementVersion() {
+        var base = Examples.informationLeak();
+        var entities = base.entities().stream()
+                .map(entity -> entity.id().equals("document_f")
+                        ? new Entity(entity.id(), entity.type(), entity.name(), Map.of("score", 7))
+                        : entity)
+                .toList();
+        var operations = List.of("8", "7").stream()
+                .map(value -> new ActionOperation(
+                        "SET_PROPERTY", Map.of("object", "target.id", "property", "'score'", "value", value)))
+                .toList();
+        var action = new ActionDefinition(
+                "RESTORE",
+                "恢复",
+                "Restore",
+                "Restore the original score",
+                Map.of("type", "object", "properties", Map.of(), "additionalProperties", false),
+                List.of(),
+                "CUSTOM",
+                new ActionProgram(1, List.of(), operations, Map.of()));
+        var world = new World(
+                "restore",
+                "Restore",
+                "information",
+                base.entityTypes(),
+                base.relationTypes(),
+                entities,
+                base.relations(),
+                1,
+                new Ontology(3, List.of(new TypeDefinition("ENTITY", "DOCUMENT", List.of(action)))));
+        var initial = state(world);
+        var result =
+                engine.execute(world, agent(world, "RESTORE"), decision("RESTORE", "document_f", Map.of()), initial);
+        assertTrue(result.accepted(), result.message());
+        assertFalse(result.changed());
+        assertEquals(initial, result.state());
+    }
+
+    @Test
+    void strictContractValidatesFinalCandidateAndKeepsNumericNoOpsAtTheSameVersion() {
+        var base = Examples.informationLeak();
+        var entities = base.entities().stream()
+                .map(entity -> entity.id().equals("document_f")
+                        ? new Entity(
+                                entity.id(),
+                                entity.type(),
+                                entity.name(),
+                                Map.of("score", 7, "simulationEvidence", "SIMULATED"))
+                        : entity)
+                .toList();
+        var fields = List.of(new PropertyDefinition("score", "INTEGER", true, true, null, "value >= 0"));
+        for (var value : List.of("7", "'bad'", "-1", "11")) {
+            var action = new ActionDefinition(
+                    "SCORE",
+                    "计算分数",
+                    "Score",
+                    "Score the document",
+                    Map.of("type", "object", "properties", Map.of(), "additionalProperties", false),
+                    List.of(),
+                    "CUSTOM",
+                    new ActionProgram(
+                            1,
+                            List.of(),
+                            List.of(new ActionOperation(
+                                    "SET_PROPERTY",
+                                    Map.of("object", "target.id", "property", "'score'", "value", value))),
+                            Map.of()));
+            var ontology = new Ontology(
+                    3,
+                    List.of(new TypeDefinition("ENTITY", "DOCUMENT", List.of(action), fields, false)),
+                    List.of(),
+                    List.of(new StateConstraint(
+                            "score_ceiling",
+                            "entities.filter(e, e.type == 'DOCUMENT').all(e, e.properties.score <= 10)")));
+            var world = new World(
+                    "strict",
+                    "Strict",
+                    "information",
+                    base.entityTypes(),
+                    base.relationTypes(),
+                    entities,
+                    base.relations(),
+                    1,
+                    ontology);
+            var original = state(world);
+            var result =
+                    engine.execute(world, agent(world, "SCORE"), decision("SCORE", "document_f", Map.of()), original);
+            assertEquals(value.equals("7"), result.accepted(), result.message());
+            assertEquals(original, result.state());
+            assertFalse(result.changed());
+            if (!value.equals("7")) {
+                assertEquals("ONTOLOGY_CONSTRAINT_VIOLATION", result.code());
+            }
+        }
     }
 
     @Test

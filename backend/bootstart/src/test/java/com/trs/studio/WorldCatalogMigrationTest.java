@@ -15,6 +15,39 @@ class WorldCatalogMigrationTest {
     Path directory;
 
     @Test
+    void v10PreservesExistingV9RunsAndTheirSnapshotAndAuditBytes() throws Exception {
+        String url = "jdbc:sqlite:" + directory.resolve("v9.db");
+        Flyway.configure().dataSource(url, null, null).target("9").load().migrate();
+        try (var connection = DriverManager.getConnection(url);
+                var sql = connection.createStatement()) {
+            sql.executeUpdate("""
+                    INSERT INTO simulation_run(id,scenario_json,status,state_json,created_at)
+                    VALUES ('existing','{}','PAUSED','{"version":0,"entities":[],"relations":[]}',0)
+                    """);
+            sql.executeUpdate("""
+                    INSERT INTO simulation_snapshot
+                    VALUES ('existing',0,'{"version":0,"entities":[],"relations":[]}')
+                    """);
+            sql.executeUpdate("""
+                    INSERT INTO simulation_event VALUES ('existing',1,'ACTION_ACCEPTED',0,'legacy','{"targetId":"root"}')
+                    """);
+        }
+        assertEquals(1, Flyway.configure().dataSource(url, null, null).load().migrate().migrationsExecuted);
+        try (var connection = DriverManager.getConnection(url);
+                var sql = connection.createStatement();
+                var snapshot = sql.executeQuery("SELECT state_json FROM simulation_snapshot WHERE run_id='existing'")) {
+            assertTrue(snapshot.next());
+            assertEquals("{\"version\":0,\"entities\":[],\"relations\":[]}", snapshot.getString(1));
+            try (var audit = connection.createStatement();
+                    var event =
+                            audit.executeQuery("SELECT payload_json FROM simulation_event WHERE run_id='existing'")) {
+                assertTrue(event.next());
+                assertEquals("{\"targetId\":\"root\"}", event.getString(1));
+            }
+        }
+    }
+
+    @Test
     void resetIsOneTimeAndRetainsAccountsAndCredentials() throws Exception {
         String url = "jdbc:sqlite:" + directory.resolve("migration.db");
         Flyway.configure().dataSource(url, null, null).target("5").load().migrate();

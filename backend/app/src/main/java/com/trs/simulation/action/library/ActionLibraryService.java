@@ -231,9 +231,13 @@ public class ActionLibraryService {
                                         t.type(),
                                         t.actions().stream()
                                                 .filter(a -> !a.actionType().equals(actionType))
-                                                .toList())
+                                                .toList(),
+                                        t.properties(),
+                                        t.allowUnknownProperties())
                                 : t)
-                        .toList());
+                        .toList(),
+                w.ontology().relations(),
+                w.ontology().stateConstraints());
         return worlds.update(
                 worldId,
                 new World(
@@ -342,7 +346,8 @@ public class ActionLibraryService {
                     .filter(a -> !a.actionType().equals(definition.actionType()))
                     .toList());
             actions.add(definition);
-            types.add(new TypeDefinition("ENTITY", type, List.copyOf(actions)));
+            types.add(new TypeDefinition(
+                    "ENTITY", type, List.copyOf(actions), t.properties(), t.allowUnknownProperties()));
         }
         if (!found) types.add(new TypeDefinition("ENTITY", type, List.of(definition)));
         return new World(
@@ -354,7 +359,11 @@ public class ActionLibraryService {
                 w.entities(),
                 w.relations(),
                 w.version(),
-                new Ontology(3, List.copyOf(types)));
+                new Ontology(
+                        3,
+                        List.copyOf(types),
+                        w.ontology().relations(),
+                        w.ontology().stateConstraints()));
     }
 
     private static void require(boolean condition, String message) {

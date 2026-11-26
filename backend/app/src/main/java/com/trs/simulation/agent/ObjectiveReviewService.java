@@ -62,8 +62,7 @@ final class ObjectiveReviewService {
         evidence.putAll(actions);
         var queries = new LinkedHashMap<Long, Object>();
         var scopedQueries = history.reversed().stream()
-                .filter(event -> ObjectiveEvidence.visibleQuery(event, scope)
-                        && (fullScope || event.payload().containsKey("scopeIds"))
+                .filter(event -> ObjectiveEvidence.visibleQuery(event, scope, fullScope)
                         && event.payload().get("result") instanceof Map<?, ?>)
                 .toList();
         var prioritizedQueries = new LinkedHashSet<Event>();

@@ -6,6 +6,7 @@ import com.trs.simulation.SimulationTypes.GoalCondition;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.evidence.ObjectiveEvidence;
 import com.trs.simulation.evidence.TaskEvidence;
+import com.trs.simulation.state.VisibilityPolicy;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.message.TextBlock;
@@ -23,6 +24,8 @@ final class AgentContextBuilder {
         host.check();
         var state = host.state();
         var scope = host.visibleIds(agent);
+        boolean fullScope = state.entities().stream().allMatch(entity -> scope.contains(entity.id()))
+                && host.initial().entities().stream().allMatch(entity -> scope.contains(entity.id()));
         var objects = state.entities().stream()
                 .filter(e -> scope.contains(e.id()))
                 .limit(30)
@@ -31,9 +34,9 @@ final class AgentContextBuilder {
         var history = host.history();
         var handled = TaskEvidence.handledInputs(history);
         var bindings = host.scenario().team().inputActions();
+        var hidden = VisibilityPolicy.hiddenIds(state, scope);
         var inputs = history.stream()
-                .filter(e -> e.eventType().equals("SIMULATION_EVENT_CREATED")
-                        && scope.contains(e.payload().get("targetId"))
+                .filter(e -> TaskEvidence.visibleInput(e, scope, hidden)
                         && !handled.contains(String.valueOf(e.payload().get("scheduledEventId"))))
                 .limit(20)
                 .map(e -> {
@@ -46,7 +49,7 @@ final class AgentContextBuilder {
                 .toList();
         var work = new ArrayList<Map<String, Object>>();
         for (var child : agent.runtime().role().equals("MASTER") ? children : List.of(agent)) {
-            var capabilities = host.capabilities(child).stream()
+            var capabilities = host.capabilities(VisibilityPolicy.underParent(child, agent)).stream()
                     .filter(ActionCapability::available)
                     .limit(24)
                     .map(c -> Map.of(
@@ -69,6 +72,7 @@ final class AgentContextBuilder {
         }
         var past = history.stream()
                 .filter(e -> Set.of("MASTER_REVIEW", "TASK_MEMORY_RESTORED").contains(e.eventType()))
+                .filter(e -> e.payload().get("scopeIds") instanceof List<?> ids ? scope.containsAll(ids) : fullScope)
                 .toList();
         var result = new LinkedHashMap<>(Map.<String, Object>of(
                 "round",
@@ -108,12 +112,11 @@ final class AgentContextBuilder {
                         scene.team().conditions().stream()
                                 .map(GoalCondition::nameZh)
                                 .toList());
-                boolean fullScope = state.entities().stream().allMatch(entity -> scope.contains(entity.id()));
                 var actions = ObjectiveEvidence.historicalActions(history, scope, fullScope, Set.of());
                 if (!actions.isEmpty() && Json.write(actions).length() <= 6000)
                     result.put("recentActionEvidence", actions);
             }
-            var previousQueries = ObjectiveEvidence.recentGraphEvidence(history, state.version(), scope, master);
+            var previousQueries = ObjectiveEvidence.recentGraphEvidence(history, state.version(), scope, fullScope);
             if (!previousQueries.isEmpty()) {
                 result.put("recentGraphEvidence", previousQueries);
                 if (Json.write(result).length() > 32000) result.remove("recentGraphEvidence");

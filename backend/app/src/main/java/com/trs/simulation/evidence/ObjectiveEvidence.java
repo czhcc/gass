@@ -4,6 +4,7 @@ import com.trs.simulation.SimulationTypes.Event;
 import com.trs.simulation.SimulationTypes.Relation;
 import com.trs.simulation.SimulationTypes.State;
 import com.trs.simulation.common.Json;
+import com.trs.simulation.state.VisibilityPolicy;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,16 +21,25 @@ public final class ObjectiveEvidence {
 
     private ObjectiveEvidence() {}
 
-    /** Checks the stored query scope, including legacy events without scope IDs. @author czhcc-trsdsj\codexsandboxoffline */
+    /** Checks stored query scope when full graph authorization has not been established. @author czhcc-trsdsj\codexsandboxoffline */
     public static boolean visibleQuery(Event event, Set<String> scope) {
-        return "GRAPH_QUERY_RESULT".equals(event.eventType())
-                && (!(event.payload().get("scopeIds") instanceof List<?> ids) || scope.containsAll(ids));
+        return visibleQuery(event, scope, false);
+    }
+
+    /** Permits missing legacy query scope only with independently proven full visibility. @author czhcc-trsdsj\codexsandboxoffline */
+    public static boolean visibleQuery(Event event, Set<String> scope, boolean fullScope) {
+        return "GRAPH_QUERY_RESULT".equals(event.eventType()) && allowed(event, "scopeIds", scope, fullScope);
     }
 
     /** Validates a completion citation against the current version and authorized scope. @author czhcc-trsdsj\codexsandboxoffline */
     public static boolean usableForCompletion(Event event, Set<String> scope, long version) {
+        return usableForCompletion(event, scope, version, false);
+    }
+
+    /** Authorizes a citation within the current graph version or a visible historical Action. @author czhcc-trsdsj\codexsandboxoffline */
+    public static boolean usableForCompletion(Event event, Set<String> scope, long version, boolean fullScope) {
         var payload = event.payload();
-        if (visibleQuery(event, scope)
+        if (visibleQuery(event, scope, fullScope)
                 && payload.get("result") instanceof Map<?, ?> result
                 && result.get("version") instanceof Number observed
                 && observed.longValue() == version) {
@@ -38,28 +48,86 @@ public final class ObjectiveEvidence {
                         && !Boolean.TRUE.equals(ranking.get("tiesTruncated"));
             return !Boolean.TRUE.equals(result.get("truncated"));
         }
-        return visibleAction(event, scope) && "ACTION_ACCEPTED".equals(event.eventType())
-                || "ACTION_TASK_RECEIPT".equals(event.eventType())
-                        && Boolean.TRUE.equals(payload.get("accepted"))
-                        && scope.contains(payload.get("targetId"));
+        return visibleAction(event, scope, fullScope)
+                && ("ACTION_ACCEPTED".equals(event.eventType())
+                        || "ACTION_TASK_RECEIPT".equals(event.eventType())
+                                && Boolean.TRUE.equals(payload.get("accepted")));
     }
 
-    private static boolean visibleAction(Event event, Set<String> scope) {
-        return Set.of("ACTION_ACCEPTED", "ACTION_REJECTED").contains(event.eventType())
-                && scope.contains(event.payload().get("targetId"));
+    private static boolean visibleAction(Event event, Set<String> scope, boolean fullScope) {
+        return Set.of("ACTION_ACCEPTED", "ACTION_REJECTED", "ACTION_TASK_RECEIPT")
+                        .contains(event.eventType())
+                && event.payload().get("targetId") instanceof String target
+                && scope.contains(target)
+                && allowed(event, "relatedIds", scope, fullScope);
+    }
+
+    private static boolean allowed(Event event, String key, Set<String> scope, boolean fullScope) {
+        if (!event.payload().containsKey(key)) {
+            return fullScope && !event.payload().containsKey("actionRunId");
+        }
+        return event.payload().get(key) instanceof List<?> ids
+                && ids.stream().allMatch(id -> id instanceof String && scope.contains(id));
+    }
+
+    /** Explicit identity is scoped to the persisted owning run. @author czhcc-trsdsj\codexsandboxoffline */
+    private record ActionKey(String runId, String actionRunId) {}
+
+    private static ActionKey actionKey(Event event) {
+        return event.payload().get("actionRunId") instanceof String id
+                        && !id.isBlank()
+                        && event.runId().equals(event.payload().get("runId"))
+                ? new ActionKey(event.runId(), id)
+                : null;
+    }
+
+    private static Event linked(Event event, Map<ActionKey, Event> indexed, Event adjacent, String type) {
+        var key = actionKey(event);
+        var match = key == null ? adjacent : indexed.get(key);
+        if (match == null
+                || !type.equals(match.eventType())
+                || !event.runId().equals(match.runId())
+                || !Objects.equals(event.agentId(), match.agentId())) {
+            return null;
+        }
+        if (key != null) {
+            return Objects.equals(
+                                    event.payload().get("inputVersion"),
+                                    match.payload().get("inputVersion"))
+                            && Objects.equals(
+                                    event.payload().get("outputVersion"),
+                                    match.payload().get("outputVersion"))
+                    ? match
+                    : null;
+        }
+        return !event.payload().containsKey("actionRunId")
+                        && !match.payload().containsKey("actionRunId")
+                        && event.simulationTime() == match.simulationTime()
+                ? match
+                : null;
     }
 
     /** Projects visible historical actions and cited receipts. @author czhcc-trsdsj\codexsandboxoffline */
     public static Map<Long, Map<String, Object>> historicalActions(
             List<Event> history, Set<String> scope, boolean fullScope, Set<Long> cited) {
         var events = new HashMap<Long, Event>();
-        history.forEach(event -> events.put(event.sequence(), event));
+        var proposals = new HashMap<ActionKey, Event>();
+        var changes = new HashMap<ActionKey, Event>();
+        for (var event : history) {
+            events.put(event.sequence(), event);
+            var key = actionKey(event);
+            if (key != null && "ACTION_PROPOSED".equals(event.eventType())) {
+                proposals.put(key, event);
+            }
+            if (key != null && "WORLD_STATE_CHANGED".equals(event.eventType())) {
+                changes.put(key, event);
+            }
+        }
         var selected = history.stream()
-                .filter(event -> visibleAction(event, scope)
-                        || cited.contains(event.sequence())
-                                && "ACTION_TASK_RECEIPT".equals(event.eventType())
-                                && Boolean.TRUE.equals(event.payload().get("accepted"))
-                                && scope.contains(event.payload().get("targetId")))
+                .filter(event -> visibleAction(event, scope, fullScope)
+                        && (!"ACTION_TASK_RECEIPT".equals(event.eventType())
+                                || cited.contains(event.sequence())
+                                        && Boolean.TRUE.equals(event.payload().get("accepted"))))
                 .toList();
         var actions = new TreeMap<Long, Map<String, Object>>();
         int budget = 8500;
@@ -73,8 +141,13 @@ public final class ObjectiveEvidence {
             item.put("targetId", payload.get("targetId"));
             item.put("accepted", !event.eventType().equals("ACTION_REJECTED"));
             item.put("code", payload.getOrDefault("code", ""));
-            var proposal = events.get(event.sequence() - 1);
-            var changed = events.get(event.sequence() + 1);
+            var proposal = linked(event, proposals, events.get(event.sequence() - 1), "ACTION_PROPOSED");
+            var changed = linked(event, changes, events.get(event.sequence() + 1), "WORLD_STATE_CHANGED");
+            if (actionKey(event) != null) {
+                item.put("actionRunId", payload.get("actionRunId"));
+                item.put("inputVersion", payload.get("inputVersion"));
+                item.put("outputVersion", payload.get("outputVersion"));
+            }
             if (event.eventType().equals("ACTION_TASK_RECEIPT")) {
                 item.put("inputVersion", payload.get("inputVersion"));
                 item.put("outputVersion", payload.get("outputVersion"));
@@ -85,9 +158,7 @@ public final class ObjectiveEvidence {
                     && proposal.payload().get("action") instanceof Map<?, ?> decision) {
                 item.put("parameters", decision.get("parameters"));
             }
-            if (event.eventType().equals("ACTION_ACCEPTED")
-                    && changed != null
-                    && changed.eventType().equals("WORLD_STATE_CHANGED")) {
+            if (Boolean.TRUE.equals(item.get("accepted")) && changed != null) {
                 appendChanges(item, changed, scope, fullScope, String.valueOf(payload.get("targetId")));
             }
             if (fullScope) item.put("affectedRelationIds", payload.getOrDefault("affectedRelationIds", List.of()));
@@ -152,7 +223,7 @@ public final class ObjectiveEvidence {
                 .filter(entity -> scope.contains(entity.id()))
                 .toList();
         var relations = state.relations().stream()
-                .filter(relation -> scope.contains(relation.sourceId()) && scope.contains(relation.targetId()))
+                .filter(relation -> VisibilityPolicy.readable(relation, scope))
                 .toList();
         var objects = bounded(entities.stream()
                 .map(entity -> {
@@ -225,8 +296,15 @@ public final class ObjectiveEvidence {
                 projection.put(key, value);
         }
         if (projection.size() < result.size() - 2) projection.put("abridged", true);
-        var evidence = new LinkedHashMap<String, Object>(
-                Map.of("type", query.eventType(), "tool", query.payload().get("tool"), "result", projection));
+        var evidence = new LinkedHashMap<String, Object>(Map.of(
+                "type",
+                query.eventType(),
+                "tool",
+                query.payload().getOrDefault("tool", ""),
+                "result",
+                projection,
+                "scopeStatus",
+                query.payload().containsKey("scopeIds") ? "RECORDED" : "UNKNOWN"));
         var args = query.payload().get("arguments");
         if (args != null && Json.write(args).length() <= 500) evidence.put("arguments", args);
         if (query.payload().get("scopeSize") instanceof Number size) evidence.put("scopeSize", size);
@@ -235,12 +313,11 @@ public final class ObjectiveEvidence {
 
     /** Selects distinct visible queries for the current state version. @author czhcc-trsdsj\codexsandboxoffline */
     public static List<Map<String, Object>> recentGraphEvidence(
-            List<Event> history, long version, Set<String> visible, boolean master) {
+            List<Event> history, long version, Set<String> visible, boolean fullScope) {
         var seen = new HashSet<Map<String, Object>>();
         var evidence = new ArrayList<Map<String, Object>>();
         for (var query : history.reversed()) {
-            if (!visibleQuery(query, visible)
-                    || !master && !query.payload().containsKey("scopeIds")
+            if (!visibleQuery(query, visible, fullScope)
                     || !(query.payload().get("result") instanceof Map<?, ?> result)
                     || !(result.get("version") instanceof Number observed)
                     || observed.longValue() != version) continue;

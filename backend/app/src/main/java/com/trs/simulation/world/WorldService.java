@@ -1,5 +1,6 @@
 package com.trs.simulation.world;
 
+import com.trs.simulation.ActionPrograms;
 import com.trs.simulation.SimulationTypes.ActionDefinition;
 import com.trs.simulation.SimulationTypes.Entity;
 import com.trs.simulation.SimulationTypes.Relation;
@@ -9,6 +10,7 @@ import com.trs.simulation.common.Json;
 import com.trs.simulation.domain.DomainEnvironment;
 import com.trs.simulation.domain.examples.Examples;
 import com.trs.simulation.scenario.ScenarioProfiles;
+import com.trs.simulation.state.OntologyConstraints;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -183,7 +185,9 @@ public class WorldService {
                                     .contains(e.evidence()),
                     "Invalid edge type or evidence");
         }
-        domains.get(input.domainCode()).validate(input);
+        ActionPrograms.validate(input.ontology());
+        var prepared = OntologyConstraints.prepareTemplate(input);
+        domains.get(input.domainCode()).validate(prepared);
         if (updating) {
             for (var scenario : scenarios()) {
                 if (scenario.worldId().equals(id)
@@ -197,8 +201,8 @@ public class WorldService {
                 input.domainCode(),
                 input.entityTypes(),
                 input.relationTypes(),
-                input.entities(),
-                input.relations(),
+                prepared.entities(),
+                prepared.relations(),
                 version,
                 input.ontology());
         require(Json.write(w).length() < 1_000_000, "World too large");

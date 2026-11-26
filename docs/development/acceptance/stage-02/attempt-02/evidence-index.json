@@ -1,0 +1,4464 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "2708c13de67db48877bf54c5e11929c9187a758a",
+  "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+  "evidenceRoots": [
+    "D:/temp/gass-s2-attempt02-x65t1d",
+    "D:/myprog/idea_21/gass/docs/development/acceptance"
+  ],
+  "evidence": [
+    {
+      "id": "EV-001",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/input.log",
+      "sha256": "50cf673fcdae434cfbcdc390c90c4344b607c255c005e4b06be815b4a5b7eb0c",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.012990+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-002",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/input-meta.json",
+      "sha256": "246b68a2cb6233953de03798cbc22d5d57c2d3668fda9b3c7a145acfc24d0154",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.012990+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-003",
+      "kind": "SOURCE_REVIEW",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/review-input-audit.json",
+      "sha256": "dc48a7bee5fafc6fb87a478f190b709551cfad7afa2f9b6873afc36139ac3bee",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.012990+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-004",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/static.log",
+      "sha256": "7602b64f0acec07de1e525c6bc9a0bd321a6326ebdbaa17054455b772c042cff",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.013989+08:00",
+      "checkIds": [
+        "G-01",
+        "G-02",
+        "G-03",
+        "G-04",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-12",
+        "G-13",
+        "S1-01",
+        "S1-02",
+        "S1-03",
+        "S1-05",
+        "S1-06",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-005",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/static-meta.json",
+      "sha256": "74cc311427276f93484b40fcdcb6f97c7d3dd0f58e2b152c9a61c7e5801790f1",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.013989+08:00",
+      "checkIds": [
+        "G-01",
+        "G-02",
+        "G-03",
+        "G-04",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-12",
+        "G-13",
+        "S1-01",
+        "S1-02",
+        "S1-03",
+        "S1-05",
+        "S1-06",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-006",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/verify_inputs.py",
+      "sha256": "19f5133ff4c87e3c54478157ebadb28d81d27163b3ea1ed32873c15f12aa5d37",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.013989+08:00",
+      "checkIds": [
+        "G-01",
+        "G-02",
+        "G-03",
+        "G-04",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-12",
+        "G-13",
+        "S1-01",
+        "S1-02",
+        "S1-03",
+        "S1-05",
+        "S1-06",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-007",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-maven.log",
+      "sha256": "d29b08bb5436366fee7726b53390b313ee200660c70aabba835a4d6f340f0507",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.014989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-008",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-maven-meta.json",
+      "sha256": "e82fb32f78e64184b16a37a7575e65faa2ba1141314246c6b41bcf3d55735c2d",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.014989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-009",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ActionLibraryIntegrationTest.xml",
+      "sha256": "742dc84225109a832f91e5785b741e4b43fe1eb43ff394eed809e83f89c16194",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.014989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-010",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.AgentScopeContractTest.xml",
+      "sha256": "f522b015b3eb709e4566912503c38eab1ead1fb05c9f293c70cd93738002cdf2",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.015989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-011",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.AuthIntegrationTest.xml",
+      "sha256": "86f39e1ee7c62b06ef951dfd238d9f48c10d8851c15560d410e3476f91f5081a",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.015989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-012",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ContinuationIntegrationTest.xml",
+      "sha256": "0317e86265ac39714a7e91eb9274c8e35232396df2417ed5d90c6de32f14d3d8",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.015989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-013",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.DeclarativeActionEngineTest.xml",
+      "sha256": "45bb1cf2dc554cf3024a382e325f8ba891850f0ae450b330500a40475c3f3445",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.015989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-014",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.HierarchicalFrameworkIntegrationTest.xml",
+      "sha256": "42227dd24d4bbded37201fa55328faa5816a00ba7c5591a2d6d73d29038c5aea",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.015989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-015",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.HierarchyGatewayIntegrationTest.xml",
+      "sha256": "8883cacd87dbebf68d33be6258b2a361425bbe455cb50a5b574dd49a0920fc22",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.015989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-016",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.HierarchyModelContractTest.xml",
+      "sha256": "210a3ba863feed09681d2f9b1266ff3ef56554c080ded9337d3e08a5093fe4c7",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.015989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-017",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.InformationObjectActionsTest.xml",
+      "sha256": "eb528030c7b6af3e9088efa440b05e20650571300b9264a8cdddfdd95d24c3f5",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.015989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-018",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ModelEditingIntegrationTest.xml",
+      "sha256": "a9330717c98f6df61fc5cac75d15743aa3bf859efa04379f6aeb1698d6ef2289",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.015989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-019",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ModelKeyPersistenceTest.xml",
+      "sha256": "81bab57538830675a0b618e7410fc41b7566f06dc1ca0be7c389e8e57134c9d1",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.015989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-020",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ObjectActionRuntimeIntegrationTest.xml",
+      "sha256": "535e76c90511609083b7245bae3957640e4cd1e77687579dfd05466068b765fd",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.015989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-021",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ObjectiveGraphQueryTest.xml",
+      "sha256": "ae6a067aee6a7416ad0d28c5160c379a24aa6d06330b167a8746a7e2b7556415",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.015989+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-022",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ObjectOwnedRelationActionsTest.xml",
+      "sha256": "758cfc5763c8a223502d282fa423a6294f45aa7719d9283d54068a955961a3bc",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.017501+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-023",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.RunDeletionIntegrationTest.xml",
+      "sha256": "1d2d3cb923a54700b50ff8d14ed456fe6ef7679ecd322bfa40e93c4e4bae8a61",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.017501+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-024",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.RunTerminationIntegrationTest.xml",
+      "sha256": "6d75206b676f33a05453ff80f5e3c69a12193d821f96831ff89a1ed809fb4fc2",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.017501+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-025",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ScenarioDeletionIntegrationTest.xml",
+      "sha256": "d72d1f9391c67f45b62ad24892aaa378449068889aba2f8a1038bbe51f46bc07",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.017501+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-026",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.SimulationIntegrationTest.xml",
+      "sha256": "0c39b0288c40aa99ab83c761f7cc577c5ce768baff27454d02da8c8198712c93",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.017501+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-027",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.WorldCatalogMigrationTest.xml",
+      "sha256": "7bf9f73fdd485daf7a78a64a981af0866e26a0a490f6f7a1ef928e9dfd947b02",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.017501+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-028",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.WorldMaintenanceIntegrationTest.xml",
+      "sha256": "a4e40f2a0639bfa5e60ed102bc38038ca5f782784864bef8e1e886fa667e07cd",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.017501+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-029",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-env.log",
+      "sha256": "be3610ec36b5393dbf11f5696037ebaca3801d368edf9a2fdc3c4740516b8dfb",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.026261+08:00",
+      "checkIds": [
+        "G-03"
+      ]
+    },
+    {
+      "id": "EV-030",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-env-meta.json",
+      "sha256": "8b97beb5b295421a346a1cc6da6f9113a45b97374caac1eda751c4ef1d25ab93",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.026261+08:00",
+      "checkIds": [
+        "G-03"
+      ]
+    },
+    {
+      "id": "EV-031",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-pnpm-retry-install.log",
+      "sha256": "d4f3b464a1a044d97a6a2fb569b9e1ab71be4afff6442ef77a334156e006c577",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.026261+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-032",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-pnpm-retry-install-meta.json",
+      "sha256": "3fd8624443841657d58a4cae821ddbfa1f901f655d6c497345c077e6aeb2bf06",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.026261+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-033",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-pnpm-retry-test.log",
+      "sha256": "1bc7c7a7bbc5b2bbb56204df818319b875b3e348cdbb24abbc5bf4e52f04af45",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.026261+08:00",
+      "checkIds": [
+        "G-04",
+        "G-06",
+        "G-12",
+        "S1-15"
+      ]
+    },
+    {
+      "id": "EV-034",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-pnpm-retry-test-meta.json",
+      "sha256": "dd6b6f4d9580b124e3878d95931133e0c4142f503f137c55750c14f037dfab51",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.027254+08:00",
+      "checkIds": [
+        "G-04",
+        "G-06",
+        "G-12",
+        "S1-15"
+      ]
+    },
+    {
+      "id": "EV-035",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-vitest.xml",
+      "sha256": "5dd4b297483c464fa14574adb5227c35e1089c7642f31241fe9de62e32b740c2",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.027254+08:00",
+      "checkIds": [
+        "G-04",
+        "G-06",
+        "G-12",
+        "S1-15"
+      ]
+    },
+    {
+      "id": "EV-036",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-pnpm-retry-build.log",
+      "sha256": "6a25df25a8c5d4b819c41bb9edff0ee1339d4ab3d968356e6c34e376d586b99a",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.027254+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-037",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-pnpm-retry-build-meta.json",
+      "sha256": "f6caf868783b573752a94faf3bc908b8bac8bdae006ac0a0208b16280257d6d3",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.027254+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-038",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-graph.log",
+      "sha256": "72d6ab275d60c1505d4ea2557eca1412c8ee6d25125ec0dc95439274932f1064",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.028250+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-10",
+        "S1-11",
+        "E2E-K",
+        "S2-10",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-039",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-graph-meta.json",
+      "sha256": "a505725bc11c59d55c9afcef357c37c1234bda7d2f135e1dd06e08c3d35a0057",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.028250+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-10",
+        "S1-11",
+        "E2E-K",
+        "S2-10",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-040",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-evidence-retry.log",
+      "sha256": "b35ef2f6f77726a704d6eef767562813aa3ecafe74540ba3f87f79a50dc49763",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.028250+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-11",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-041",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-evidence-retry-meta.json",
+      "sha256": "5cc4025742962880b082262c9335bfd285996f500e0692f443cbb3a20818b2b3",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.028250+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-11",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-042",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-smoke.log",
+      "sha256": "871d2dbdae8da8cc58c4e0df7b03c29294e933e168231769fdea43373d1ab801",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.028250+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-043",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-smoke-meta.json",
+      "sha256": "f490a6c0a0ea47b35cac700402c814d6d817e04b7a2cd1a92e54996fad9ed9cd",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.028250+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-044",
+      "kind": "STATE_FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-http-trace.json",
+      "sha256": "bbb1ca2acdd76c736612088a6339361a524b663cecdd85e7c8020c1fa98b2941",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.029250+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-045",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-server.log",
+      "sha256": "472cb5683b57c40d69deca567604634a6bc1ccdcd6ad7bc317706915ec8b3c70",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.029250+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-046",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-concurrency.json",
+      "sha256": "9a42144509e0696f6eee75a1af4696c2ef336e9908e62904836fb1c7f6bfdfaa",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.029250+08:00",
+      "checkIds": [
+        "G-10",
+        "S1-06",
+        "S2-07"
+      ]
+    },
+    {
+      "id": "EV-047",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-browser-verified.log",
+      "sha256": "e268b389d4ebc305b361c23c797d59b1f9e3abdee3fbd88ec22694e450cda390",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.029250+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-048",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-browser-verified-meta.json",
+      "sha256": "3e9869c9fd926632bac5036c795352410df936c54b713d29b11b005ba0a004ca",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.030249+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-049",
+      "kind": "SCREENSHOT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-browser.png",
+      "sha256": "df955aebcab0ef2c8e0780b59ef09a6f69e7de53dc5375c1a6dad2774fbd59f5",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.030249+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-050",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-query-objective.log",
+      "sha256": "a20b535f3e4bf83a646270f2df682100bce7640b9cc455541058e36e65e8aca6",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.030249+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-051",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-query-objective-meta.json",
+      "sha256": "efc4e533681025c6447e8a4a75146187cc42d95f338dc550481ceff93e963d0e",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.030249+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-052",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ReviewerQueryObjectiveTest.xml",
+      "sha256": "8f41181615f0e8c409bbec382d112396cddf27b0f50d829f39b1fa4af1b467b7",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.030249+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-053",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/src/test/java/com/trs/studio/ReviewerQueryObjectiveTest.java",
+      "sha256": "883400ae2c479b13b23ce48191c40e6ebbadb06d70efea3ce26aeb9d8e4e0f85",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.030249+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-054",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-legacy-bank.log",
+      "sha256": "0c8b55c865577f2212ec03a97d5f72cd411584b1b4bed8e35543fb698016ea37",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.031250+08:00",
+      "checkIds": [
+        "G-08",
+        "S1-05",
+        "S2-01",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-055",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline-legacy-bank-meta.json",
+      "sha256": "b57eaff95883cc840c129533bf3ab9bf7aee321e9bd69fe58da04f5947ddc738",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.031250+08:00",
+      "checkIds": [
+        "G-08",
+        "S1-05",
+        "S2-01",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-056",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ReviewerStage2LegacyBankTest.xml",
+      "sha256": "38f5fea9cd10563a3855a6a87aa64dd1fd4e4629ffd689d8de52501d88c4fd1f",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.031250+08:00",
+      "checkIds": [
+        "G-08",
+        "S1-05",
+        "S2-01",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-057",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/baseline/backend/bootstart/src/test/java/com/trs/studio/ReviewerStage2LegacyBankTest.java",
+      "sha256": "a1b1010fdd9127cb4da3482aae629116038f2f95c6d6324f930f35aca826f7bf",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.031250+08:00",
+      "checkIds": [
+        "G-08",
+        "S1-05",
+        "S2-01",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-058",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-maven.log",
+      "sha256": "f99052b170aeb1acbcde3d01670718e72f2e38c04f66eb017b21bc2e285fa8f7",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.033253+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-059",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-maven-meta.json",
+      "sha256": "1422f266d042c2e38cf3731dea431dc9ab6331c946d6782963c990d88452b428",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.033774+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-060",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.simulation.agent.WorkerToolsTest.xml",
+      "sha256": "e51b2fb5b264f82f550981e25357782972bab9dd4fe72ba4e666b429deef438b",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.033774+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-061",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ActionLibraryIntegrationTest.xml",
+      "sha256": "5ed68a5afdaef4088f7fb17ad48151e5c12273bf5c91abfc7eaa8168da025811",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.033774+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-062",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.AgentScopeContractTest.xml",
+      "sha256": "cdf67c37a64a38cb10754eaa3be7999c0c5f5205b3f5ba3095ac53c3f0227c2a",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.033774+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-063",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.AuthIntegrationTest.xml",
+      "sha256": "83051c2ab0192094e19e8fce822367c639d759ed204a56847400cc25bcfe1d81",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.034280+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-064",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ContinuationIntegrationTest.xml",
+      "sha256": "a1f5802a8229e3f97f9b7044ebf23341ce95e3ed78058a3944a7b7d97e6706c3",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.034280+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-065",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.DeclarativeActionEngineTest.xml",
+      "sha256": "c0ad12489e1a2146c108db3c4f3fb937a08a1259f67a5ac26e6b6cfa8744c650",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.034280+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-066",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.HierarchicalFrameworkIntegrationTest.xml",
+      "sha256": "b5a77331c1be1aff693ea21c2d7b3ed80d72106eec5e23bfcff47f55a650710c",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.034280+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-067",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.HierarchyGatewayIntegrationTest.xml",
+      "sha256": "57b1e5339cf37dba66c50839afa9d012cc7fc8b60806fcaa8a074f75bd424ee3",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.034280+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-068",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.HierarchyModelContractTest.xml",
+      "sha256": "2328c44154fcc48bc06861c9c0ec3ea9e4236de0cc6356a5b3e6712021c11828",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.034840+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-069",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.InformationObjectActionsTest.xml",
+      "sha256": "27c2b9c32356d9b8600715ae88b607195a7eea32e043406e4d188ed97f96aabf",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.034840+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-070",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ModelEditingIntegrationTest.xml",
+      "sha256": "2ea43d17bf5da7c8451b29708b873e479fb541af85dc2e3d1a9685ebed1578ff",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.034840+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-071",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ModelKeyPersistenceTest.xml",
+      "sha256": "c519da821e901368c2e55e493b79352873c43bcf1eb42bb064db4c5c4099609b",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.034840+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-072",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ObjectActionRuntimeIntegrationTest.xml",
+      "sha256": "65b6e85aa8727fb9deb1e4774016d0b7c4e5525a0e21ce24b3d4ea2a802900a1",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.034840+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-073",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ObjectiveGraphQueryTest.xml",
+      "sha256": "21e8c6b69db7cb26187bf090db9b281ccfdfd1583975f2b4638907e4c306eca6",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.034840+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-074",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ObjectOwnedRelationActionsTest.xml",
+      "sha256": "79f82ecaf1e8e53e47aea6f9fea4bed65d454af3ced6e1bd42d82a83b208c828",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.034840+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-075",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.RunDeletionIntegrationTest.xml",
+      "sha256": "71f04c2a222959dd8318ffb0617cc4e903bc265e8f3e10bbf108bb1458ab3d60",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.034840+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-076",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.RunTerminationIntegrationTest.xml",
+      "sha256": "9933a169aa02e928787abf453bf40387811352874eb8188da4abf28a8a10d454",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.035848+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-077",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ScenarioDeletionIntegrationTest.xml",
+      "sha256": "ba11dd89316842ce70798b5ca448976c4d0de7c0e226462c0cdf41c9e1a9a42b",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.035848+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-078",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.SimulationIntegrationTest.xml",
+      "sha256": "8cad36e014e95944382313c2d69b9a6ffc643e9d216141247bb90068dd0e51d7",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.035848+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-079",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.WorldCatalogMigrationTest.xml",
+      "sha256": "c7ccd200ea78031214ae191b9121b4bc04026eb801bcfa8bc9ce65b54e7ca930",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.035848+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-080",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.WorldMaintenanceIntegrationTest.xml",
+      "sha256": "ce62b273ab23dc124fa82986216fd4e2b3aae423db41823270b26be3e1b86133",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.035848+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-081",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-env.log",
+      "sha256": "be3610ec36b5393dbf11f5696037ebaca3801d368edf9a2fdc3c4740516b8dfb",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.044175+08:00",
+      "checkIds": [
+        "G-03"
+      ]
+    },
+    {
+      "id": "EV-082",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-env-meta.json",
+      "sha256": "d98fab41b3763d2f63a55e439655406dffb45ba7570cf52f439323c9cff0ff6f",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.044175+08:00",
+      "checkIds": [
+        "G-03"
+      ]
+    },
+    {
+      "id": "EV-083",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-pnpm-retry-install.log",
+      "sha256": "34299b084f3cdca5e201b6c89e5d9dc41e96a373d4763fc4f05bdcef5667ff96",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.045191+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-084",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-pnpm-retry-install-meta.json",
+      "sha256": "a2c8a5ae2bedd926effcaf470a27480cab82a6d99a3e49bcf51b2f57f5f4ee50",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.045191+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-085",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-pnpm-retry-test.log",
+      "sha256": "d658c764a820a9df99cfa28f34c2ba2a3aecd0436b382cb180b311fa5dbc578c",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.045191+08:00",
+      "checkIds": [
+        "G-04",
+        "G-06",
+        "G-12",
+        "S1-15"
+      ]
+    },
+    {
+      "id": "EV-086",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-pnpm-retry-test-meta.json",
+      "sha256": "15f0fd80d3879d1c60ac40d7cff60c15b219deb4e76e8a757d14096e4f977e0b",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.045191+08:00",
+      "checkIds": [
+        "G-04",
+        "G-06",
+        "G-12",
+        "S1-15"
+      ]
+    },
+    {
+      "id": "EV-087",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-vitest.xml",
+      "sha256": "45175d84c56bf09e4840f42ec0706ff65763ec9b25076271d139cad43515e57f",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.045191+08:00",
+      "checkIds": [
+        "G-04",
+        "G-06",
+        "G-12",
+        "S1-15"
+      ]
+    },
+    {
+      "id": "EV-088",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-pnpm-retry-build.log",
+      "sha256": "25e971b13d6f7529550efa354d3085e697816de086f2e8c94fa80f3cb2f987e1",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.046192+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-089",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-pnpm-retry-build-meta.json",
+      "sha256": "c75c195569e932c67d108a6f7001951d0d51dd3ccce14a62c9e4c9688ba3e161",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.046192+08:00",
+      "checkIds": [
+        "G-06"
+      ]
+    },
+    {
+      "id": "EV-090",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-graph.log",
+      "sha256": "72d6ab275d60c1505d4ea2557eca1412c8ee6d25125ec0dc95439274932f1064",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.046192+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-10",
+        "S1-11",
+        "E2E-K",
+        "S2-10",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-091",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-graph-meta.json",
+      "sha256": "8fee6f3039bd1acff2f0e45d12b924a974ce33903dd47eff617fe49d47337456",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.046192+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-10",
+        "S1-11",
+        "E2E-K",
+        "S2-10",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-092",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-evidence-retry.log",
+      "sha256": "adf556e154cae31ab5651e4aeef28dabf29c736e65fefc262b3fe0d1197ac2a8",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.046192+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-11",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-093",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-evidence-retry-meta.json",
+      "sha256": "70c442d9f38799301b101549732464cc74ab317d8d90f12862946dadb8972ffc",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.046192+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-11",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-094",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-smoke.log",
+      "sha256": "70273c3a0b46abe529ae440af942d2e6c3573b98546d37908a7386d87a3544d7",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.047187+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-095",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-smoke-meta.json",
+      "sha256": "fe6101514947b9afb203186b0c432ac69e1c29caa6a960061eb1979b291a8209",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.047187+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-096",
+      "kind": "STATE_FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-http-trace.json",
+      "sha256": "645c00aaa276b6675924ea98d54d3c5c17561fdbe5a16b6e27c2effa6911e9d9",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.047187+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-097",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-server.log",
+      "sha256": "34128e6898bbf9aff8b7a405362e231de3093b4d2dca223a69faba5880971e6b",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.048192+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-098",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-concurrency.json",
+      "sha256": "d266196534b421e6c753d909c79f6bcb202cd7933809873a020bf52c9e4e228c",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.048192+08:00",
+      "checkIds": [
+        "G-10",
+        "S1-06",
+        "S2-07"
+      ]
+    },
+    {
+      "id": "EV-099",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-browser-verified.log",
+      "sha256": "e268b389d4ebc305b361c23c797d59b1f9e3abdee3fbd88ec22694e450cda390",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.048192+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-100",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-browser-verified-meta.json",
+      "sha256": "dc4d3c879e259d6a2a301dd4b62a45107a8e065bdbfa678fa76cb6263a414f60",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.048192+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-101",
+      "kind": "SCREENSHOT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-browser.png",
+      "sha256": "df955aebcab0ef2c8e0780b59ef09a6f69e7de53dc5375c1a6dad2774fbd59f5",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.048192+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-102",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-query-objective.log",
+      "sha256": "1700b6e7707455e30f3395dee8a005598ccf166b9f24f0a67c88a8fcecb261ad",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.049187+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-103",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-query-objective-meta.json",
+      "sha256": "852a5ad84e704850f9a813a4f47767849fcf7592bd3ee8aa75b7245db0acb0f9",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.049187+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-104",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ReviewerQueryObjectiveTest.xml",
+      "sha256": "6e68bee972f71bc057446e12ae4ea1dcb4c2078c6ed39309fe2a3330e4505d11",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.049187+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-105",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/src/test/java/com/trs/studio/ReviewerQueryObjectiveTest.java",
+      "sha256": "883400ae2c479b13b23ce48191c40e6ebbadb06d70efea3ce26aeb9d8e4e0f85",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.049187+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-106",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-review-ontology.log",
+      "sha256": "4f4656cec47b99385cf2ac35b779c60bcece58b5a2500fa57cc8d8d8c26c8261",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.050191+08:00",
+      "checkIds": [
+        "G-08",
+        "S1-05",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-107",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-review-ontology-meta.json",
+      "sha256": "1b30e6336fa4581045fb28e25f11891d5595fdcc613a38ef04faa08113eb3232",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.050191+08:00",
+      "checkIds": [
+        "G-08",
+        "S1-05",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-108",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ReviewerStage2OntologyTest.xml",
+      "sha256": "4c16add39bb27b28d66ce25dff6889c5be8e49d9c17af6c276cb8424c083b6c6",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.050191+08:00",
+      "checkIds": [
+        "G-08",
+        "S1-05",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-109",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/src/test/java/com/trs/studio/ReviewerStage2OntologyTest.java",
+      "sha256": "cfc62d56bc28e48065ab5f0c3fdc7194cc78c0a7ba1d7338d1edc3d3747acf19",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.050191+08:00",
+      "checkIds": [
+        "G-08",
+        "S1-05",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-110",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-review-commit.log",
+      "sha256": "9ecd5f969317c5c4624d1015dbc36ab9cad94b35aa27e5a5629bc13749b3bacf",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.051562+08:00",
+      "checkIds": [
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-13"
+      ]
+    },
+    {
+      "id": "EV-111",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-review-commit-meta.json",
+      "sha256": "fd997d0063ac6484dc24b92c65849edeed3a02a5f6793b279f3a6b0065002a8b",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.051562+08:00",
+      "checkIds": [
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-13"
+      ]
+    },
+    {
+      "id": "EV-112",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ReviewerStage2CommitTest.xml",
+      "sha256": "28ef55bf464e07912d98f8d97351f8c07e6f68bfe8eb566c1bbd56d36cf2b319",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.051562+08:00",
+      "checkIds": [
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-13"
+      ]
+    },
+    {
+      "id": "EV-113",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/src/test/java/com/trs/studio/ReviewerStage2CommitTest.java",
+      "sha256": "4b5b723aff13197bf0ff798311bcda7467d3779c629e89600343faafb5f9a306",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.051562+08:00",
+      "checkIds": [
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-13"
+      ]
+    },
+    {
+      "id": "EV-114",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-review-visibility.log",
+      "sha256": "1dd386cac0b7bb9044474573282bbed7843334a8f3186f88591a38289e7042a9",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.052065+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-11",
+        "S2-09",
+        "S2-10",
+        "S2-11"
+      ]
+    },
+    {
+      "id": "EV-115",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-review-visibility-meta.json",
+      "sha256": "e49b007d61b3cb4d4f92a9c81931c862fa0ce852893215e22bcc61f952fe69c7",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.052065+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-11",
+        "S2-09",
+        "S2-10",
+        "S2-11"
+      ]
+    },
+    {
+      "id": "EV-116",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ReviewerStage2VisibilityTest.xml",
+      "sha256": "eab453b09db8b1663897768523a14a17aeaecfd875ce2347a737a39c34ec7868",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.053071+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-11",
+        "S2-09",
+        "S2-10",
+        "S2-11"
+      ]
+    },
+    {
+      "id": "EV-117",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/src/test/java/com/trs/studio/ReviewerStage2VisibilityTest.java",
+      "sha256": "90bf7717a23365857a644177c24df6541eda035ca1ae32799cba434047e5d915",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.053071+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-11",
+        "S2-09",
+        "S2-10",
+        "S2-11"
+      ]
+    },
+    {
+      "id": "EV-118",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-review-evidence.log",
+      "sha256": "c7a45387fc3eb1833480a432d1ecef83e5bde8d40876025dcbcd6c575e0f68c1",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.053071+08:00",
+      "checkIds": [
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-119",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-review-evidence-meta.json",
+      "sha256": "a9a931db12927978d7dc7246aef21b05699562e63001dacc64502925b90ff3fa",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.054068+08:00",
+      "checkIds": [
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-120",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ReviewerStage2EvidenceTest.xml",
+      "sha256": "93c322c4b5c4a4f3146fccbc5de9b33d9171ffaa08a75581ada56d384bb1b5d3",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.054068+08:00",
+      "checkIds": [
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-121",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/src/test/java/com/trs/studio/ReviewerStage2EvidenceTest.java",
+      "sha256": "284caa113e9b7804cd805c951cb45861b9f796e4bbcf3b669a9f7c7484d6c46f",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.054068+08:00",
+      "checkIds": [
+        "S2-12",
+        "S2-13",
+        "S2-14",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-122",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-format.log",
+      "sha256": "49499a254e0d228a20a2768213ba5529e3978ab826cae32795e5a0e30a4e5448",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.054068+08:00",
+      "checkIds": [
+        "G-12"
+      ]
+    },
+    {
+      "id": "EV-123",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-format-meta.json",
+      "sha256": "c1165e4f81cef33a0c5939bdfd98c94f19d48f27f135853be23a22fb41d74d54",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.054068+08:00",
+      "checkIds": [
+        "G-12"
+      ]
+    },
+    {
+      "id": "EV-124",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-gate-tests.log",
+      "sha256": "d3d7c0859be07a8e769f7c1ec9e22c24d88a78b6dceda56f1db48480d7725fc7",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.078081+08:00",
+      "checkIds": [
+        "G-01"
+      ]
+    },
+    {
+      "id": "EV-125",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-gate-tests-meta.json",
+      "sha256": "e2b5642f073283beac368c8dfee4c1a1c39cc59039fb973caff256d26132aa8d",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.078081+08:00",
+      "checkIds": [
+        "G-01"
+      ]
+    },
+    {
+      "id": "EV-126",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/http-compare.log",
+      "sha256": "9c0b783a4613b05031cc25d6d121fabb83d00c40687b310a0b4c2535c05616ff",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.078081+08:00",
+      "checkIds": [
+        "G-08",
+        "G-10",
+        "G-11",
+        "S1-05",
+        "S1-07",
+        "S1-08",
+        "S1-14",
+        "E2E-A",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-127",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/http-compare-meta.json",
+      "sha256": "a4502c8c5ba9ddb42e03530b95be5ba27903db729947feb7d7eda04684d4c3c3",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.079076+08:00",
+      "checkIds": [
+        "G-08",
+        "G-10",
+        "G-11",
+        "S1-05",
+        "S1-07",
+        "S1-08",
+        "S1-14",
+        "E2E-A",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-128",
+      "kind": "COMPARISON",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/stage2-http-analysis.json",
+      "sha256": "426cf2f567cc28e26c5df9a6c7bb2f3e3be29dab3b718a312901b680f72a8bba",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.079076+08:00",
+      "checkIds": [
+        "G-08",
+        "G-10",
+        "G-11",
+        "S1-05",
+        "S1-07",
+        "S1-08",
+        "S1-14",
+        "E2E-A",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-129",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/stage2_http_compare.py",
+      "sha256": "ef38586109ce271eee61e73fbdae9a434f56dd2d32d57d81afaef24282ee556f",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.079076+08:00",
+      "checkIds": [
+        "G-08",
+        "G-10",
+        "G-11",
+        "S1-05",
+        "S1-07",
+        "S1-08",
+        "S1-14",
+        "E2E-A",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-130",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/historical-reopen.log",
+      "sha256": "cb2dc368c8adb11cc6cbe4f90bcea7627846d544f315d399f26277823e2fac96",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.079076+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-131",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/historical-reopen-meta.json",
+      "sha256": "5261dd05e20f4a1d16b9f9762fc710e9aae4880ef32829cf7ea66f710da10e40",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.079076+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-132",
+      "kind": "COMPARISON",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-reopen-comparison.json",
+      "sha256": "820d764333efe8f9337e9482e0cbaed2381f98195e2f4b18bf01feeabc77e354",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.079076+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-133",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-reopen-server.log",
+      "sha256": "2abf3a35d416a9af7defedeb4f69e9565644630cef46c659d85b99a5da77d9ac",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.079076+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-134",
+      "kind": "STATE_FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/v9-to-v10-reopen.json",
+      "sha256": "1ba214be09da28a07e4f882abafcf76cc4846d2f0104b7c2dbef391362f5d3ea",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.079076+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-135",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/GraphFixture.java",
+      "sha256": "06750b0ef1eca840eccb4b2c4cbb1d004b5bb177bf32cc85aaeecba63d237b73",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.079076+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-10",
+        "S1-11",
+        "E2E-K",
+        "S2-10",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-136",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/graph_fixture.py",
+      "sha256": "d8cefd59a81ead331b84d07c1d3ead439eacdd4c621cfc53a81ba5063690fc1e",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.080074+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-10",
+        "S1-11",
+        "E2E-K",
+        "S2-10",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-137",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/EvidenceFixture.java",
+      "sha256": "597f80f02e9a6bdfe54ab5d735f828d081f8281c614b7bd12d87c731b84d8f38",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.080074+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-11",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-138",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/evidence_retry.py",
+      "sha256": "ed328bbe862830bf9acbb3946cae3427bca5e65427fd892332b832b390b1eda4",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.080074+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-11",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-139",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/http_fixture.py",
+      "sha256": "b8b0c9f63132be268d26f7dbb4b5867c9c3daf5b47b1ad589695551be4c83b08",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.080074+08:00",
+      "checkIds": [
+        "G-08",
+        "G-11",
+        "S1-04",
+        "S1-07",
+        "S1-15",
+        "E2E-A"
+      ]
+    },
+    {
+      "id": "EV-140",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/concurrency_fixture.py",
+      "sha256": "0b60935d4f2cc6dfff7d327a62cddd1469dee50cb09e42889843f652cbc4918c",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.080074+08:00",
+      "checkIds": [
+        "G-10",
+        "S1-06",
+        "S2-07"
+      ]
+    },
+    {
+      "id": "EV-141",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/browser-fixture-verified.mjs",
+      "sha256": "ccf7d44e6602bc80868ff3dc92fa7d68b8bf18dc95ed62c9869e1a9488740cbe",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.081077+08:00",
+      "checkIds": [
+        "G-06",
+        "G-12",
+        "S1-15",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-142",
+      "kind": "FROZEN_INPUT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-02/check-manifest.json",
+      "sha256": "ad0697d6c94a929d51c1a09317d9517993e4307383c469c6129c371bd111121b",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.081077+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-143",
+      "kind": "FROZEN_INPUT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-02/check-manifest.sha256",
+      "sha256": "5bf2dda523ba6b25173ff562ff93f86d0592860c7defed86d360b77e99e66155",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.081077+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-144",
+      "kind": "FROZEN_INPUT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-02/baseline.json",
+      "sha256": "b13768fa17ca0914f394601ffe1bc947ce0f81ec11de97ff3e58c1233d47645b",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.081077+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-145",
+      "kind": "FROZEN_INPUT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-02/candidate.json",
+      "sha256": "4434a9361cecd6d76cdfcd7eab312b615c13a5dcd46ff11342524eddc6fd251e",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.081077+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-146",
+      "kind": "FROZEN_INPUT",
+      "path": "D:/myprog/idea_21/gass/docs/development/acceptance/stage-01/attempt-02/gate-report.json",
+      "sha256": "12b5438479d4ce38412f77f25705d138141c3b0678c84fe846e846b37ee20fe7",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.081077+08:00",
+      "checkIds": [
+        "G-01",
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-147",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/run_review.py",
+      "sha256": "756d500822883386f6d29834cdc039dd114cdbafc6b360b104c0c8f909e67f5f",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.081077+08:00",
+      "checkIds": [
+        "G-04",
+        "G-05",
+        "G-07",
+        "G-08",
+        "G-09",
+        "G-10",
+        "G-11",
+        "S1-02",
+        "S1-03",
+        "S1-04",
+        "S1-05",
+        "S1-06",
+        "S1-07",
+        "S1-08",
+        "S1-09",
+        "S1-10",
+        "S1-11",
+        "S1-12",
+        "S1-13",
+        "S1-14",
+        "E2E-K",
+        "S2-01",
+        "S2-02",
+        "S2-03",
+        "S2-04",
+        "S2-05",
+        "S2-06",
+        "S2-07",
+        "S2-08",
+        "S2-09",
+        "S2-10",
+        "S2-11",
+        "S2-12",
+        "S2-13",
+        "S2-14"
+      ]
+    },
+    {
+      "id": "EV-148",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/prepare_objective_fixture.py",
+      "sha256": "ac69b323d33e6b4c7d429ce5da44b4127fbd17d08ad1b109467bc57d01f02adf",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.081077+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-03",
+        "S1-09",
+        "S1-11",
+        "S1-12",
+        "E2E-K"
+      ]
+    },
+    {
+      "id": "EV-149",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-review-repairscope.log",
+      "sha256": "5fd77b0a6772f8a02f04b85f584dc42e07aa6d88c6f047536cdf66d03057d01d",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.082084+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-11",
+        "S2-09",
+        "S2-10"
+      ]
+    },
+    {
+      "id": "EV-150",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-review-repairscope-meta.json",
+      "sha256": "00c9e59799500a25a3b19263682a1a1c7aea2e351bf9bfb2601182068b9e8e19",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.082084+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-11",
+        "S2-09",
+        "S2-10"
+      ]
+    },
+    {
+      "id": "EV-151",
+      "kind": "TEST_REPORT",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate/backend/bootstart/target/surefire-reports/TEST-com.trs.studio.ReviewerStage2RepairScopeTest.xml",
+      "sha256": "874d7c11a0bb0750c12816228a390c9d2b6429d8b4d802a0b9f86da198392a8f",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.082084+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-11",
+        "S2-09",
+        "S2-10"
+      ]
+    },
+    {
+      "id": "EV-152",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/reviewer-fixtures/ReviewerStage2RepairScopeTest.java",
+      "sha256": "72a105203f7c4a4669299b8386aa072213b9f7e4e543270b72c26f75ca1d7289",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.082084+08:00",
+      "checkIds": [
+        "G-09",
+        "S1-11",
+        "S2-09",
+        "S2-10"
+      ]
+    },
+    {
+      "id": "EV-153",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/repair-bank-http.log",
+      "sha256": "d0ade956f4ee7f5b73d7d5d996391f743d38a12cd94e96a2281d3e83d72cb4b0",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.083072+08:00",
+      "checkIds": [
+        "G-08",
+        "S1-05",
+        "S2-01",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-154",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/repair-bank-http-meta.json",
+      "sha256": "696d4c0dad008e116a7952d6db90b74a63588c7e4898c549e148c57804710921",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.083072+08:00",
+      "checkIds": [
+        "G-08",
+        "S1-05",
+        "S2-01",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-155",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/repair_bank_http.py",
+      "sha256": "cb9bf3d2c94bf760b03a2cd1a153c310a56e6f2663e23d30abe93e1271fc1576",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.083072+08:00",
+      "checkIds": [
+        "G-08",
+        "S1-05",
+        "S2-01",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-156",
+      "kind": "STATE_FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/repair-bank-http-result.json",
+      "sha256": "997dfe6d6533b91547570fc2a58e716d99e3369847bca5ee5c81dba6e44672d0",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.083072+08:00",
+      "checkIds": [
+        "G-08",
+        "S1-05",
+        "S2-01",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-157",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/repair-bank-http-server.log",
+      "sha256": "50d76b17c799a24a0049f8daeb4a2ec832b4eca95016f04a5a01fdec825684b6",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.083072+08:00",
+      "checkIds": [
+        "G-08",
+        "S1-05",
+        "S2-01",
+        "S2-04"
+      ]
+    },
+    {
+      "id": "EV-158",
+      "kind": "REPAIR_COMPARISON",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/repair-before-after.json",
+      "sha256": "d4720c491dffcc73231a33e3d62a16005b1bc13d5cb0895800e67fa12306a8d1",
+      "sourceCommits": [
+        "2708c13de67db48877bf54c5e11929c9187a758a",
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.088584+08:00",
+      "checkIds": [
+        "G-08",
+        "G-09",
+        "S1-05",
+        "S1-11",
+        "S2-01",
+        "S2-04",
+        "S2-09",
+        "S2-10"
+      ]
+    },
+    {
+      "id": "EV-159",
+      "kind": "RETRY_EVIDENCE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/port-conflict-historical-reopen.log",
+      "sha256": "6bd6632d9b43dbe3ba02d398535bcf3c962b0c679813034d087820311901c126",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.089595+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-160",
+      "kind": "RETRY_EVIDENCE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/port-conflict-historical-reopen-meta.json",
+      "sha256": "88f7a56f3bb11a4f0ec84680b39e0918739c671a66c7b941972f2db03019d81f",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.090590+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-161",
+      "kind": "RETRY_EVIDENCE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/port-conflict-candidate-reopen-server.log",
+      "sha256": "11b3ec9560607eb69c1c70ec0b4afa601cef0750085b17268d0fea4a92cda4b9",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.091597+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-162",
+      "kind": "RETRY_EVIDENCE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/historical-reopen-absolute-invocation.log",
+      "sha256": "b2f8158be507875ce23103bbe8a98d043d183d1b491cfcf48ea68725e22705f7",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.091597+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-163",
+      "kind": "RETRY_EVIDENCE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/historical-reopen-absolute-invocation-meta.json",
+      "sha256": "faa66a5f58a1b24af751f501543dec03952a60d580440c169df7f44cdcf9c9de",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.092590+08:00",
+      "checkIds": [
+        "G-07",
+        "G-08",
+        "G-10",
+        "S1-05",
+        "S1-08",
+        "E2E-A",
+        "S2-01",
+        "S2-12",
+        "E2E-M"
+      ]
+    },
+    {
+      "id": "EV-164",
+      "kind": "PREFLIGHT_EVIDENCE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-gate-tests-windows-line-endings.log",
+      "sha256": "475a067d4293d9c7e6ffef87c21d7194787137fa1aed4ecc08c180b37c5ba3ae",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.093597+08:00",
+      "checkIds": [
+        "G-01"
+      ]
+    },
+    {
+      "id": "EV-165",
+      "kind": "PREFLIGHT_EVIDENCE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/candidate-gate-tests-windows-line-endings-meta.json",
+      "sha256": "6ca165a65d03afc4379837d4ad5b1c50c6c34cddb541ff55bcaf27a9087804b8",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.094600+08:00",
+      "checkIds": [
+        "G-01"
+      ]
+    },
+    {
+      "id": "EV-166",
+      "kind": "PREFLIGHT_EVIDENCE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/gate-preflight.json",
+      "sha256": "f71e9d2c72e1c47450ecbb11d096268f3c9da856643ba23dda2d6e45e9433138",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.102261+08:00",
+      "checkIds": [
+        "G-01"
+      ]
+    },
+    {
+      "id": "EV-167",
+      "kind": "PREFLIGHT_EVIDENCE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/gate-preflight-03.json",
+      "sha256": "addc8c9ae54c3598a3d15bccfece8dfe1abc547cae55d875ec9fee662d16ed54",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.102261+08:00",
+      "checkIds": [
+        "G-01"
+      ]
+    },
+    {
+      "id": "EV-168",
+      "kind": "COMMAND_LOG",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/evidence-review.log",
+      "sha256": "4940496fca875652dc6c72c3cf0ff954605f33a6acb3fd2667dfa55053231882",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.215817+08:00",
+      "checkIds": [
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-169",
+      "kind": "COMMAND_METADATA",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/evidence-review-meta.json",
+      "sha256": "6d789d96c35ee0d6faed98e70daca9b2c59842f5a2d41665d80e8df9709d955f",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.215817+08:00",
+      "checkIds": [
+        "G-13",
+        "S1-16"
+      ]
+    },
+    {
+      "id": "EV-170",
+      "kind": "FIXTURE",
+      "path": "D:/temp/gass-s2-attempt02-x65t1d/check_evidence.py",
+      "sha256": "6464ea708d0965df55a1ed50503cbce0f61347897268bd297c582f4ff3fd352e",
+      "sourceCommits": [
+        "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89"
+      ],
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "capturedAt": "2026-11-26T14:04:05.215817+08:00",
+      "checkIds": [
+        "G-13",
+        "S1-16"
+      ]
+    }
+  ]
+}

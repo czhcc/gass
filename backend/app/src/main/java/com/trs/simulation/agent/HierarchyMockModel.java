@@ -8,6 +8,7 @@ import com.trs.simulation.action.expression.CelExpressions;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.common.context.HierarchyData;
 import com.trs.simulation.evidence.TaskEvidence;
+import com.trs.simulation.state.VisibilityPolicy;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.TextBlock;
 import io.agentscope.core.message.ToolUseBlock;
@@ -125,6 +126,9 @@ public final class HierarchyMockModel implements Model {
 
     private Candidate candidate(AgentDefinition worker, TaskRequest request) {
         var state = host.state();
+        var scope = host.visibleIds(worker);
+        var hidden = VisibilityPolicy.hiddenIds(state, scope);
+        var scopedState = VisibilityPolicy.project(state, scope);
         var history = host.history();
         var handled = TaskEvidence.handledInputs(history);
         var team = host.scenario().team();
@@ -141,7 +145,7 @@ public final class HierarchyMockModel implements Model {
                 String inputId = null;
                 if (inputBound || rule.eventType() != null) {
                     var input = history.stream()
-                            .filter(e -> e.eventType().equals("SIMULATION_EVENT_CREATED")
+                            .filter(e -> TaskEvidence.visibleInput(e, scope, hidden)
                                     && capability.targetId().equals(e.payload().get("targetId")))
                             .filter(e -> rule.eventType() == null
                                     || rule.eventType().equals(e.payload().get("eventType")))
@@ -173,10 +177,11 @@ public final class HierarchyMockModel implements Model {
                     }
                     if (!ready) continue;
                 }
-                var variables = HierarchyData.variables(host.initial(), state, Map.of(), 0);
+                var variables = HierarchyData.variables(
+                        VisibilityPolicy.project(host.initial(), scope), scopedState, Map.of(), 0);
                 variables.put(
                         "target",
-                        HierarchyData.json(state.entities().stream()
+                        HierarchyData.json(scopedState.entities().stream()
                                 .filter(e -> e.id().equals(capability.targetId()))
                                 .findFirst()
                                 .orElseThrow()));

@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "stage": 2,
+  "attempt": 2,
+  "status": "PASSED",
+  "exitCode": 0,
+  "nextStageAllowed": true,
+  "startedAt": "2026-11-26T06:04:59.199729+00:00",
+  "endedAt": "2026-11-26T06:04:59.702056+00:00",
+  "reason": null,
+  "baselineCommit": "2708c13de67db48877bf54c5e11929c9187a758a",
+  "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+  "checkoutHead": "c095a79cac400b8aac12723a2bdfc72ef9e41397",
+  "checkManifestSha256": "ad0697d6c94a929d51c1a09317d9517993e4307383c469c6129c371bd111121b",
+  "evidenceIndexSha256": "63d860ac9337c4ed6558c824daa484143358a6ea54ba41f0c24d0c33ccf0a26d",
+  "reviewerPayloadSha256": "a00e5955472f517bebd5eee7997c23279ab4df1d1c9fd688758276129ef07488",
+  "gateImplementationSha256": "e107de6d89ce27aac532c98a3778497845ce002ee34aaeea48ad309edcdbb21e",
+  "reviewerSessionId": "gass-s2-attempt02-x65t1d",
+  "requiredChecks": 46,
+  "requiredCommandRuns": 33,
+  "verifiedEvidenceFiles": 170,
+  "testReports": {
+    "CMD-BASELINE-PNPM-RETRY-TEST": {
+      "total": 82,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 13
+    },
+    "CMD-CANDIDATE-PNPM-RETRY-TEST": {
+      "total": 82,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 13
+    },
+    "CMD-BASELINE-MAVEN": {
+      "total": 94,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 20
+    },
+    "CMD-CANDIDATE-MAVEN": {
+      "total": 109,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 21
+    },
+    "CMD-BASELINE-QUERY-OBJECTIVE": {
+      "total": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-QUERY-OBJECTIVE": {
+      "total": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-REVIEW-COMMIT": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-REVIEW-EVIDENCE": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-REVIEW-ONTOLOGY": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-REVIEW-VISIBILITY": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    }
+  }
+}

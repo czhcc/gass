@@ -7,6 +7,7 @@ import com.trs.simulation.SimulationTypes.Decision;
 import com.trs.simulation.SimulationTypes.Outcome;
 import com.trs.simulation.SimulationTypes.State;
 import com.trs.simulation.SimulationTypes.World;
+import com.trs.simulation.state.VisibilityPolicy;
 
 /**
  * Pure domain action validation and effects, without persistence or SDK dependencies. @author agent
@@ -14,7 +15,7 @@ import com.trs.simulation.SimulationTypes.World;
 public interface DomainEnvironment {
     /** Projects domain-generated objects into an authorized observation scope. @author agent */
     default java.util.Set<String> observationScope(SimulationTypes.AgentDefinition agent, SimulationTypes.State state) {
-        return new java.util.HashSet<>(agent.visibleEntityIds());
+        return VisibilityPolicy.readableIds(agent, state);
     }
 
     /** Validates initial domain invariants before a template is stored. @author agent */

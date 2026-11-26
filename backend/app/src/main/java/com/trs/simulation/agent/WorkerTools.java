@@ -6,6 +6,7 @@ import com.trs.simulation.SimulationTypes.Decision;
 import com.trs.simulation.SimulationTypes.TaskRecord;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.graph.RunGraphReadService;
+import com.trs.simulation.state.VisibilityPolicy;
 import io.agentscope.core.message.ToolResultBlock;
 import io.agentscope.core.tool.AgentTool;
 import io.agentscope.core.tool.Tool;
@@ -69,17 +70,8 @@ final class WorkerTools {
                     Map<String, Object> arguments) {
         host.check();
         if (++queries > 5) throw new IllegalArgumentException("Task query limit reached");
-        var projected = new AgentDefinition(
-                agent.id(),
-                agent.name(),
-                agent.goal(),
-                agent.modelId(),
-                agent.allowedActions(),
-                List.copyOf(host.visibleIds(agent)),
-                agent.maxDecisions(),
-                agent.runtime());
         var args = arguments == null ? Map.<String, Object>of() : arguments;
-        var read = graph.read(projected, host.state(), tool, args);
+        var read = graph.read(agent, host.state(), tool, args);
         var result = read.result();
         if (Json.write(result).length() > 24000)
             throw new IllegalArgumentException("Query result too large; reduce limit");
@@ -98,9 +90,9 @@ final class WorkerTools {
                         "result",
                         result,
                         "scopeSize",
-                        projected.visibleEntityIds().size(),
+                        read.scopeIds().size(),
                         "scopeIds",
-                        projected.visibleEntityIds(),
+                        read.scopeIds(),
                         "reused",
                         read.reused()));
         var cited = new LinkedHashMap<>(result);
@@ -155,10 +147,24 @@ final class WorkerTools {
         var receipt = host.execute(
                 task, agent, new Decision(action, target, parameters, reason, "ENTITY"), version, inputEventId);
         if (!receipts.isEmpty()) return receipts.getFirst();
-        var cited = new LinkedHashMap<>(receipt);
+        var scope = host.visibleIds(agent);
+        boolean visible = receipt.get("relatedIds") instanceof List<?> related
+                && scope.containsAll(related)
+                && VisibilityPolicy.referencesVisible(
+                        receipt.get("parameters"), VisibilityPolicy.hiddenIds(host.state(), scope));
+        var cited = new LinkedHashMap<String, Object>();
+        if (visible) {
+            cited.putAll(receipt);
+        } else {
+            for (String field : List.of("taskId", "accepted", "code", "inputVersion", "outputVersion")) {
+                cited.put(field, receipt.get(field));
+            }
+        }
         host.history().reversed().stream()
-                .filter(event -> event.eventType().equals("ACTION_TASK_RECEIPT")
-                        && task.taskId().equals(event.payload().get("taskId")))
+                .filter(event -> visible
+                        && event.eventType().equals("ACTION_TASK_RECEIPT")
+                        && task.taskId().equals(event.payload().get("taskId"))
+                        && receipt.get("actionRunId").equals(event.payload().get("actionRunId")))
                 .findFirst()
                 .ifPresent(event -> cited.put("eventSequence", event.sequence()));
         receipts.add(cited);
