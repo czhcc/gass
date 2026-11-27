@@ -190,3 +190,11 @@
 - 分支 `feat/knowledge-graph-expansion`，新候选 `c5293b03c59a5f4909a87d24d52ce1fcdb3ec259`，原基线 `2aa1f0b2344393304ca966b64f42669658ea12dd`。冻结清单摘要 `4a9da357bc353a32c41635f86b7dad51f767106b2380d39905728bcb4e71fbad`、原批准记录及前两次独立验收保存。真实业务 MCP 保留原批准适用条件。
 - 开发自测通过后端 160 项、前端 86 项、原验收与累计回归 71 项、门禁单测 37 项、架构检查、后端打包及前端生产构建，实际 JVM 复测了待研判、活跃任务、ECA 和分支来源恢复。下一阶段准入等待第三次独立验收结果。
 - [第三次验收候选](acceptance/stage-05/candidate.json) · [缺陷根因与测试证据](acceptance/stage-05/development.md) · [第二次独立验收](acceptance/stage-05/attempt-02/review.md)
+
+## 第五阶段独立验收（第 3 次）
+
+- 原始基线 `2aa1f0b2344393304ca966b64f42669658ea12dd`，候选 `c5293b03c59a5f4909a87d24d52ce1fcdb3ec259`。冻结清单、批准、两份指南及前两轮验收记录和原始证据已逐项核验。
+- 100 项适用必验中 98 项通过，`E2E-K`、`S5-15` 未通过，真实业务 MCP 保持原批准不适用。STAGE05-001、STAGE05-002 复验通过，STAGE05-003 仍开放。
+- 旧候选的原夹具复现了缺陷，新候选通过原夹具。新增 14 个范围对照中，外部全量文字目标配 `RUN_GRAPH` 仍可用 UNKNOWN 的局部证据误完成，另有三种明确局部表达被拒绝。
+- 47 条冻结验证命令、后端候选 160 项、前端 86 项及生产构建通过。Stage Gate 退出 `1`，第六阶段未获准入。
+- [独立验收报告](acceptance/stage-05/attempt-03/review.md) · [机器可读结果](acceptance/stage-05/attempt-03/result.json) · [证据索引](acceptance/stage-05/attempt-03/evidence-index.json) · [Stage Gate 报告](acceptance/stage-05/attempt-03/gate-report.json)

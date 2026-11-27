@@ -1,0 +1,274 @@
+[
+  {
+    "case": "chinese-bounded-ranking",
+    "goal": "只对当前授权运行图谱中的路径进行排名。",
+    "declaredScope": "unset",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": false,
+    "proofSummary": null,
+    "deferralReasons": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "objectiveStatus": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "terminationReason": "OBJECTIVE_NOT_VERIFIABLE"
+  },
+  {
+    "case": "external-explicit",
+    "goal": "Rank paths for every person held by the source.",
+    "declaredScope": "EXTERNAL_GRAPH",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": false,
+    "proofSummary": null,
+    "deferralReasons": [
+      "EXTERNAL_COVERAGE_UNKNOWN"
+    ],
+    "objectiveStatus": [
+      "DATA_REQUIRED"
+    ],
+    "terminationReason": "OBJECTIVE_NOT_VERIFIABLE"
+  },
+  {
+    "case": "grounded-observation",
+    "goal": "Inspect the document_f.",
+    "declaredScope": "unset",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": true,
+    "proofSummary": "已观测当前授权运行图谱中的对象 document_f。外部全量数据未验证。",
+    "deferralReasons": [],
+    "objectiveStatus": [
+      "ANSWERED"
+    ],
+    "terminationReason": "OBJECTIVE_REVIEW_COMPLETED"
+  },
+  {
+    "case": "known-bounded-ranking",
+    "goal": "Rank paths within the current authorized run graph.",
+    "declaredScope": "unset",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": true,
+    "proofSummary": "在当前授权运行图谱中，路径排名的最高计数为 2，路径示例 [[\"document_f\",\"person_a\",\"person_c\"],[\"document_f\",\"person_a\",\"person_c\",\"organization_d\"]]。外部全量数据未验证。",
+    "deferralReasons": [],
+    "objectiveStatus": [
+      "ANSWERED"
+    ],
+    "terminationReason": "OBJECTIVE_REVIEW_COMPLETED"
+  },
+  {
+    "case": "mismatched-observation",
+    "goal": "Inspect the document_f.",
+    "declaredScope": "unset",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": false,
+    "proofSummary": null,
+    "deferralReasons": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "objectiveStatus": [
+      "UNVERIFIABLE"
+    ],
+    "terminationReason": "OBJECTIVE_NOT_VERIFIABLE"
+  },
+  {
+    "case": "mixed-local-then-provider",
+    "goal": "Start from the current authorized run graph and include the rest of the data provider's records in the comparison.",
+    "declaredScope": "unset",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": false,
+    "proofSummary": null,
+    "deferralReasons": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "objectiveStatus": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "terminationReason": "OBJECTIVE_NOT_VERIFIABLE"
+  },
+  {
+    "case": "paraphrased-bounded-ranking",
+    "goal": "Produce a ranking of paths restricted to the current authorized run graph.",
+    "declaredScope": "unset",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": false,
+    "proofSummary": null,
+    "deferralReasons": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "objectiveStatus": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "terminationReason": "OBJECTIVE_NOT_VERIFIABLE"
+  },
+  {
+    "case": "provider-implicit-maximum",
+    "goal": "Which person wins the ranking when the comparison includes everything the register holds?",
+    "declaredScope": "unset",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": false,
+    "proofSummary": null,
+    "deferralReasons": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "objectiveStatus": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "terminationReason": "OBJECTIVE_NOT_VERIFIABLE"
+  },
+  {
+    "case": "structured-local",
+    "goal": "Compare people only within the current authorized run graph.",
+    "declaredScope": "RUN_GRAPH",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": true,
+    "proofSummary": "在当前授权运行图谱中，路径排名的最高计数为 2，路径示例 [[\"document_f\",\"person_a\",\"person_c\"],[\"document_f\",\"person_a\",\"person_c\",\"organization_d\"]]。外部全量数据未验证。",
+    "deferralReasons": [],
+    "objectiveStatus": [
+      "ANSWERED"
+    ],
+    "terminationReason": "OBJECTIVE_REVIEW_COMPLETED"
+  },
+  {
+    "case": "structured-local-conflicts-with-goal",
+    "goal": "At tick 0, find the closest person across every record held by the registered data provider, including records absent from this snapshot.",
+    "declaredScope": "RUN_GRAPH",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": true,
+    "proofSummary": "在当前授权运行图谱中，路径排名的最高计数为 2，路径示例 [[\"document_f\",\"person_a\",\"person_c\"],[\"document_f\",\"person_a\",\"person_c\",\"organization_d\"]]。外部全量数据未验证。",
+    "deferralReasons": [],
+    "objectiveStatus": [
+      "ANSWERED"
+    ],
+    "terminationReason": "OBJECTIVE_REVIEW_COMPLETED"
+  },
+  {
+    "case": "structured-local-explicit-external-conflict",
+    "goal": "Rank paths in the entire external graph.",
+    "declaredScope": "RUN_GRAPH",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": false,
+    "proofSummary": null,
+    "deferralReasons": [
+      "EXTERNAL_COVERAGE_UNKNOWN"
+    ],
+    "objectiveStatus": [
+      "DATA_REQUIRED"
+    ],
+    "terminationReason": "OBJECTIVE_NOT_VERIFIABLE"
+  },
+  {
+    "case": "timed-bounded-ranking",
+    "goal": "At tick 0, rank paths within the current authorized run graph.",
+    "declaredScope": "unset",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": false,
+    "proofSummary": null,
+    "deferralReasons": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "objectiveStatus": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "terminationReason": "OBJECTIVE_NOT_VERIFIABLE"
+  },
+  {
+    "case": "timed-implicit-maximum",
+    "goal": "At tick 0, who wins if nothing kept in the source catalogue is excluded?",
+    "declaredScope": "unset",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": false,
+    "proofSummary": null,
+    "deferralReasons": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "objectiveStatus": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "terminationReason": "OBJECTIVE_NOT_VERIFIABLE"
+  },
+  {
+    "case": "unknown-network",
+    "goal": "Who is closest in the entire network, including any records we have yet to discover?",
+    "declaredScope": "unset",
+    "simulationTime": 0,
+    "coverage": "UNKNOWN",
+    "version": 0,
+    "references": [
+      10
+    ],
+    "completed": false,
+    "proofSummary": null,
+    "deferralReasons": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "objectiveStatus": [
+      "GOAL_SCOPE_UNDETERMINED"
+    ],
+    "terminationReason": "OBJECTIVE_NOT_VERIFIABLE"
+  }
+]

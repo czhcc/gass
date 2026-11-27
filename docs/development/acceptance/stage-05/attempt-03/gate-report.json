@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "stage": 5,
+  "attempt": 3,
+  "status": "FAILED",
+  "exitCode": 1,
+  "nextStageAllowed": false,
+  "startedAt": "2026-11-27T08:14:25.253754+00:00",
+  "endedAt": "2026-11-27T08:14:25.645513+00:00",
+  "reason": "required review check E2E-K: FAILED"
+}

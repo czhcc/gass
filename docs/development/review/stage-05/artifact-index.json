@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "attempt": 1,
+      "evidenceId": "EV-195",
+      "candidateCommit": "28b903253a2f73da33b60a9a0e836eaf8daae92e",
+      "originalFilename": "EV-195-ReviewerStage5GlobalClaimTest.java",
+      "originalSha256": "b098ed44aed6a475b4dbc4d3bb00aecd4274903df7b54011e9b742990e5a7bae",
+      "path": "fixtures/attempt-01/ReviewerStage5GlobalClaimTest.java",
+      "sha256": "9d55316bfbc29de8b75631b1fe8f88dffa71445f4e568d2344997033c5bb2214",
+      "changes": [
+        "Use a random per-run test administrator password from REVIEWER_FIXTURE_PASSWORD."
+      ]
+    },
+    {
+      "attempt": 1,
+      "evidenceId": "EV-196",
+      "candidateCommit": "28b903253a2f73da33b60a9a0e836eaf8daae92e",
+      "originalFilename": "EV-196-global-objective-scope.json",
+      "originalSha256": "790d8c17474bea266ae4bdaf090d589a107da703e889c7346922a610d19233f9",
+      "path": "evidence/attempt-01/EV-196-global-objective-scope.json",
+      "sha256": "790d8c17474bea266ae4bdaf090d589a107da703e889c7346922a610d19233f9",
+      "changes": []
+    },
+    {
+      "attempt": 2,
+      "evidenceId": "EV-314",
+      "candidateCommit": "177f62657eb800760a9263ed23989f1fb30596af",
+      "originalFilename": "EV-314-ReviewerStage5ScopeMatrixTest.java",
+      "originalSha256": "14a1afae6898a8be77bdc3568bd3ad9118954fb58955635b31c396774baf8972",
+      "path": "fixtures/attempt-02/ReviewerStage5ScopeMatrixTest.java",
+      "sha256": "7e2199f417061315263e38091667dee62991b43bc931abb188902e0423b68b9c",
+      "changes": [
+        "Use a random per-run test administrator password from REVIEWER_FIXTURE_PASSWORD."
+      ]
+    },
+    {
+      "attempt": 2,
+      "evidenceId": "EV-315",
+      "candidateCommit": "177f62657eb800760a9263ed23989f1fb30596af",
+      "originalFilename": "EV-315-scope-external.json",
+      "originalSha256": "8376bc77f1f8fdfa7db3ea68822d22a40d848bded7031fdf8f5b696951bc09bb",
+      "path": "evidence/attempt-02/EV-315-scope-external.json",
+      "sha256": "8376bc77f1f8fdfa7db3ea68822d22a40d848bded7031fdf8f5b696951bc09bb",
+      "changes": []
+    },
+    {
+      "attempt": 2,
+      "evidenceId": "EV-316",
+      "candidateCommit": "177f62657eb800760a9263ed23989f1fb30596af",
+      "originalFilename": "EV-316-scope-local.json",
+      "originalSha256": "6e5884472daac172ec3dd3d64fca11ab4354fbaff0c6b6d71870809d061b834a",
+      "path": "evidence/attempt-02/EV-316-scope-local.json",
+      "sha256": "6e5884472daac172ec3dd3d64fca11ab4354fbaff0c6b6d71870809d061b834a",
+      "changes": []
+    },
+    {
+      "attempt": 2,
+      "evidenceId": "EV-317",
+      "candidateCommit": "177f62657eb800760a9263ed23989f1fb30596af",
+      "originalFilename": "EV-317-scope-timed-provider.json",
+      "originalSha256": "3f247aaf8bb6196fdaca7cb9fc25201f696646f2ee9a1e4ab8308b3d0d91353b",
+      "path": "evidence/attempt-02/EV-317-scope-timed-provider.json",
+      "sha256": "3f247aaf8bb6196fdaca7cb9fc25201f696646f2ee9a1e4ab8308b3d0d91353b",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-335",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-335-ReviewerStage5NaturalScopeTest.java",
+      "originalSha256": "3c07c8f6077f718b24b78c6174106d55668547ba7026bc859cc868750126b774",
+      "path": "fixtures/attempt-03/ReviewerStage5NaturalScopeTest.java",
+      "sha256": "3e7b67075a6f3ae052b7eb939682372f1e06da7972198e9c621ec02066b9281d",
+      "changes": [
+        "Use a random per-run test administrator password from REVIEWER_FIXTURE_PASSWORD."
+      ]
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-337",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-337-natural-chinese-bounded-ranking.json",
+      "originalSha256": "f4af5a9f186aa9e5b9b5f65cb0b5afca922e2a53a79db00090e2e9a912b6c39f",
+      "path": "evidence/attempt-03/EV-337-natural-chinese-bounded-ranking.json",
+      "sha256": "f4af5a9f186aa9e5b9b5f65cb0b5afca922e2a53a79db00090e2e9a912b6c39f",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-338",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-338-natural-external-explicit.json",
+      "originalSha256": "cba46758119faaba09e5d9abda90265dbf1af3283d62c5bcc2ab81ef24d50ab8",
+      "path": "evidence/attempt-03/EV-338-natural-external-explicit.json",
+      "sha256": "cba46758119faaba09e5d9abda90265dbf1af3283d62c5bcc2ab81ef24d50ab8",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-339",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-339-natural-grounded-observation.json",
+      "originalSha256": "ec9f30b465e0a5765585a183cd8167db81551cafb0028d93e976eea1a3a03699",
+      "path": "evidence/attempt-03/EV-339-natural-grounded-observation.json",
+      "sha256": "ec9f30b465e0a5765585a183cd8167db81551cafb0028d93e976eea1a3a03699",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-340",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-340-natural-known-bounded-ranking.json",
+      "originalSha256": "031faefdbbac16e29cfaa0dc9e361b25fa70d92cffadd9d3aa9885c421fa77f9",
+      "path": "evidence/attempt-03/EV-340-natural-known-bounded-ranking.json",
+      "sha256": "031faefdbbac16e29cfaa0dc9e361b25fa70d92cffadd9d3aa9885c421fa77f9",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-341",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-341-natural-mismatched-observation.json",
+      "originalSha256": "4cb837871fd97cc3f346efeedb300c9de076666cf9215ea2df0ae833efc67467",
+      "path": "evidence/attempt-03/EV-341-natural-mismatched-observation.json",
+      "sha256": "4cb837871fd97cc3f346efeedb300c9de076666cf9215ea2df0ae833efc67467",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-342",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-342-natural-mixed-local-then-provider.json",
+      "originalSha256": "a2484f2bff4abe2df0183a42ff075898b2dae058a047b37aa4ea092b1a2213ba",
+      "path": "evidence/attempt-03/EV-342-natural-mixed-local-then-provider.json",
+      "sha256": "a2484f2bff4abe2df0183a42ff075898b2dae058a047b37aa4ea092b1a2213ba",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-343",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-343-natural-paraphrased-bounded-ranking.json",
+      "originalSha256": "445d1f6fa56d9656da8588b6dcd550d1a829098644ca98d5773e041cbe4cc11d",
+      "path": "evidence/attempt-03/EV-343-natural-paraphrased-bounded-ranking.json",
+      "sha256": "445d1f6fa56d9656da8588b6dcd550d1a829098644ca98d5773e041cbe4cc11d",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-344",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-344-natural-provider-implicit-maximum.json",
+      "originalSha256": "25b5b3b632465cf2d2704bc71dd6b691ef21e269ded532639f599a6fd92e1c7d",
+      "path": "evidence/attempt-03/EV-344-natural-provider-implicit-maximum.json",
+      "sha256": "25b5b3b632465cf2d2704bc71dd6b691ef21e269ded532639f599a6fd92e1c7d",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-345",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-345-natural-structured-local-conflicts-with-goal.json",
+      "originalSha256": "9e18da6b30799519356e720b59acb58c4263d49ee10531ce3e8a94c85a64c9cc",
+      "path": "evidence/attempt-03/EV-345-natural-structured-local-conflicts-with-goal.json",
+      "sha256": "9e18da6b30799519356e720b59acb58c4263d49ee10531ce3e8a94c85a64c9cc",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-346",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-346-natural-structured-local-explicit-external-conflict.json",
+      "originalSha256": "a8395a1b39d21e67f3c0253997e4237febe7ca9a5299a50b67a64e3918eb144d",
+      "path": "evidence/attempt-03/EV-346-natural-structured-local-explicit-external-conflict.json",
+      "sha256": "a8395a1b39d21e67f3c0253997e4237febe7ca9a5299a50b67a64e3918eb144d",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-347",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-347-natural-structured-local.json",
+      "originalSha256": "021f4e5b567db61e2c4ccab1e14b4d0e59a7b8ba5e9b049c490b81b0a3025fb7",
+      "path": "evidence/attempt-03/EV-347-natural-structured-local.json",
+      "sha256": "021f4e5b567db61e2c4ccab1e14b4d0e59a7b8ba5e9b049c490b81b0a3025fb7",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-348",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-348-natural-timed-bounded-ranking.json",
+      "originalSha256": "146be56f3a62610be51229eaf58529d8fb6e68bf5b9a2b7c2879ef5b73e94d18",
+      "path": "evidence/attempt-03/EV-348-natural-timed-bounded-ranking.json",
+      "sha256": "146be56f3a62610be51229eaf58529d8fb6e68bf5b9a2b7c2879ef5b73e94d18",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-349",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-349-natural-timed-implicit-maximum.json",
+      "originalSha256": "08fe66de5f7425529ff526d188e9df7b97f78ac49463c1029e866e509c789db5",
+      "path": "evidence/attempt-03/EV-349-natural-timed-implicit-maximum.json",
+      "sha256": "08fe66de5f7425529ff526d188e9df7b97f78ac49463c1029e866e509c789db5",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-350",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-350-natural-unknown-network.json",
+      "originalSha256": "8eac926dd7a6a0ec4bd61afb246cf4ef3f2448d3156b0b6b657af897dea4f553",
+      "path": "evidence/attempt-03/EV-350-natural-unknown-network.json",
+      "sha256": "8eac926dd7a6a0ec4bd61afb246cf4ef3f2448d3156b0b6b657af897dea4f553",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-351",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-351-natural-language-outcomes.json",
+      "originalSha256": "16351cdfceaf353a50ddbbb783f83f08305f275b5b5cadc3359344ec8d36833f",
+      "path": "evidence/attempt-03/EV-351-natural-language-outcomes.json",
+      "sha256": "16351cdfceaf353a50ddbbb783f83f08305f275b5b5cadc3359344ec8d36833f",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-355",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-355-ReviewerStage5ProofTest.java",
+      "originalSha256": "dfe2c270d2219150d8a42a6daf5f2fc8b8c3c4e76d1d44ae9fd598069c3e26b2",
+      "path": "fixtures/attempt-03/ReviewerStage5ProofTest.java",
+      "sha256": "dfe2c270d2219150d8a42a6daf5f2fc8b8c3c4e76d1d44ae9fd598069c3e26b2",
+      "changes": []
+    },
+    {
+      "attempt": 3,
+      "evidenceId": "EV-357",
+      "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+      "originalFilename": "EV-357-external-witness.json",
+      "originalSha256": "691e21d3813545eb09ee13e3433b919dfe488d54b2b5ee71aca7d30f9228718d",
+      "path": "evidence/attempt-03/EV-357-external-witness.json",
+      "sha256": "691e21d3813545eb09ee13e3433b919dfe488d54b2b5ee71aca7d30f9228718d",
+      "changes": []
+    }
+  ]
+}
