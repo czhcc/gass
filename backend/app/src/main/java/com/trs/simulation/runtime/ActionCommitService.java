@@ -124,16 +124,7 @@ final class ActionCommitService {
             int stateChangeSequence = 0;
             if (!diff.isEmpty()) {
                 OntologyConstraints.validateCandidate(store.frozenWorld(id), current, next);
-                int updated = db.update(
-                        "UPDATE simulation_run SET state_json=? WHERE id=?"
-                                + " AND JSON_EXTRACT(state_json,'$.version')=?",
-                        Json.write(next),
-                        id,
-                        current.version());
-                if (updated != 1) {
-                    throw new IllegalStateException("World version conflict");
-                }
-                db.update("INSERT INTO simulation_snapshot VALUES (?,?,?)", id, next.version(), Json.write(next));
+                store.saveGraph(current, next);
             }
             var meta = metadata(command, decision, current, next, diff, outcome);
             append(

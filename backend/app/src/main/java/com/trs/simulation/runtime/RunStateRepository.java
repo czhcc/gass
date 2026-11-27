@@ -77,6 +77,30 @@ final class RunStateRepository {
         return Json.read(one("SELECT scenario_json FROM simulation_run WHERE id=?", id), Scenario.class);
     }
 
+    void saveGraph(State current, State next) {
+        if (current.version() == next.version()) {
+            return;
+        }
+        int updated = db.update(
+                "UPDATE simulation_run SET state_json=? WHERE id=? AND JSON_EXTRACT(state_json,'$.version')=?",
+                Json.write(next),
+                current.runId(),
+                current.version());
+        if (updated != 1) {
+            throw new IllegalStateException("World version conflict");
+        }
+        db.update("INSERT INTO simulation_snapshot VALUES (?,?,?)", current.runId(), next.version(), Json.write(next));
+    }
+
+    long businessChangeCount(String id) {
+        return state(id).version()
+                - db.queryForObject("SELECT MIN(version) FROM simulation_snapshot WHERE run_id=?", Long.class, id)
+                - db.queryForObject("""
+                        SELECT COUNT(*) FROM simulation_event
+                        WHERE run_id=? AND event_type='WORLD_EXPANDED' AND JSON_EXTRACT(payload_json,'$.changed')=1
+                        """, Long.class, id);
+    }
+
     int eventCount(String id) {
         return db.queryForObject("SELECT COUNT(*) FROM simulation_event WHERE run_id=?", Integer.class, id);
     }

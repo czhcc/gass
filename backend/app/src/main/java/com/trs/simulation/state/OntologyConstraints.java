@@ -100,6 +100,24 @@ public final class OntologyConstraints {
 
     /** Validates the final state and compares immutable fields against the prior state. @author czhcc-trsdsj\codexsandboxoffline */
     public static void validateCandidate(World world, State before, State after) {
+        validateCandidate(world, before, after, Map.of());
+    }
+
+    /** 验证外部扩展。只有新导入账户的余额可作为分币种数据基线增量。 @author czhcc-trsdsj\codexsandboxoffline */
+    public static Map<String, Long> validateExternalCandidate(World world, State before, State after) {
+        Map<String, Long> importDelta = Map.of();
+        if ("bank".equals(world.domainCode())) {
+            var known = entities(before.entities());
+            var added = after.entities().stream()
+                    .filter(entity -> !known.containsKey(entity.id()))
+                    .toList();
+            importDelta = Map.copyOf(balancesByCurrency(new State(after.runId(), 0, 0, added, List.of())));
+        }
+        validateCandidate(world, before, after, importDelta);
+        return importDelta;
+    }
+
+    private static void validateCandidate(World world, State before, State after, Map<String, Long> importDelta) {
         require(after.entities().size() <= 200 && after.relations().size() <= 1000, "Graph budget exceeded");
         var oldEntities = entities(before == null ? List.of() : before.entities());
         var entities = entities(after.entities());
@@ -162,9 +180,11 @@ public final class OntologyConstraints {
             }
         }
         if ("bank".equals(world.domainCode())) {
-            var totals = bankTotals(after);
+            var totals = balancesByCurrency(after);
             if (before != null) {
-                require(totals.equals(bankTotals(before)), "Bank balances must be conserved by currency");
+                var expected = balancesByCurrency(before);
+                importDelta.forEach((currency, value) -> expected.merge(currency, value, Math::addExact));
+                require(totals.equals(expected), "Bank balances must be conserved by currency");
             }
         }
         if (world.ontology().stateConstraints() != null) {
@@ -187,7 +207,8 @@ public final class OntologyConstraints {
         return entities;
     }
 
-    private static Map<String, Long> bankTotals(State state) {
+    /** 分币种精确汇总账户余额并检测非法数值及溢出。 @author czhcc-trsdsj\codexsandboxoffline */
+    public static Map<String, Long> balancesByCurrency(State state) {
         var totals = new HashMap<String, Long>();
         for (var entity : state.entities()) {
             if (!"BANK_ACCOUNT".equals(entity.type())) {

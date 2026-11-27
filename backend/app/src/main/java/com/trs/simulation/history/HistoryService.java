@@ -38,7 +38,10 @@ public class HistoryService {
             List<Difference> relationDifferences,
             Map<String, Object> leftMetrics,
             Map<String, Object> rightMetrics,
-            String summary) {}
+            String summary,
+
+            @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+            Boolean comparableDataBaseline) {}
 
     private final RunService runs;
     private final JdbcTemplate db;
@@ -57,7 +60,9 @@ public class HistoryService {
         var result = new ArrayList<Checkpoint>();
         result.add(new Checkpoint(0, initial.version(), initial.simulationTime()));
         for (var event : runs.events(id, 0))
-            if (event.eventType().equals("WORLD_STATE_CHANGED"))
+            if (event.eventType().equals("WORLD_STATE_CHANGED")
+                    || event.eventType().equals("WORLD_EXPANDED")
+                            && Boolean.TRUE.equals(event.payload().get("changed")))
                 result.add(new Checkpoint(
                         event.sequence(),
                         ((Number) event.payload().get("version")).longValue(),
@@ -83,7 +88,8 @@ public class HistoryService {
         for (var event : events) {
             if (event.sequence() > sequence) break;
             time = event.simulationTime();
-            if (event.eventType().equals("WORLD_STATE_CHANGED"))
+            if (event.eventType().equals("WORLD_STATE_CHANGED")
+                    || event.eventType().equals("WORLD_EXPANDED"))
                 state = runs.replay(id, ((Number) event.payload().get("version")).longValue());
         }
         return new State(id, time, state.version(), state.entities(), state.relations());
@@ -145,6 +151,11 @@ public class HistoryService {
                 db.update("INSERT INTO simulation_snapshot VALUES (?,?,?)", child, state.version(), Json.write(state));
                 db.update("INSERT INTO simulation_usage(run_id) VALUES (?)", child);
                 db.update("INSERT INTO simulation_branch VALUES (?,?,?,?,?)", child, parent, sequence, label, key);
+                db.update("""
+                        INSERT INTO simulation_knowledge_import
+                        SELECT ?, candidate_id,provider_code,import_order,0,entity_count,identities_json,receipt_json
+                        FROM simulation_knowledge_import WHERE run_id=? AND event_sequence<=?
+                        """, child, parent, sequence);
                 append(
                         child,
                         "BRANCH_CREATED",
@@ -313,6 +324,9 @@ public class HistoryService {
         var relations = diff(
                 a.relations().stream().collect(java.util.stream.Collectors.toMap(Relation::id, e -> (Object) e)),
                 b.relations().stream().collect(java.util.stream.Collectors.toMap(Relation::id, e -> (Object) e)));
+        var leftData = dataBaseline(left);
+        var rightData = dataBaseline(right);
+        Boolean comparable = leftData.isEmpty() && rightData.isEmpty() ? null : leftData.equals(rightData);
         return new Comparison(
                 left,
                 right,
@@ -323,7 +337,16 @@ public class HistoryService {
                 entities.size()
                         + " changed entities; "
                         + relations.size()
-                        + " changed relations. SIMULATED results, not real-world facts.");
+                        + " changed relations. SIMULATED results, not real-world facts."
+                        + (Boolean.FALSE.equals(comparable) ? " External data baselines differ." : ""),
+                comparable);
+    }
+
+    private List<String> dataBaseline(String runId) {
+        return db.queryForList(
+                "SELECT candidate_id FROM simulation_knowledge_import WHERE run_id=? ORDER BY import_order",
+                String.class,
+                runId);
     }
 
     private List<Difference> diff(Map<String, Object> left, Map<String, Object> right) {

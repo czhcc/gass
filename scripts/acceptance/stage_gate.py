@@ -15,6 +15,15 @@ HEX_40 = re.compile(r"[0-9a-f]{40}")
 HEX_64 = re.compile(r"[0-9a-f]{64}")
 CHECK_ROW = re.compile(r"^\|\s*([A-Z][A-Z0-9-]+)\s*\|.*?\b(PASSED|FAILED|BLOCKED|NOT_APPLICABLE|NOT_RUN)\s*\|$", re.M)
 INFRASTRUCTURE = {"scripts/acceptance/stage_gate.py", "scripts/acceptance/test_stage_gate.py"}
+STAGE_FIVE_SUITES = {
+    "STAGE5-PROVIDER": "ReviewerStage5ProviderTest",
+    "STAGE5-IMPORT": "ReviewerStage5ImportTest",
+    "STAGE5-AUTHORITY": "ReviewerStage5AuthorityTest",
+    "STAGE5-REPLAY": "ReviewerStage5ReplayTest",
+    "STAGE5-EVIDENCE": "ReviewerStage5EvidenceTest",
+    "STAGE5-MCP-CONTRACT": "ReviewerStage5McpContractTest",
+    "STAGE5-LIVE-MCP": "ReviewerStage5LiveMcpTest",
+}
 COMMAND_PATTERNS = {
     "INPUT": r"git .*rev-parse",
     "STATIC": r"git .*diff",
@@ -45,6 +54,7 @@ COMMAND_PATTERNS = {
     "STAGE4-RULE-SAFETY": r"-Dtest=ReviewerStage4RuleSafetyTest .*test$",
     "STAGE4-RECOVERY": r"-Dtest=ReviewerStage4RecoveryTest .*test$",
     "STAGE4-MANAGEMENT": r"-Dtest=ReviewerStage4ManagementTest .*test$",
+    **{ident: rf"-Dtest={suite} .*test$" for ident, suite in STAGE_FIVE_SUITES.items()},
     "GATE-TEST": r"python(?:\.exe)? -m unittest discover -s scripts[/\\]acceptance -p test_stage_gate\.py$",
 }
 REQUIRED_SUITES = {
@@ -71,6 +81,7 @@ REQUIRED_SUITES = {
     "STAGE4-RULE-SAFETY": {"com.trs.studio.ReviewerStage4RuleSafetyTest"},
     "STAGE4-RECOVERY": {"com.trs.studio.ReviewerStage4RecoveryTest"},
     "STAGE4-MANAGEMENT": {"com.trs.studio.ReviewerStage4ManagementTest"},
+    **{ident: {f"com.trs.studio.{suite}"} for ident, suite in STAGE_FIVE_SUITES.items()},
 }
 
 
@@ -241,6 +252,17 @@ def verify_manifest(repo, stage_dir, stage):
             and verification["STAGE-GATE"]["required"] is True
             and verification["STAGE-GATE"]["target"] == "gate",
             "automatic Stage Gate must remain required")
+    if stage == 5:
+        require(manifest["previousStages"] == [1, 2, 3, 4], "stage five requires all four prerequisites")
+        live = check_ids["S5-C01"]
+        require(live["required"] is True and live["applicability"] == "EXTERNAL-MCP"
+                and live["verificationIds"] == ["STAGE5-LIVE-MCP"], "invalid stage five live MCP check")
+        for ident in STAGE_FIVE_SUITES:
+            command = verification[ident]
+            conditional = ident == "STAGE5-LIVE-MCP"
+            require(command["required"] is not conditional
+                    and command["target"] == ("conditional" if conditional else "candidate"),
+                    f"invalid stage five verification {ident}")
     return {**manifest, "candidateCommit": candidate}, digest, head
 
 
@@ -267,6 +289,24 @@ def verify_index(index, baseline, candidate):
     return assets
 
 
+def live_mcp_enabled(manifest):
+    conditions = index_by_id(manifest["conditions"], "frozen condition")
+    return conditions["EXTERNAL-MCP"]["enabled"] is True
+
+
+def verify_check_status(manifest, frozen, check):
+    ident = frozen["id"]
+    status = check["status"]
+    if manifest["stage"] == 5 and ident == "S5-C01" and not live_mcp_enabled(manifest):
+        require(status == "NOT_APPLICABLE", f"{ident} does not match approved applicability")
+        return False
+    if frozen["required"]:
+        require(status == "PASSED", f"required review check {ident}: {status}",
+                2 if status in {"NOT_RUN", "BLOCKED"} else 1)
+        return True
+    return False
+
+
 def verify_review(manifest, result, review, assets, digest, attempt):
     require(result["schemaVersion"] == 1 and result["stage"] == manifest["stage"]
             and result["attempt"] == attempt, "review stage or attempt differs")
@@ -288,14 +328,12 @@ def verify_review(manifest, result, review, assets, digest, attempt):
     frozen_checks = index_by_id(manifest["checks"], "frozen check")
     checks = index_by_id(result["checks"], "review check")
     require(checks.keys() == frozen_checks.keys(), "review check IDs differ from the frozen manifest")
+    applicable_checks = 0
     for ident, frozen in frozen_checks.items():
         check = checks[ident]
         require(type(frozen["required"]) is bool and check["required"] is frozen["required"],
                 f"required flag differs for {ident}")
-        if frozen["required"]:
-            status = check["status"]
-            require(status == "PASSED", f"required review check {ident}: {status}",
-                    2 if status in {"NOT_RUN", "BLOCKED"} else 1)
+        applicable_checks += verify_check_status(manifest, frozen, check)
         refs = check["evidenceRefs"]
         require(refs and all(ref in assets and ident in assets[ref]["checkIds"] for ref in refs),
                 f"missing candidate-bound evidence for {ident}", 2)
@@ -320,7 +358,7 @@ def verify_review(manifest, result, review, assets, digest, attempt):
                 and issue["status"] in {"OPEN", "CLOSED", "DEFERRED"}, f"invalid issue {ident}")
         require(issue["severity"] not in {"BLOCKER", "MAJOR"} or issue["status"] == "CLOSED",
                 f"unresolved {issue['severity']} issue {ident}")
-    return len(checks)
+    return applicable_checks if manifest["stage"] == 5 else len(checks)
 
 
 def match_commands(verification, commands):
@@ -389,8 +427,16 @@ def read_log(path):
     return data.decode("utf-16" if data.startswith((b"\xff\xfe", b"\xfe\xff")) else "utf-8-sig", errors="replace")
 
 
+def applicable_verification(manifest):
+    definitions = manifest["verification"]
+    if manifest.get("stage") != 5 or not live_mcp_enabled(manifest):
+        return definitions
+    return [({**item, "target": "candidate", "required": True} if item["id"] == "STAGE5-LIVE-MCP" else item)
+            for item in definitions]
+
+
 def verify_commands(manifest, result, assets):
-    matches = match_commands(manifest["verification"], result["commands"])
+    matches = match_commands(applicable_verification(manifest), result["commands"])
     used = set()
     summaries = {}
     for (verification, target), command in sorted(matches.items()):
@@ -576,8 +622,8 @@ def main():
     parser.add_argument("--attempt", type=int, default=2)
     parser.add_argument("--report", type=Path, help="alternate output file, useful for reruns")
     args = parser.parse_args()
-    if args.stage not in {1, 2, 3, 4} or args.attempt < (2 if args.stage == 1 else 1):
-        parser.error("supported attempts are stage 1 attempt 2+ and stages 2–4 attempt 1+")
+    if args.stage not in {1, 2, 3, 4, 5} or args.attempt < (2 if args.stage == 1 else 1):
+        parser.error("supported attempts are stage 1 attempt 2+ and stages 2–5 attempt 1+")
     repo = Path(__file__).resolve().parents[2]
     output = args.report or repo/f"docs/development/acceptance/stage-{args.stage:02}/attempt-{args.attempt:02}/gate-report.json"
     started = datetime.now(timezone.utc).isoformat()

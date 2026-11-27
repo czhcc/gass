@@ -303,6 +303,45 @@ class PreviousEvidenceTest(unittest.TestCase):
             gate.verify_reuse([self.original], [self.reused], [self.entry], {})
 
 
+
+class StageFiveGateTest(unittest.TestCase):
+    def test_cli_routes_stage_five(self):
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "report.json"
+            args = ["stage_gate.py", "--stage", "5", "--attempt", "1", "--report", str(report)]
+            with patch("sys.argv", args), patch.object(gate, "evaluate", return_value={"requiredChecks": 100}) as evaluate:
+                self.assertEqual(0, gate.main())
+            self.assertEqual((5, 1), evaluate.call_args.args[1:])
+            self.assertTrue(json.loads(report.read_text(encoding="utf-8"))["nextStageAllowed"])
+
+    def test_missing_stage_five_commands_include_live_only_when_approved(self):
+        definitions = [{"id": ident, "target": "candidate", "required": True} for ident in (
+            "STAGE5-PROVIDER", "STAGE5-IMPORT", "STAGE5-AUTHORITY", "STAGE5-REPLAY", "STAGE5-EVIDENCE", "STAGE5-MCP-CONTRACT"
+        )]
+        definitions.append({"id": "STAGE5-LIVE-MCP", "target": "conditional", "required": False})
+        manifest = {"stage": 5, "verification": definitions, "conditions": [{"id": "EXTERNAL-MCP", "enabled": False}]}
+        offline = gate.applicable_verification(manifest)
+        self.assertNotIn("STAGE5-LIVE-MCP", [item["id"] for item in offline if item["required"]])
+        with self.assertRaisesRegex(gate.GateError, "missing required command runs.*STAGE5-MCP-CONTRACT"):
+            gate.match_commands(offline, [])
+        manifest["conditions"][0]["enabled"] = True
+        online = gate.applicable_verification(manifest)
+        self.assertIn({"id": "STAGE5-LIVE-MCP", "target": "candidate", "required": True}, online)
+        with self.assertRaisesRegex(gate.GateError, "missing required command runs.*STAGE5-LIVE-MCP"):
+            gate.match_commands(online, [])
+
+    def test_mcp_item_uses_approved_condition(self):
+        check = {"id": "S5-C01", "required": True, "applicability": "EXTERNAL-MCP"}
+        manifest = {"stage": 5, "conditions": [{"id": "EXTERNAL-MCP", "enabled": False}]}
+        self.assertFalse(gate.verify_check_status(manifest, check, {"status": "NOT_APPLICABLE"}))
+        with self.assertRaisesRegex(gate.GateError, "not match approved applicability"):
+            gate.verify_check_status(manifest, check, {"status": "PASSED"})
+        manifest["conditions"][0]["enabled"] = True
+        self.assertTrue(gate.verify_check_status(manifest, check, {"status": "PASSED"}))
+        with self.assertRaises(gate.GateError) as failure:
+            gate.verify_check_status(manifest, check, {"status": "BLOCKED"})
+        self.assertEqual(2, failure.exception.exit_code)
+
 if __name__ == "__main__":
     unittest.main()
 

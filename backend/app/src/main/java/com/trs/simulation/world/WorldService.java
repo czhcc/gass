@@ -369,6 +369,9 @@ public class WorldService {
                             evaluation.requireQuiescence(),
                             evaluation.completionMode());
         }
+        if (s.expansionPolicy() != null) {
+            s.expansionPolicy().validate(w);
+        }
         require(Json.write(s).length() < 200000, "Scenario configuration too large");
         if (s.id() != null) scenario(s.id());
         var result = new Scenario(
@@ -382,7 +385,8 @@ public class WorldService {
                 s.objective() == null ? null : s.objective().strip(),
                 s.scheduling(),
                 evaluation,
-                s.ruleIds() == null ? null : s.ruleIds().stream().toList());
+                s.ruleIds() == null ? null : s.ruleIds().stream().toList(),
+                s.expansionPolicy());
         rules.freeze(w, result);
         db.update(
                 "INSERT INTO scenario VALUES (?,?) ON CONFLICT(id) DO UPDATE SET"

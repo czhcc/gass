@@ -112,7 +112,8 @@ class WorldCatalogMigrationTest {
                     ('legacy','USER_INTERVENTION','same-command','old','{}','{"accepted":true}',0,4)
                     """);
         }
-        var migration = Flyway.configure().dataSource(url, null, null).load();
+        var migration =
+                Flyway.configure().dataSource(url, null, null).target("13").load();
         assertEquals(1, migration.migrate().migrationsExecuted);
         assertEquals(0, migration.migrate().migrationsExecuted);
         try (var connection = DriverManager.getConnection(url);
@@ -133,6 +134,40 @@ class WorldCatalogMigrationTest {
             try (var checks = sql.executeQuery("PRAGMA foreign_key_check")) {
                 assertEquals(false, checks.next());
             }
+        }
+    }
+
+    @Test
+    void v14RetainsV13FrozenRulesAndCreatesEmptyExpansionStorage() throws Exception {
+        String url = "jdbc:sqlite:" + directory.resolve("v13.db");
+        Flyway.configure().dataSource(url, null, null).target("13").load().migrate();
+        try (var connection = DriverManager.getConnection(url);
+                var sql = connection.createStatement()) {
+            sql.executeUpdate("""
+                    INSERT INTO simulation_run (id,scenario_json,status,state_json,created_at,trigger_rules_json)
+                    VALUES ('existing','{"name":"old"}','PAUSED','{"version":0}',0,'[]')
+                    """);
+            sql.executeUpdate("INSERT INTO simulation_snapshot VALUES ('existing',0,'{\"version\":0}')");
+        }
+        var migration =
+                Flyway.configure().dataSource(url, null, null).target("14").load();
+        assertEquals(1, migration.migrate().migrationsExecuted);
+        assertEquals(0, migration.migrate().migrationsExecuted);
+        try (var connection = DriverManager.getConnection(url);
+                var sql = connection.createStatement();
+                var rows = sql.executeQuery("""
+                        SELECT scenario_json, trigger_rules_json,
+                            (SELECT state_json FROM simulation_snapshot WHERE run_id='existing'),
+                            (SELECT COUNT(*) FROM simulation_knowledge_candidate),
+                            (SELECT COUNT(*) FROM simulation_knowledge_import)
+                        FROM simulation_run WHERE id='existing'
+                        """)) {
+            assertTrue(rows.next());
+            assertEquals("{\"name\":\"old\"}", rows.getString(1));
+            assertEquals("[]", rows.getString(2));
+            assertEquals("{\"version\":0}", rows.getString(3));
+            assertEquals(0, rows.getInt(4));
+            assertEquals(0, rows.getInt(5));
         }
     }
 

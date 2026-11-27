@@ -135,8 +135,7 @@ final class RunTerminationPolicy {
                     "Global decision budget reached",
                     "");
         if (!scenario.eventDriven() && scenario.team() == null && checkLegacyEstimate(id, limits, total)) return true;
-        long changes = store.state(id).version()
-                - db.queryForObject("SELECT MIN(version) FROM simulation_snapshot WHERE run_id=?", Long.class, id);
+        long changes = store.businessChangeCount(id);
         if (changes >= limits.changeBudget())
             return finish(id, "MAX_STATE_CHANGES", changes, limits.changeBudget(), "State change budget reached", "");
         return false;

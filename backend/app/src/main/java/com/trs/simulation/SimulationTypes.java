@@ -2,6 +2,7 @@ package com.trs.simulation;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.trs.simulation.knowledge.ExpansionPolicy;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -345,7 +346,37 @@ public final class SimulationTypes {
 
             @JsonInclude(JsonInclude.Include.NON_NULL) EvaluationPolicy evaluationPolicy,
 
-            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> ruleIds) {
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> ruleIds,
+
+            @JsonInclude(JsonInclude.Include.NON_NULL) ExpansionPolicy expansionPolicy) {
+        /** 保留阶段四场景构造接口。 @author czhcc-trsdsj\codexsandboxoffline */
+        public Scenario(
+                String id,
+                String name,
+                String worldId,
+                List<AgentDefinition> agents,
+                int maxSteps,
+                int maxEvents,
+                TeamConfig team,
+                String objective,
+                SchedulingPolicy scheduling,
+                EvaluationPolicy evaluationPolicy,
+                List<String> ruleIds) {
+            this(
+                    id,
+                    name,
+                    worldId,
+                    agents,
+                    maxSteps,
+                    maxEvents,
+                    team,
+                    objective,
+                    scheduling,
+                    evaluationPolicy,
+                    ruleIds,
+                    null);
+        }
+
         /** Accepts the phase-three scheduling and evaluation configuration. @author czhcc-trsdsj\codexsandboxoffline */
         public Scenario(
                 String id,

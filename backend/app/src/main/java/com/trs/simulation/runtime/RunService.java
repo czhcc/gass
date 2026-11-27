@@ -22,6 +22,7 @@ import com.trs.simulation.model.ModelService;
 import com.trs.simulation.rule.TriggerRule;
 import com.trs.simulation.rule.TriggerRuleCatalog;
 import com.trs.simulation.scenario.ScenarioProfiles;
+import com.trs.simulation.state.OntologyConstraints;
 import com.trs.simulation.state.VisibilityPolicy;
 import com.trs.simulation.world.WorldService;
 import jakarta.annotation.PreDestroy;
@@ -278,6 +279,8 @@ public class RunService {
             db.update("DELETE FROM simulation_reasoning_action WHERE run_id=?", id);
             db.update("DELETE FROM simulation_reasoning_round WHERE run_id=?", id);
             db.update("DELETE FROM simulation_action_receipt WHERE run_id=?", id);
+            db.update("DELETE FROM simulation_knowledge_import WHERE run_id=?", id);
+            db.update("DELETE FROM simulation_knowledge_candidate WHERE run_id=?", id);
             db.update("DELETE FROM simulation_snapshot WHERE run_id=?", id);
             db.update("DELETE FROM simulation_event WHERE run_id=?", id);
             db.update("DELETE FROM simulation_task WHERE run_id=?", id);
@@ -287,10 +290,45 @@ public class RunService {
         active.remove(id);
     }
 
+    /** 当前运行可以接受显式的外部数据补充。 @author czhcc-trsdsj\codexsandboxoffline */
+    synchronized void checkKnowledgeBoundary(String id) {
+        if (!get(id).status().equals("PAUSED") || invocations.containsKey(id)) {
+            throw new IllegalStateException("External expansion requires an inactive paused run");
+        }
+    }
+
     /** Evaluates current domain metrics through its plugin. @author agent */
     public Map<String, Object> evaluate(String id) {
         var domain = store.frozenWorld(id).domainCode();
-        return domains.get(domain).evaluate(state(id));
+        var current = state(id);
+        var metrics = domains.get(domain).evaluate(current);
+        if (!"bank".equals(domain) || store.scenario(id).expansionPolicy() == null) {
+            return metrics;
+        }
+        var initial = OntologyConstraints.balancesByCurrency(store.initialState(id));
+        var balances = OntologyConstraints.balancesByCurrency(current);
+        var imported = new java.util.TreeMap<String, Long>();
+        db.query(
+                        "SELECT receipt_json FROM simulation_knowledge_import WHERE run_id=? ORDER BY import_order",
+                        (row, index) -> Json.read(row.getString(1), KnowledgeExpansionService.Receipt.class),
+                        id)
+                .forEach(receipt -> receipt.importedBalanceMinor()
+                        .forEach((currency, amount) -> imported.merge(currency, amount, Math::addExact)));
+        var actions = new java.util.TreeMap<String, Long>();
+        balances.forEach((currency, amount) -> actions.put(
+                currency,
+                Math.subtractExact(
+                        Math.subtractExact(amount, initial.getOrDefault(currency, 0L)),
+                        imported.getOrDefault(currency, 0L))));
+        var result = new java.util.LinkedHashMap<>(metrics);
+        if (balances.size() > 1) {
+            result.remove("totalMinor");
+        }
+        result.put("initialMinorByCurrency", initial);
+        result.put("currentMinorByCurrency", balances);
+        result.put("importDeltaMinorByCurrency", imported);
+        result.put("actionDeltaMinorByCurrency", actions);
+        return result;
     }
 
     /**
@@ -819,10 +857,7 @@ public class RunService {
             throw new IllegalStateException("Wait for the active round to finish cancelling");
         var current = state(id);
         if (current.version() != expectedVersion) throw new IllegalStateException("World version conflict");
-        if (current.version()
-                                - db.queryForObject(
-                                        "SELECT MIN(version) FROM simulation_snapshot WHERE run_id=?", Long.class, id)
-                        >= changeBudget
+        if (store.businessChangeCount(id) >= changeBudget
                 || store.eventCount(id) > store.scenario(id).maxEvents() - 10)
             throw new IllegalStateException("Run budget exhausted");
         var scenario = store.scenario(id);

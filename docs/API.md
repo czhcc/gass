@@ -207,3 +207,16 @@ V9 增加 simulation_task 和 simulation_usage，不清理原数据。完整协�
 V7 仅新增计时与原因字段，不清理数据、不改写历史事件。旧运行从升级后开始累计耗时，升级前耗时无法追溯；旧 COMPLETED 缺少原因时界面显示“历史已结束”，不能据此认定任务完成。预算结束后可以回放或从历史事件创建新分支，不能直接继续原终态运行。
 
 模型编辑：API Key 留空且密钥来源未变时保留已保存的密钥；填写新 API Key 会加密替换；填写不同的 API Key 环境变量名时改用该变量。响应仍只返回安全 View，不返回明文或密文。修改的运行参数在后续模型调用中生效。
+
+## 外部图谱数据扩展
+
+运行冻结场景的可选 `expansionPolicy`。配置包含 `operators`（允许查询及确认导入的登录名）、`sources`（已登记 providerCode 对应的 `mapping` 和 `initialIdentities`）及 `maxCalls`、`maxDepth`、`maxEntitiesPerCall`、`maxRelationsPerCall`、`maxTotalImported`。省略该配置时关闭外部查询和导入。连接器由服务端装配为 `KnowledgeGraphProvider` Bean，场景及请求只引用已登记代号。端点、只读工具清单、认证引用由部署配置持有。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | /api/runs/{id}/knowledge/query | 传入 `providerCode` 与 `query`（`operation` 为 SEARCH、GET_ENTITY 或 EXPAND，另有 `selector`、`depth`、`limit`）。返回服务端候选、输入图谱版本，以及来源修订、取数时间、查询范围、完整性和分页标识。 |
+| POST | /api/runs/{id}/knowledge/imports | 传入 `candidateId` 确认该批次。返回导入收据、数据来源、映射版本、事件序号、图谱版本、补充字段、冲突和分币种余额增量。重复确认同一批次返回原收据。 |
+
+操作人由登录会话确认。每次查询开始和返回后均检查运行保持暂停且无在途轮次，导入时再次复验候选身份、版本、生命周期、五分钟有效期和预算。候选只适用于发起它的运行和操作人。派生分支继承分支点之前已导入的数据及身份映射，可在外部源断开时读取，不接受父分支生成的候选 ID。
+
+导入成功写入来源为 `EXTERNAL_IMPORT` 的 `WORLD_EXPANDED`。真实数据变化增加图谱版本，模拟时间和轮次保持原值。导入采用 FILL_MISSING，不覆盖已有属性或恢复失效关系。启用扩展的银行运行评价分别提供 `initialMinorByCurrency`、`currentMinorByCurrency`、`importDeltaMinorByCurrency` 和 `actionDeltaMinorByCurrency`。分支比较记录已导入批次的基线是否一致。
