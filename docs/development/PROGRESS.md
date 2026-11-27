@@ -169,3 +169,10 @@
 - 100 项适用必验中 95 项通过、5 项失败，真实只读业务 MCP 条件不适用。待修复 STAGE05-001 包循环、STAGE05-002 分支字段来源丢失、STAGE05-003 局部证据错误完成外部全图目标。
 - 候选后端 151 项、前端 86 项及生产构建通过。Stage Gate 退出 `1`，`nextStageAllowed=false`，第六阶段未获准入。
 - [独立验收报告](acceptance/stage-05/attempt-01/review.md) · [机器可读结果](acceptance/stage-05/attempt-01/result.json) · [证据索引](acceptance/stage-05/attempt-01/evidence-index.json) · [Stage Gate 报告](acceptance/stage-05/attempt-01/gate-report.json)
+
+## 第五阶段缺陷修复（待重新验收）
+
+- 原候选 `28b903253a2f73da33b60a9a0e836eaf8daae92e`，修复候选 `177f62657eb800760a9263ed23989f1fb30596af`。原基线 `2aa1f0b2344393304ca966b64f42669658ea12dd`、冻结清单 SHA-256 `4a9da357bc353a32c41635f86b7dad51f767106b2380d39905728bcb4e71fbad`、批准及第一次独立验收记录保留。
+- STAGE05-001 将冻结配置移至无业务依赖的共享契约。STAGE05-002 按历史分支截点保留原始来源运行与事件序号。STAGE05-003 由服务端区分局部与外部全图目标并验证证据范围，覆盖未验证时记录待补数据。
+- 后端 155 项、前端 86 项、累计原夹具 66 项及门禁单测 37 项通过。架构检查、Spotless、生产构建、真实 JVM 的分支来源、待研判和 ECA 恢复复测通过。
+- [复验候选登记](acceptance/stage-05/candidate.json) · [缺陷根因与实际测试证据](acceptance/stage-05/development.md) · [第一次独立验收](acceptance/stage-05/attempt-01/review.md)
