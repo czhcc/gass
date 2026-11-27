@@ -183,3 +183,10 @@
 - 100 项适用必验中 98 项通过、2 项失败，真实只读 MCP 业务联调条件不适用。原始夹具在旧候选上复现，在新候选通过。STAGE05-001、STAGE05-002 关闭，STAGE05-003 仍开放，影响 `E2E-K`、`S5-15`。
 - 新的范围对照验证合法局部目标仍可完成。含逻辑时刻的全数据源目标仍会用外部覆盖 UNKNOWN 的局部证据完成。37 项门禁单测、候选后端 155 项、前端 86 项及构建均通过，独立 Stage Gate 退出 `1`，第六阶段未获准入。
 - [独立验收报告](acceptance/stage-05/attempt-02/review.md) · [机器可读结果](acceptance/stage-05/attempt-02/result.json) · [证据索引](acceptance/stage-05/attempt-02/evidence-index.json) · [Stage Gate 报告](acceptance/stage-05/attempt-02/gate-report.json)
+
+## 第五阶段第二次缺陷修复（待第三次独立验收）
+
+- 本轮仅修复 STAGE05-003（E2E-K、S5-15）。原夹具在 `177f62657eb800760a9263ed23989f1fb30596af` 上确认，旧逻辑把评价时刻误用为局部范围依据。修复后，目标完成、运行终止及最终报告共用服务端证据充分性校验。无明确范围的全量请求待补证；可证实的当前图谱局部目标和明确来源记录的授权存在性目标仍可完成。
+- 分支 `feat/knowledge-graph-expansion`，新候选 `c5293b03c59a5f4909a87d24d52ce1fcdb3ec259`，原基线 `2aa1f0b2344393304ca966b64f42669658ea12dd`。冻结清单摘要 `4a9da357bc353a32c41635f86b7dad51f767106b2380d39905728bcb4e71fbad`、原批准记录及前两次独立验收保存。真实业务 MCP 保留原批准适用条件。
+- 开发自测通过后端 160 项、前端 86 项、原验收与累计回归 71 项、门禁单测 37 项、架构检查、后端打包及前端生产构建，实际 JVM 复测了待研判、活跃任务、ECA 和分支来源恢复。下一阶段准入等待第三次独立验收结果。
+- [第三次验收候选](acceptance/stage-05/candidate.json) · [缺陷根因与测试证据](acceptance/stage-05/development.md) · [第二次独立验收](acceptance/stage-05/attempt-02/review.md)

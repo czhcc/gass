@@ -2,16 +2,16 @@
   "schemaVersion": 1,
   "stage": 5,
   "status": "PENDING_INDEPENDENT_REVIEW",
-  "reviewAttempt": 2,
+  "reviewAttempt": 3,
   "baselineCommit": "2aa1f0b2344393304ca966b64f42669658ea12dd",
-  "candidateCommit": "177f62657eb800760a9263ed23989f1fb30596af",
-  "candidateCommittedAt": "2026-11-27T14:55:15+08:00",
-  "registeredAt": "2026-11-27T14:56:03.849087+08:00",
+  "candidateCommit": "c5293b03c59a5f4909a87d24d52ce1fcdb3ec259",
+  "candidateCommittedAt": "2026-11-27T15:50:45+08:00",
+  "registeredAt": "2026-11-27T15:51:59.739284+08:00",
   "checkManifest": "check-manifest.json",
   "checkManifestSha256": "4a9da357bc353a32c41635f86b7dad51f767106b2380d39905728bcb4e71fbad",
   "approvalRecord": "check-manifest.json#approval",
   "approvedAt": "2026-11-27T11:37:10.3187195+08:00",
   "developmentReport": "development.md",
-  "previousCandidateCommit": "28b903253a2f73da33b60a9a0e836eaf8daae92e",
-  "previousAttemptReport": "attempt-01/review.md"
+  "previousCandidateCommit": "177f62657eb800760a9263ed23989f1fb30596af",
+  "previousAttemptReport": "attempt-02/review.md"
 }
