@@ -10,6 +10,7 @@ import com.trs.simulation.SimulationTypes.World;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.domain.DomainEnvironment;
 import com.trs.simulation.domain.examples.Examples;
+import com.trs.simulation.rule.TriggerRuleCatalog;
 import com.trs.simulation.scenario.ScenarioProfiles;
 import com.trs.simulation.state.OntologyConstraints;
 import java.util.HashMap;
@@ -51,11 +52,14 @@ public class WorldService {
     private final JdbcTemplate db;
     private final TransactionTemplate tx;
     private final Map<String, DomainEnvironment> domains = new HashMap<>();
+    private final TriggerRuleCatalog rules;
 
     /** Injects persistence and transaction boundaries. @author agent */
-    public WorldService(JdbcTemplate db, TransactionTemplate tx, List<DomainEnvironment> plugins) {
+    public WorldService(
+            JdbcTemplate db, TransactionTemplate tx, List<DomainEnvironment> plugins, TriggerRuleCatalog rules) {
         this.db = db;
         this.tx = tx;
+        this.rules = rules;
         plugins.forEach(p -> domains.put(p.domainCode(), p));
     }
 
@@ -377,7 +381,9 @@ public class WorldService {
                 s.team(),
                 s.objective() == null ? null : s.objective().strip(),
                 s.scheduling(),
-                evaluation);
+                evaluation,
+                s.ruleIds() == null ? null : s.ruleIds().stream().toList());
+        rules.freeze(w, result);
         db.update(
                 "INSERT INTO scenario VALUES (?,?) ON CONFLICT(id) DO UPDATE SET"
                         + " definition_json=excluded.definition_json",

@@ -96,6 +96,47 @@ class WorldCatalogMigrationTest {
     }
 
     @Test
+    void v13PreservesTheV12ReceiptsAndAcceptsSeparateRuleCommands() throws Exception {
+        String url = "jdbc:sqlite:" + directory.resolve("v12.db");
+        Flyway.configure().dataSource(url, null, null).target("12").load().migrate();
+        try (var connection = DriverManager.getConnection(url);
+                var sql = connection.createStatement()) {
+            sql.execute("PRAGMA foreign_keys=ON");
+            sql.executeUpdate("""
+                    INSERT INTO simulation_run(id,scenario_json,status,state_json,created_at)
+                    VALUES ('legacy','{}','PAUSED','{}',0)
+                    """);
+            sql.executeUpdate("INSERT INTO simulation_snapshot VALUES ('legacy',0,'{}')");
+            sql.executeUpdate("""
+                    INSERT INTO simulation_action_receipt VALUES
+                    ('legacy','USER_INTERVENTION','same-command','old','{}','{"accepted":true}',0,4)
+                    """);
+        }
+        var migration = Flyway.configure().dataSource(url, null, null).load();
+        assertEquals(1, migration.migrate().migrationsExecuted);
+        assertEquals(0, migration.migrate().migrationsExecuted);
+        try (var connection = DriverManager.getConnection(url);
+                var sql = connection.createStatement()) {
+            sql.execute("PRAGMA foreign_keys=ON");
+            sql.executeUpdate("""
+                    INSERT INTO simulation_action_receipt VALUES
+                    ('legacy','SYSTEM_RULE','same-command','new','{}','{"accepted":false}',0,5)
+                    """);
+            try (var rows = sql.executeQuery("""
+                    SELECT receipt_json,simulation_time FROM simulation_action_receipt
+                    WHERE origin='USER_INTERVENTION' AND command_id='same-command'
+                    """)) {
+                assertTrue(rows.next());
+                assertEquals("{\"accepted\":true}", rows.getString(1));
+                assertEquals(4, rows.getLong(2));
+            }
+            try (var checks = sql.executeQuery("PRAGMA foreign_key_check")) {
+                assertEquals(false, checks.next());
+            }
+        }
+    }
+
+    @Test
     void resetIsOneTimeAndRetainsAccountsAndCredentials() throws Exception {
         String url = "jdbc:sqlite:" + directory.resolve("migration.db");
         Flyway.configure().dataSource(url, null, null).target("5").load().migrate();

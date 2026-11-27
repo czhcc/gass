@@ -86,6 +86,31 @@ class StageThreeGateTest(unittest.TestCase):
             gate.match_commands(definitions, [])
 
 
+class StageFourGateTest(unittest.TestCase):
+    def test_stage_four_runs_through_the_same_evaluator(self):
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "report.json"
+            with patch("sys.argv", ["stage_gate.py", "--stage", "4", "--attempt", "1", "--report", str(report)]):
+                with patch.object(gate, "evaluate", return_value={"requiredChecks": 79}) as evaluate:
+                    self.assertEqual(0, gate.main())
+            self.assertEqual((4, 1), evaluate.call_args.args[1:])
+
+    def test_stage_four_requires_all_four_specialized_suites(self):
+        definitions = []
+        for ident, suite in {
+            "STAGE4-PROPAGATION": "ReviewerStage4PropagationTest",
+            "STAGE4-RULE-SAFETY": "ReviewerStage4RuleSafetyTest",
+            "STAGE4-RECOVERY": "ReviewerStage4RecoveryTest",
+            "STAGE4-MANAGEMENT": "ReviewerStage4ManagementTest",
+        }.items():
+            self.assertRegex(f"mvn -Dtest={suite} -Dsurefire.failIfNoSpecifiedTests=false test",
+                             gate.COMMAND_PATTERNS[ident])
+            self.assertEqual({f"com.trs.studio.{suite}"}, gate.REQUIRED_SUITES[ident])
+            definitions.append({"id": ident, "target": "candidate", "required": True})
+        with self.assertRaisesRegex(gate.GateError, "missing required command runs"):
+            gate.match_commands(definitions, [])
+
+
 class ReviewerTest(unittest.TestCase):
     def setUp(self):
         self.result = {

@@ -19,6 +19,9 @@ export const terminationMessages: Record<string, [string, string]> = {
   MAX_STEPS: ['推演轮数达到上限', 'Simulation round limit reached'],
   MAX_EVENTS: ['事件数量达到预算限制（预留 10 条审计事件）', 'Event limit reached (10 audit events reserved)'],
   MAX_WORK_PER_TIME: ['同一模拟时刻的处理预算已用尽，待办项已保留', 'Work limit for this simulation time reached; pending work is retained'],
+  MAX_RULE_DEPTH: ['达到规则因果深度上限', 'Rule causal depth limit reached'],
+  MAX_RULE_FAN_OUT: ['达到单个事件的规则派生上限', 'Rule fan-out limit reached'],
+  MAX_RULE_WORK: ['达到运行的规则待办总量上限', 'Run rule work limit reached'],
   MAX_RUNTIME: ['实际推演耗时达到上限', 'Active computation time limit reached'],
   MAX_AGENT_DECISIONS: ['尚未结束的 Agent 均已耗尽各自的决策次数', 'All remaining agents exhausted their decision limits'],
   MAX_DECISIONS: ['运行总决策次数达到上限', 'Global decision limit reached'],
@@ -52,6 +55,10 @@ const titles: Record<string, [string, string]> = {
   SIMULATION_EVENT_SCHEDULED: ['已安排输入事件', 'Input event scheduled'], SIMULATION_EVENT_CREATED: ['输入事件已送达', 'Input event delivered'],
   SIMULATION_CLOCK_ADVANCED: ['已推进模拟时钟', 'Simulation clock advanced'],
   DOMAIN_EVENT_SCHEDULED: ['已安排领域事件', 'Domain event scheduled'], DOMAIN_EVENT_PROCESSED: ['领域事件已处理', 'Domain event processed'],
+  RULE_ACTION_SCHEDULED: ['已安排规则行动', 'Rule action scheduled'],
+  RULE_ACTION_DECISION: ['规则发起行动', 'Rule proposed an action'],
+  RULE_ACTION_PROCESSED: ['规则行动已裁定', 'Rule action adjudicated'],
+  RULE_MATCH_RECORDED: ['规则匹配结果', 'Rule match recorded'],
   REASONING_ROUND_STARTED: ['已开始研判轮次', 'Reasoning round started'], REASONING_ROUND_FINISHED: ['研判轮次已结束', 'Reasoning round finished'],
   BRANCH_CLOCK_RESTORED: ['已继承分支时钟', 'Branch clock restored'],
   BRANCH_CREATED: ['已创建运行分支', 'Branch created'], AGENT_MEMORY_RESTORED: ['Agent 历史已恢复', 'Agent history restored'],
@@ -77,7 +84,7 @@ const properties: Record<string, [string, string]> = { reviewed: ['审查状态'
 const tools: Record<string, [string, string]> = { graph_search_entity: ['搜索可见对象', 'Search visible objects'], graph_get_entity: ['读取可见对象', 'Read a visible object'], graph_expand_relations: ['查询关系可达范围', 'Expand visible relationships'], graph_find_paths: ['查询图谱路径', 'Find graph paths'], graph_calculate_centrality: ['计算图谱中心性', 'Calculate centrality'], graph_get_subgraph: ['读取局部图谱', 'Read a subgraph'], graph_estimate_impact: ['估计潜在影响范围', 'Estimate potential impact'] };
 
 export function isKeyEvent(event: RunEvent) {
-  return event.eventType.startsWith('RUN_') || ['ACTION_ACCEPTED', 'ACTION_REJECTED', 'WORLD_STATE_CHANGED', 'SIMULATION_EVENT_CREATED', 'SIMULATION_EVENT_SCHEDULED', 'SIMULATION_CLOCK_ADVANCED', 'BRANCH_CREATED', 'MASTER_REVIEW', 'SUBTASK_DISPATCHED', 'SUBTASK_COMPLETED', 'SCENARIO_EVALUATED', 'OBJECTIVE_REVIEWED', 'OBJECTIVE_COMPLETION_RECORDED'].includes(event.eventType);
+  return event.eventType.startsWith('RUN_') || ['ACTION_ACCEPTED', 'ACTION_REJECTED', 'WORLD_STATE_CHANGED', 'SIMULATION_EVENT_CREATED', 'SIMULATION_EVENT_SCHEDULED', 'SIMULATION_CLOCK_ADVANCED', 'RULE_ACTION_SCHEDULED', 'RULE_ACTION_PROCESSED', 'BRANCH_CREATED', 'MASTER_REVIEW', 'SUBTASK_DISPATCHED', 'SUBTASK_COMPLETED', 'SCENARIO_EVALUATED', 'OBJECTIVE_REVIEWED', 'OBJECTIVE_COMPLETION_RECORDED'].includes(event.eventType);
 }
 
 /** Uses persisted proposals and snapshots only; it never translates by calling a model. */
@@ -89,7 +96,8 @@ export function describeEvent(event: RunEvent, context: EventContext, lang: Lang
   const pool = [...objects(after.entities), ...objects(before.entities), ...objects(observation.entities), ...(context.entities ?? [])];
   const name = (id: unknown) => (pool.find(e => e.id === id)?.name as string | undefined) ?? (str(id) || t('未指定对象', 'Unspecified object'));
   const agent = context.agents?.find(a => a.id === event.agentId);
-  const actor = event.agentId ? agentDisplayName(agent ?? { id: event.agentId }, lang) : t('系统', 'System');
+  const actor = event.payload.actionOrigin === 'SYSTEM_RULE' ? t('系统规则', 'System rule')
+    : event.agentId ? agentDisplayName(agent ?? { id: event.agentId }, lang) : t('系统', 'System');
   const result: EventDescription = { title: titles[event.eventType] ? local(titles, event.eventType) : t(`其他事件（${event.eventType}）`, `Other event (${event.eventType})`), summary: '', actor, tone: 'neutral', facts: [], changes: [], reasoning: '', originalReason: '' };
   const fact = (label: string, value: unknown) => { if (value !== undefined && value !== null && value !== '') result.facts.push({ label, value: str(value) || JSON.stringify(value) }); };
   let decision = object(p.decision ?? p.action);
@@ -246,5 +254,18 @@ export function describeEvent(event: RunEvent, context: EventContext, lang: Lang
   if(p.parentTaskId) fact(t('父任务','Parent task'),p.parentTaskId);
   if (p.evidence) fact(t('证据性质', 'Evidence'), ({ FACT: t('输入事实', 'Input fact'), INFERRED: t('推断', 'Inferred'), HYPOTHESIS: t('假设 / 行动提案', 'Hypothesis / proposal'), SIMULATED: t('模拟结果', 'Simulated result') } as Record<string, string>)[str(p.evidence)] ?? p.evidence);
   if (!result.summary) result.summary = t('该记录已保存；详细数据可在原始事件中查看。', 'This record was persisted; see the original event for its data.');
+  if (p.actionOrigin === 'SYSTEM_RULE') {
+    if (p.ruleId && p.ruleRevision !== undefined) {
+      fact(t('规则版本', 'Rule revision'), `${p.ruleId} · ${p.ruleRevision}`);
+    }
+    const cause = object(p.causeEventRef);
+    if (cause.runId && typeof cause.sequence === 'number') {
+      fact(t('因果事件', 'Cause event'), `${cause.runId} #${cause.sequence}`);
+    }
+    if (typeof p.dueTime === 'number') fact(t('到期时间', 'Due time'), p.dueTime);
+    if (event.eventType === 'RULE_MATCH_RECORDED' || event.eventType === 'RULE_ACTION_PROCESSED') {
+      fact(t('处理结果', 'Processing result'), p.code);
+    }
+  }
   return result;
 }

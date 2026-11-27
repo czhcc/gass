@@ -109,6 +109,29 @@ Entry 包含 id、domainCode、ownerType、revision（同编码修订号）、st
 - `evaluationPolicy.mode` 默认按有无 CEL 条件推断为 `CONDITIONS` 或 `TEXT_ONLY`。缺省的最早轮次和时点均为 0，`requireQuiescence` 为 true。`completionMode` 默认 `QUIESCENCE`，也可选 `HORIZON` 或 `OBJECTIVE`。选择 `HORIZON` 需指定逻辑时点或轮次之一。选择 `OBJECTIVE` 要求配置文字目标。
 - 最早轮次和最早逻辑时点共同约束评价。`complete_objective` 可先记录文字结论，评价和运行结束仍由队列与冻结策略决定。空队列可记录 `QUIESCENT`。到达 horizon 时，先处理该时点内的工作，保留 horizon 外待办，再记录 `HORIZON_REACHED`。明确允许非静止时完成的文字策略会记录剩余工作。
 
+## ECA 触发规则
+
+规则配置按世界管理。发布版本随严格事件驱动运行冻结。场景的可选 `ruleIds` 选择要冻结的规则。世界、类型和场景作用域分别使用 `WORLD`、`TYPE`、`SCENARIO`。类型规则的 `scopeId` 等于触发对象类型，场景规则的 `scopeId` 为已有场景 ID。
+
+| 方法 | 路径 | 用途 |
+| --- | --- | --- |
+| GET | `/api/rules?worldId=...` | 草稿列表 |
+| GET | `/api/rules/published?worldId=...` | 每条规则的最新发布版 |
+| POST | `/api/rules` | 保存新草稿 |
+| PUT | `/api/rules/{id}` | 更新草稿 |
+| POST | `/api/rules/validate` | 校验规则定义 |
+| POST | `/api/rules/preview` | 对当前世界模板和假设事件试算计划 |
+| POST | `/api/rules/{id}/publish` | 发布不可变修订 |
+| GET | `/api/rules/{id}/revisions` | 读取发布历史 |
+| GET | `/api/runs/{id}/rules` | 读取运行或分支的冻结版本 |
+
+规则 JSON 包含 `worldId`、`name`、`scope`、`enabled`、`priority`、`trigger`、`conditionExpression`、`actions` 和 `grant`。修订号由发布接口管理。规则的 `grant` 显式列出 `visibleEntityIds`、`targetTypes` 和 `allowedActions`。
+
+- `trigger` 的 `eventType` 可选 `PROPERTY_CHANGED`、`RELATION_ENABLED`、`RELATION_DISABLED`、`RELATION_PROPERTY_CHANGED`、`ENTITY_CREATED`、`RELATION_CREATED` 和 `DOMAIN_EVENT`。最后一项匹配已提交的对应实体变化。变化触发器指定 `objectType`，属性触发器同时指定 `property`。
+- 每项响应指定 `actionType`、`targetType`、`targetExpression`、`parameterExpressions` 和 `delayExpression`。目标表达式返回单个 ID 或 ID 列表。延迟为整数 TICK。CEL 条件使用授权范围内的提交后快照及 `event.oldValue`、`event.newValue`、`event.objectId`。目标和参数使用处理时的授权图谱。
+- 试算请求为 `{ "rule": { ... }, "event": { "objectId": "A", "oldValue": "NORMAL", "newValue": "FAILED" } }`。试算返回意向计划。到期执行仍检查授权、目标绑定、参数和当前前置条件。
+- `AUTO_ACTION` 在调度端点可见。规则审计使用 `SYSTEM_RULE` 并公开 `ruleId`、`ruleRevision` 和 `causeEventRef`。用户干预的来源由服务端分配。
+
 ## 模拟模型、实时、分支与银行
 
 | 方法 | 路径 | 说明 |

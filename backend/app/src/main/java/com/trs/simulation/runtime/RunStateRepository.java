@@ -43,6 +43,27 @@ final class RunStateRepository {
                 after);
     }
 
+    Event event(RuleWork.EventRef ref) {
+        return db
+                .query(
+                        """
+                SELECT simulation_time,event_type,agent_id,payload_json FROM simulation_event
+                WHERE run_id=? AND sequence_no=?
+                """,
+                        (row, index) -> new Event(
+                                ref.runId(),
+                                ref.sequence(),
+                                row.getString("event_type"),
+                                row.getLong("simulation_time"),
+                                row.getString("agent_id"),
+                                Json.read(row.getString("payload_json"), Map.class)),
+                        ref.runId(),
+                        ref.sequence())
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Rule source event is missing"));
+    }
+
     State initialState(String id) {
         var world = frozenWorld(id);
         return new State(id, 0, 0, world.entities(), world.relations());

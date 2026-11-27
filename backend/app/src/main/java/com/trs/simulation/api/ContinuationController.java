@@ -123,12 +123,20 @@ public class ContinuationController {
     }
 
     /** Intervention request with optimistic version control. @author agent */
-    public record Intervention(String agentId, long expectedVersion, Decision decision) {}
+    public record Intervention(
+            String agentId,
+            long expectedVersion,
+            Decision decision,
+
+            @com.fasterxml.jackson.annotation.JsonAlias("origin")
+            String actionOrigin) {}
 
     /** Applies a user intervention through the World Engine only. @author agent */
     @PostMapping("/runs/{id}/actions")
     public State action(
             @PathVariable String id, @RequestHeader("Idempotency-Key") String key, @RequestBody Intervention input) {
+        if ("SYSTEM_RULE".equals(input.actionOrigin()))
+            throw new IllegalArgumentException("Rule Action provenance is assigned by the scheduler");
         return runs.intervene(id, key, input.agentId(), input.decision(), input.expectedVersion());
     }
 

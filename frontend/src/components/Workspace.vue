@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from "vue";
 import { api } from "../api";
-import type { GoalCondition, Lang, Scenario, ScenarioProfile, TeamConfig } from "../types";
+import type { GoalCondition, Lang, RuleSummary, Scenario, ScenarioProfile, TeamConfig } from "../types";
 import Models from "./Models.vue";
 import Worlds from "./Worlds.vue";
 import Actions from "./Actions.vue";
+import Rules from "./Rules.vue";
 import ObjectiveFields from './ObjectiveFields.vue';
 import { defineAsyncComponent } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
@@ -20,6 +21,17 @@ const tab = computed(() => String(route.params.tab || "worlds"));
 const error = ref(""),
   busy = ref(false);
 const scenarioForm = ref({ name: "", worldId: "", modelId: "", maxSteps: 5 });
+const newRuleIds = ref<string[]>([]);
+const publishedRules = ref<RuleSummary[] | null>(null);
+const bindingScenario = ref<Scenario | null>(null);
+const boundRuleIds = ref<string[]>([]);
+const rulesForBinding = ref<RuleSummary[]>([]);
+const strictScheduling = { contractVersion: 1, mode: 'EVENT_DRIVEN', timeUnit: 'TICK' };
+const ruleText = computed(() => props.lang === 'zh'
+  ? { tab: '规则', load: '载入已发布规则', edit: '绑定规则', save: '保存规则绑定', cancel: '取消',
+      label: '已发布规则（选择后启用严格事件时钟）', empty: '此场景没有可用的已发布规则。', saved: '规则绑定已保存。' }
+  : { tab: 'Rules', load: 'Load published rules', edit: 'Bind rules', save: 'Save rule bindings', cancel: 'Cancel',
+      label: 'Published rules (selection enables strict event scheduling)', empty: 'No published rules apply to this scenario.', saved: 'Rule bindings saved.' });
 const objective = ref('');
 const objectiveConditions = ref<GoalCondition[]>([]);
 const draftingObjective = ref(false);
@@ -36,7 +48,10 @@ const customActions = computed(() => {
   const w = worlds.value.find(w => w.id === scenarioForm.value.worldId);
   return [...new Map((w?.ontology?.types ?? []).flatMap(t => t.actions).filter(a => !known.has(a.actionType)).map(a => [a.actionType, a])).values()];
 });
-watch(() => scenarioForm.value.worldId, () => { extraPermissions.value = []; agentsJson.value = ''; teamJson.value = ''; objectiveConditions.value = []; });
+watch(() => scenarioForm.value.worldId, () => {
+  extraPermissions.value = []; agentsJson.value = ''; teamJson.value = ''; objectiveConditions.value = [];
+  newRuleIds.value = []; publishedRules.value = null;
+});
 const demoWorldId = ref("");
 const demoWorld = computed(() => worlds.value.find((world) => world.id === demoWorldId.value));
 watch(() => worlds.value.map(world => world.id), ids => {
@@ -131,6 +146,47 @@ async function load() {
   }
 }
 onMounted(load);
+
+async function loadRules(worldId: string, scenario?: Scenario) {
+  if (busy.value || !worldId) return;
+  busy.value = true;
+  error.value = '';
+  try {
+    const found = await api<RuleSummary[]>('/rules/published?worldId=' + encodeURIComponent(worldId));
+    const available = found.filter(rule => rule.scope !== 'SCENARIO' || rule.scopeId === scenario?.id);
+    if (scenario) {
+      bindingScenario.value = scenario;
+      rulesForBinding.value = available;
+      boundRuleIds.value = [...(scenario.ruleIds ?? [])];
+    } else if (scenarioForm.value.worldId === worldId) publishedRules.value = available;
+  } catch (e) {
+    error.value = String(e);
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function saveRuleBindings() {
+  const scene = bindingScenario.value;
+  if (busy.value || !scene) return;
+  busy.value = true;
+  error.value = '';
+  try {
+    const updated = await api<Scenario>('/scenarios/' + encodeURIComponent(scene.id), 'PUT', {
+      ...scene, ruleIds: boundRuleIds.value,
+      scheduling: boundRuleIds.value.length && scene.scheduling?.mode !== 'EVENT_DRIVEN'
+        ? strictScheduling : scene.scheduling,
+    });
+    scenarios.value = scenarios.value.map(item => item.id === updated.id ? updated : item);
+    bindingScenario.value = null;
+    scenarioMessage.value = ruleText.value.saved;
+  } catch (e) {
+    error.value = String(e);
+  } finally {
+    busy.value = false;
+  }
+}
+
 async function createScenario() {
   if (busy.value || draftingObjective.value || !validRounds(scenarioForm.value.maxSteps) || !validObjectiveConditions.value) return;
   busy.value = true;
@@ -158,6 +214,7 @@ async function createScenario() {
       agents: configuredAgents,
       team: description ? { ...team, conditions } : team,
       ...(description ? { objective: description } : {}),
+      ...(newRuleIds.value.length ? { scheduling: strictScheduling, ruleIds: newRuleIds.value } : {}),
     });
     scenarios.value.push(s);
   } catch (e) {
@@ -257,7 +314,7 @@ async function demo(domain: string) {
     <aside class="workspace-sidebar">
     <nav class="grid gap-2" :aria-label="lang === 'zh' ? '工作台导航' : 'Workspace navigation'">
       <RouterLink
-        v-for="item in ['worlds', 'actions', 'models', 'scenarios', 'studio', 'demos'] as const"
+        v-for="item in ['worlds', 'actions', 'rules', 'models', 'scenarios', 'studio', 'demos'] as const"
         :key="item"
         :to="'/' + item"
         :aria-current="tab === item ? 'page' : undefined"
@@ -265,7 +322,7 @@ async function demo(domain: string) {
         :class="{ 'workspace-menu-active': tab === item }"
         @click="load"
       >
-        {{ item === 'demos' ? t.demoWorld : t[item] }}
+        {{ item === 'demos' ? t.demoWorld : item === 'rules' ? ruleText.tab : t[item] }}
       </RouterLink>
     </nav>
     </aside>
@@ -302,6 +359,7 @@ async function demo(domain: string) {
       :initial-id="route.query.run ? String(route.query.run) : undefined"
     /><Models v-else-if="tab === 'models'" :lang="lang" />
     <Actions v-else-if="tab === 'actions'" :lang="lang" />
+    <Rules v-else-if="tab === 'rules'" :lang="lang" :worlds="worlds" />
     <Worlds v-else-if="tab === 'worlds'" :lang="lang" />
     <section v-else-if="tab === 'scenarios'" class="grid gap-5 lg:grid-cols-2">
       <form class="panel grid gap-4" @submit.prevent="createScenario">
@@ -342,6 +400,16 @@ async function demo(domain: string) {
           >{{ t.agentsJson }}<textarea v-model="agentsJson" rows="5" /></label>
         <label>{{ objective.trim() ? (lang === 'zh' ? '调度 JSON（判定条件使用上方表单）' : 'Delegation JSON (conditions use the fields above)')
           : (lang === 'zh' ? '调度与效果条件 JSON（可选，覆盖模板）' : 'Delegation and outcome conditions JSON (optional template override)') }}<textarea v-model="teamJson" rows="5" /></label>
+        <button class="secondary" type="button" :disabled="busy || !scenarioForm.worldId"
+          @click="loadRules(scenarioForm.worldId)">{{ ruleText.load }}</button>
+        <fieldset v-if="publishedRules" class="grid gap-2 rounded border border-slate-200 p-3">
+          <legend class="text-sm">{{ ruleText.label }}</legend>
+          <p v-if="!publishedRules.length">{{ ruleText.empty }}</p>
+          <label v-for="rule in publishedRules" :key="rule.id" class="flex items-center gap-2">
+            <input v-model="newRuleIds" type="checkbox" :value="rule.id" class="w-auto" />
+            {{ rule.name }} · v{{ rule.revision }}
+          </label>
+        </fieldset>
         <button class="primary" :disabled="busy || draftingObjective || !validRounds(scenarioForm.maxSteps) || !validObjectiveConditions">{{ t.create }}</button>
       </form>
       <div ref="scenarioList" class="space-y-4" tabindex="-1">
@@ -363,6 +431,22 @@ async function demo(domain: string) {
           >
             {{ t.delete }}
           </button>
+          <button class="secondary mt-3 ml-2" type="button" :disabled="busy"
+            @click="loadRules(scenario.worldId, scenario)">{{ ruleText.edit }}</button>
+          <form v-if="bindingScenario?.id === scenario.id" class="mt-3 grid gap-3" @submit.prevent="saveRuleBindings">
+            <fieldset :disabled="busy" class="grid gap-2">
+              <legend>{{ ruleText.label }}</legend>
+              <p v-if="!rulesForBinding.length">{{ ruleText.empty }}</p>
+              <label v-for="rule in rulesForBinding" :key="rule.id" class="flex items-center gap-2">
+                <input v-model="boundRuleIds" type="checkbox" :value="rule.id" class="w-auto" />
+                {{ rule.name }} · v{{ rule.revision }}
+              </label>
+            </fieldset>
+            <div class="flex gap-2">
+              <button class="primary" :disabled="busy">{{ ruleText.save }}</button>
+              <button class="secondary" type="button" :disabled="busy" @click="bindingScenario = null">{{ ruleText.cancel }}</button>
+            </div>
+          </form>
         </article>
         <p v-if="scenarioMessage" role="status">{{ scenarioMessage }}</p>
         <p v-if="createdRun" role="status" class="break-all">

@@ -35,14 +35,29 @@ final class ActionCommitService {
             Decision request,
             String origin,
             String taskId,
-            String inputEventId) {
+            String inputEventId,
+            RuleWork.Cause cause) {
+        Command(
+                String runId,
+                String commandId,
+                String actorId,
+                long expectedVersion,
+                Decision request,
+                String origin,
+                String taskId,
+                String inputEventId) {
+            this(runId, commandId, actorId, expectedVersion, request, origin, taskId, inputEventId, null);
+        }
+
         String fingerprint() {
             var fields = new LinkedHashMap<String, Object>();
             fields.put("actorId", actorId);
             fields.put("decision", request);
             fields.put("inputEventId", inputEventId);
             // A worker may resend its original decision with the version returned in the receipt.
-            if (taskId == null) {
+            if (cause != null) {
+                fields.put("cause", cause);
+            } else if (taskId == null) {
                 fields.put("expectedVersion", expectedVersion);
             }
             return Json.write(fields);
@@ -124,14 +139,22 @@ final class ActionCommitService {
             append(
                     command,
                     current,
-                    "USER_INTERVENTION".equals(command.origin()) ? "USER_INTERVENTION" : "AGENT_DECISION",
+                    switch (command.origin()) {
+                        case "USER_INTERVENTION" -> "USER_INTERVENTION";
+                        case "SYSTEM_RULE" -> "RULE_ACTION_DECISION";
+                        default -> "AGENT_DECISION";
+                    },
                     Map.of(
                             "decision",
                             decision,
                             "evidence",
                             "HYPOTHESIS",
                             "origin",
-                            "USER_INTERVENTION".equals(command.origin()) ? "USER" : "AGENT"),
+                            switch (command.origin()) {
+                                case "USER_INTERVENTION" -> "USER";
+                                case "SYSTEM_RULE" -> "RULE";
+                                default -> "AGENT";
+                            }),
                     meta);
             append(command, current, "ACTION_PROPOSED", Map.of("action", decision), meta);
             String targetId = decision.targetId() == null ? "" : decision.targetId();
@@ -187,6 +210,8 @@ final class ActionCommitService {
                             ? Map.of()
                             : command.request().parameters());
             receipt.put("affectedRelationIds", appliedRelations);
+            if (command.cause() != null)
+                receipt.put("effectSequence", stateChangeSequence == 0 ? verdictSequence : stateChangeSequence);
             if (command.inputEventId() != null) {
                 receipt.put("inputEventId", command.inputEventId());
             }
@@ -216,7 +241,11 @@ final class ActionCommitService {
                 }
                 if (!diff.isEmpty()) {
                     eventClock.enqueueDomainEvent(
-                            id, current.simulationTime(), (String) meta.get("actionRunId"), next.version());
+                            id,
+                            current.simulationTime(),
+                            (String) meta.get("actionRunId"),
+                            next.version(),
+                            stateChangeSequence);
                 }
             }
             db.update(
@@ -255,6 +284,13 @@ final class ActionCommitService {
         meta.put("commandId", command.commandId());
         meta.put("actorId", command.actorId());
         meta.put("actionOrigin", command.origin());
+        if (command.cause() != null) {
+            meta.put("causeEventRef", command.cause().causeEventRef());
+            meta.put("ruleId", command.cause().ruleId());
+            meta.put("ruleRevision", command.cause().ruleRevision());
+            meta.put("causeDepth", command.cause().causeDepth());
+            meta.put("correlationId", command.cause().correlationId());
+        }
         meta.put("inputVersion", before.version());
         meta.put("outputVersion", after.version());
         if (command.taskId() != null) {

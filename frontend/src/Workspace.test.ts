@@ -67,6 +67,29 @@ it('explicitly grants selected custom world Actions to the primary default agent
   expect(body.agents[1].allowedActions).not.toContain('CUSTOM_SCORE');
 });
 
+it('binds a published rule using the strict event contract', async () => {
+  const world: World = { id: 'devices', name: 'Devices', domainCode: 'information', version: 1,
+    entities: [], relations: [], entityTypes: [], relationTypes: [] };
+  const { fetcher, store } = await setup('en', undefined, [world]);
+  const original = fetcher.getMockImplementation()!;
+  fetcher.mockImplementation(async (url, init) => url === '/api/rules/published?worldId=devices'
+    ? { ok: true, json: async () => [{ id: 'rule-1', name: 'Propagation', scope: 'WORLD', revision: 1 }] }
+    : original(url, init));
+  store.models = [{ id: 'm', name: 'Model', modelName: 'Model', baseUrl: 'mock://local', keyConfigured: false,
+    apiKeyEnv: null, temperature: 0, maxTokens: 1024, timeoutSeconds: 10, concurrency: 1 }];
+  await fireEvent.update(screen.getByLabelText('Scenario name'), 'Propagation scenario');
+  await fireEvent.update(screen.getByLabelText('World'), world.id);
+  await fireEvent.update(screen.getByLabelText('Model'), 'm');
+  await fireEvent.click(screen.getByRole('button', { name: 'Load published rules' }));
+  await fireEvent.click(await screen.findByLabelText('Propagation · v1'));
+  await fireEvent.click(screen.getByRole('button', { name: 'Create hierarchical scenario' }));
+  await waitFor(() => expect(fetcher.mock.calls.some(([url, init]) => url === '/api/scenarios' && init?.method === 'POST')).toBe(true));
+  const saved = JSON.parse(String(fetcher.mock.calls.find(([url, init]) => url === '/api/scenarios' && init?.method === 'POST')![1]!.body));
+  expect(saved.ruleIds).toEqual(['rule-1']);
+  expect(saved.scheduling).toEqual({ contractVersion: 1, mode: 'EVENT_DRIVEN', timeUnit: 'TICK' });
+  expect(saved.team.rootAgentId).toBe('lead');
+});
+
 it('loads editable roles and outcome rules without losing the selected model or hierarchy',async()=>{
   const world:World={id:'bank-world',name:'Bank world',domainCode:'bank',version:1,entities:[{id:'a',type:'BANK_ACCOUNT',name:'A',properties:{}}],relations:[],entityTypes:['BANK_ACCOUNT'],relationTypes:[]};
   const {fetcher,store}=await setup('en',undefined,[world]);
@@ -187,7 +210,8 @@ it.each(['zh', 'en'] as const)('validates integer round limits in both creation 
 it('keeps six sidebar destinations and limits demo operations to their own page', async () => {
   const { router } = await setup();
   const navigation = screen.getByRole('navigation', { name: 'Workspace navigation' });
-  expect(within(navigation).getAllByRole('link')).toHaveLength(6);
+  expect(within(navigation).getAllByRole('link')).toHaveLength(7);
+  expect(within(navigation).getByRole('link', { name: 'Rules' }).getAttribute('href')).toBe('/rules');
   expect(within(navigation).getByRole('link', { name: 'Scenarios' }).getAttribute('aria-current')).toBe('page');
   expect(screen.queryByLabelText('Demo world')).toBeNull();
   expect(screen.queryByRole('button', { name: 'Create leak demo' })).toBeNull();

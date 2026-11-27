@@ -4,6 +4,7 @@ import com.trs.simulation.SimulationTypes.Scenario;
 import com.trs.simulation.SimulationTypes.ScheduledInput;
 import com.trs.simulation.SimulationTypes.State;
 import com.trs.simulation.common.Json;
+import com.trs.simulation.rule.TriggerRule;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,32 +43,88 @@ final class EventClockScheduler {
     }
 
     // Invoked inside the successful Action commit. The Action receipt key is stable across retries.
-    void enqueueDomainEvent(String id, long time, String actionRunId, long version) {
+    void enqueueDomainEvent(String id, long time, String actionRunId, long version, long changeSequence) {
+        var payload = new LinkedHashMap<String, Object>(Map.of("actionRunId", actionRunId, "stateVersion", version));
+        if (hasRules(id)) payload.put("sourceEventRef", new RuleWork.EventRef(id, changeSequence));
         enqueue(
                 id,
                 "domain:" + actionRunId,
                 time,
                 0,
                 "DOMAIN_EVENT",
-                Map.of("actionRunId", actionRunId, "stateVersion", version));
+                payload,
+                false,
+                hasRules(id) ? changeSequence : null);
     }
 
     private void enqueue(String id, String key, long time, int priority, String kind, Object payload) {
-        store.append(
-                id,
-                "EXTERNAL_INPUT".equals(kind) ? "SIMULATION_EVENT_SCHEDULED" : "DOMAIN_EVENT_SCHEDULED",
-                store.state(id).simulationTime(),
-                null,
+        enqueue(id, key, time, priority, kind, payload, false, null);
+    }
+
+    void scheduleRuleWork(String id, String key, long time, int priority, RuleWork work) {
+        enqueue(id, key, time, priority, "DOMAIN_EVENT", work, true, null);
+    }
+
+    private void enqueue(
+            String id,
+            String key,
+            long time,
+            int priority,
+            String kind,
+            Object payload,
+            boolean automatic,
+            Long createdSequence) {
+        var audit = new LinkedHashMap<String, Object>(
                 Map.of("scheduledEventId", key, "dueTime", time, "priority", priority, "input", payload));
-        var sequence = store.eventCount(id);
+        String type = "EXTERNAL_INPUT".equals(kind) ? "SIMULATION_EVENT_SCHEDULED" : "DOMAIN_EVENT_SCHEDULED";
+        if (automatic && payload instanceof RuleWork work) {
+            type = "RULE_ACTION_SCHEDULED";
+            audit.put("causeEventRef", work.cause().causeEventRef());
+            audit.put("ruleId", work.cause().ruleId());
+            audit.put("ruleRevision", work.cause().ruleRevision());
+            audit.put("actionOrigin", "SYSTEM_RULE");
+        }
+        store.append(id, type, store.state(id).simulationTime(), null, audit);
+        long sequence = createdSequence == null ? store.eventCount(id) : createdSequence;
         long enqueueSequence = db.queryForObject("""
                 SELECT COALESCE(MAX(enqueue_sequence),0)+1 FROM simulation_scheduled_event WHERE run_id=?
                 """, Long.class, id);
-        db.update("""
+        db.update(
+                """
                 INSERT INTO simulation_scheduled_event
-                    (run_id,event_id,simulation_time,payload_json,created_sequence,enqueue_sequence,priority,work_kind)
-                VALUES (?,?,?,?,?,?,?,?)
-                """, id, key, time, Json.write(payload), sequence, enqueueSequence, priority, kind);
+                    (run_id,event_id,simulation_time,payload_json,created_sequence,enqueue_sequence,priority,work_kind,auto_action)
+                VALUES (?,?,?,?,?,?,?,?,?)
+                """, id, key, time, Json.write(payload), sequence, enqueueSequence, priority, kind, automatic ? 1 : 0);
+    }
+
+    boolean hasRules(String id) {
+        return db.queryForObject(
+                "SELECT trigger_rules_json IS NOT NULL FROM simulation_run WHERE id=?", Boolean.class, id);
+    }
+
+    List<TriggerRule> frozenRules(String id) {
+        var json = db.queryForObject("SELECT trigger_rules_json FROM simulation_run WHERE id=?", String.class, id);
+        return json == null ? List.of() : List.of(Json.read(json, TriggerRule[].class));
+    }
+
+    boolean workExists(String id, String key) {
+        return db.queryForObject("""
+                SELECT COUNT(*) FROM simulation_scheduled_event WHERE run_id=? AND event_id=?
+                """, Integer.class, id, key) > 0;
+    }
+
+    int ruleWorkCount(String id) {
+        return db.queryForObject("""
+                SELECT COUNT(*) FROM simulation_scheduled_event WHERE run_id=? AND auto_action=1
+                """, Integer.class, id);
+    }
+
+    long pendingRuleWork(String id) {
+        return db.queryForObject("""
+                SELECT COUNT(*) FROM simulation_scheduled_event
+                WHERE run_id=? AND delivered=0 AND work_status IN ('PENDING','PROCESSING')
+                    AND (auto_action=1 OR JSON_TYPE(payload_json,'$.sourceEventRef')='object')
+                """, Long.class, id);
     }
 
     void acknowledge(String id, String key, int sequence) {
@@ -105,9 +162,13 @@ final class EventClockScheduler {
     }
 
     /** Summarizes the committed delivery and which constraint interrupted it. @author czhcc-trsdsj\codexsandboxoffline */
-    record Slice(Long firstExternalSequence, boolean workLimit, boolean eventLimit) {
+    record Slice(Long firstExternalSequence, boolean workLimit, boolean eventLimit, String propagationLimit) {
+        Slice(Long firstExternalSequence, boolean workLimit, boolean eventLimit) {
+            this(firstExternalSequence, workLimit, eventLimit, null);
+        }
+
         boolean interrupted() {
-            return workLimit || eventLimit;
+            return workLimit || eventLimit || propagationLimit != null;
         }
     }
 
@@ -144,17 +205,7 @@ final class EventClockScheduler {
                             .toList()));
         }
         return tx.execute(status -> {
-            var current = store.state(id);
-            if (time > current.simulationTime()) {
-                var next = new State(id, time, current.version(), current.entities(), current.relations());
-                db.update("UPDATE simulation_run SET state_json=? WHERE id=?", Json.write(next), id);
-                store.append(
-                        id,
-                        "SIMULATION_CLOCK_ADVANCED",
-                        time,
-                        null,
-                        Map.of("previousTime", current.simulationTime(), "stateVersion", current.version()));
-            }
+            advanceClock(id, time);
             Long firstExternal = null;
             for (var row : claimed) {
                 if (deliver(id, scenario, time, row) && firstExternal == null)
@@ -167,6 +218,78 @@ final class EventClockScheduler {
             afterDelivery.accept(slice);
             return slice;
         });
+    }
+
+    Slice advanceRules(
+            String id, long time, Scenario scene, boolean domainOnly, EcaRuntime rules, Consumer<Slice> afterDelivery) {
+        return tx.execute(status -> {
+            advanceClock(id, time);
+            Long firstExternal = null;
+            int delivered = db.queryForObject("""
+                    SELECT COUNT(*) FROM simulation_scheduled_event
+                    WHERE run_id=? AND simulation_time=? AND delivered=1
+                    """, Integer.class, id, time);
+            boolean workLimit = false;
+            String limit = null;
+            while (true) {
+                var items = db.queryForList("""
+                        SELECT event_id,work_kind,payload_json,simulation_time,priority,enqueue_sequence,auto_action
+                        FROM simulation_scheduled_event WHERE run_id=? AND work_status IN ('PENDING','PROCESSING')
+                          AND delivered=0 AND simulation_time<=? AND (?=0 OR work_kind='DOMAIN_EVENT')
+                        ORDER BY simulation_time,priority DESC,enqueue_sequence,event_id LIMIT 1
+                        """, id, time, domainOnly ? 1 : 0);
+                if (items.isEmpty()) break;
+                if (delivered >= scene.scheduling().maxWorkPerTime()) {
+                    workLimit = true;
+                    break;
+                }
+                if (store.eventCount(id) >= scene.maxEvents() - 10) {
+                    limit = "MAX_EVENTS";
+                    break;
+                }
+                var row = items.getFirst();
+                String key = (String) row.get("event_id");
+                var payload = (String) row.get("payload_json");
+                boolean automatic = ((Number) row.get("auto_action")).intValue() == 1;
+                var outcome = automatic
+                        ? rules.execute(id, key, time, scene, Json.read(payload, RuleWork.class))
+                        : "DOMAIN_EVENT".equals(row.get("work_kind"))
+                                ? rules.consume(id, time, scene, Json.read(payload, Map.class))
+                                : EcaRuntime.Delivery.completed();
+                if (outcome.limit() != null) {
+                    limit = outcome.limit();
+                    break;
+                }
+                db.update("""
+                        UPDATE simulation_scheduled_event SET attempts=attempts+1 WHERE run_id=? AND event_id=?
+                        """, id, key);
+                if (automatic) {
+                    db.update("""
+                            UPDATE simulation_scheduled_event SET delivered=1,work_status=?,completed_sequence=?
+                            WHERE run_id=? AND event_id=?
+                            """, outcome.workStatus(), outcome.completedSequence(), id, key);
+                } else if (deliver(id, scene, time, row) && firstExternal == null) {
+                    firstExternal = (long) store.eventCount(id);
+                }
+                delivered++;
+            }
+            var slice = new Slice(firstExternal, workLimit, false, limit);
+            afterDelivery.accept(slice);
+            return slice;
+        });
+    }
+
+    private void advanceClock(String id, long time) {
+        var current = store.state(id);
+        if (time <= current.simulationTime()) return;
+        var next = new State(id, time, current.version(), current.entities(), current.relations());
+        db.update("UPDATE simulation_run SET state_json=? WHERE id=?", Json.write(next), id);
+        store.append(
+                id,
+                "SIMULATION_CLOCK_ADVANCED",
+                time,
+                null,
+                Map.of("previousTime", current.simulationTime(), "stateVersion", current.version()));
     }
 
     void waitForReasoning(String id, long firstSequence) {
@@ -204,7 +327,8 @@ final class EventClockScheduler {
 
     List<Map<String, Object>> queue(String id) {
         return db.queryForList("""
-                SELECT event_id AS id,work_kind AS type,simulation_time AS dueTime,priority,
+                SELECT event_id AS id,CASE WHEN auto_action=1 THEN 'AUTO_ACTION' ELSE work_kind END AS type,
+                    simulation_time AS dueTime,priority,
                     enqueue_sequence AS enqueueSequence,work_status AS status,attempts
                 FROM simulation_scheduled_event WHERE run_id=?
                 ORDER BY simulation_time,priority DESC,enqueue_sequence,event_id

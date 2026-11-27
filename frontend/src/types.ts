@@ -88,6 +88,18 @@ export interface Scenario {
   name: string;
   worldId: string;
   objective?: string | null;
+  ruleIds?: string[];
+  scheduling?: { contractVersion: number; mode: string; timeUnit: string; maxWorkPerTime?: number } | null;
+}
+
+export interface RuleSummary {
+  id: string;
+  revision: number;
+  worldId: string;
+  name: string;
+  scope: 'TYPE' | 'WORLD' | 'SCENARIO';
+  scopeId?: string | null;
+  enabled: boolean;
 }
 
 export interface Run {
