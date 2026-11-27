@@ -2,6 +2,7 @@ package com.trs.simulation.evidence;
 
 import com.trs.simulation.SimulationTypes.Event;
 import com.trs.simulation.SimulationTypes.Relation;
+import com.trs.simulation.SimulationTypes.Scenario;
 import com.trs.simulation.SimulationTypes.State;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.graph.KnowledgeCoverage;
@@ -15,12 +16,85 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 /** Prepares scoped audit evidence for text objectives. @author czhcc-trsdsj\codexsandboxoffline */
 public final class ObjectiveEvidence {
     public static final String COMPLETION_EVENT = "OBJECTIVE_COMPLETION_RECORDED";
+    public static final String COMPLETION_DEFERRED = "OBJECTIVE_COMPLETION_DEFERRED";
+
+    private static final Pattern EXTERNAL_SCOPE = Pattern.compile(
+            "(?iu)\\b(?:external|outside)\\s+(?:knowledge|graph|data|source|corpus|the (?:run|simulation))\\b"
+                    + "|\\bbeyond (?:this|the) (?:local|current) (?:run|graph)\\b"
+                    + "|外部(?:知识|图谱|数据|来源|全图)|(?:超出|超越)(?:本地|当前)(?:推演|图谱)");
+    private static final Pattern RUN_SCOPE = Pattern.compile(
+            "(?iu)\\b(?:current|local|runtime|simulated|simulation|authorized)\\s+(?:local\\s+)?(?:run|graph|world|subgraph)\\b"
+                    + "|(?:本地|当前|本次|当前授权)(?:运行|推演|模拟|子图|图谱|世界)");
+
+    private static final Pattern UNSCOPED_WHOLE_GRAPH = Pattern.compile(
+            "(?iu)\\b(?:all|entire|whole|global)\\s+(?:of\\s+the\\s+)?(?:knowledge\\s+)?(?:graph|network)\\b|全图|全局图谱");
+    private static final Pattern SIMULATION_TIME_BOUND =
+            Pattern.compile("(?iu)\\b(?:wait\\s+until|before|after|at|by)\\s+(?:simulation\\s+)?tick\\s+[0-9]+\\b"
+                    + "|(?:等待|等到|截至|在)(?:逻辑|模拟|推演)(?:时刻|时间|时点)\\s*[0-9]+");
+
+    /** Maximum scope that a scenario's completion is required to establish. @author czhcc-trsdsj\codexsandboxoffline */
+    public enum GoalScope {
+        RUN_GRAPH,
+        EXTERNAL_GRAPH,
+        UNDETERMINED
+    }
+
+    /** Evidence assessment returned to the completion tool. @author czhcc-trsdsj\codexsandboxoffline */
+    public enum CompletionCheck {
+        SUPPORTED,
+        EVIDENCE_UNAVAILABLE,
+        SEARCH_INCOMPLETE,
+        GOAL_SCOPE_UNDETERMINED,
+        EXTERNAL_COVERAGE_UNKNOWN,
+        EXTERNAL_COVERAGE_PARTIAL,
+        EXTERNAL_SCOPE_UNVERIFIED
+    }
 
     private ObjectiveEvidence() {}
+
+    /** Resolves the required scope from the frozen scene. @author czhcc-trsdsj\codexsandboxoffline */
+    public static GoalScope goalScope(Scenario scenario) {
+        var policy = scenario.evaluationPolicy();
+        return goalScope(
+                policy == null ? null : policy.objectiveScope(),
+                scenario.objective(),
+                scenario.expansionPolicy() != null);
+    }
+
+    /** Uses a configured scope or an explicit objective bound; otherwise stays conservative for expansion. @author czhcc-trsdsj\codexsandboxoffline */
+    public static GoalScope goalScope(String declared, String objective, boolean expansionEnabled) {
+        if ("EXTERNAL_GRAPH".equals(declared) || claimsExternalScope(objective)) {
+            return GoalScope.EXTERNAL_GRAPH;
+        }
+        if ("RUN_GRAPH".equals(declared)
+                || !expansionEnabled
+                || objective == null
+                || objective.isBlank()
+                || !UNSCOPED_WHOLE_GRAPH.matcher(objective).find()
+                        && (RUN_SCOPE.matcher(objective).find()
+                                || SIMULATION_TIME_BOUND.matcher(objective).find())) {
+            return GoalScope.RUN_GRAPH;
+        }
+        return GoalScope.UNDETERMINED;
+    }
+
+    /** Detects a statement that explicitly goes beyond the local graph. @author czhcc-trsdsj\codexsandboxoffline */
+    public static boolean claimsExternalScope(String text) {
+        return text != null && EXTERNAL_SCOPE.matcher(text).find();
+    }
+
+    /** Prevents old local-only completion events from satisfying a broader frozen goal. @author czhcc-trsdsj\codexsandboxoffline */
+    public static boolean supportsRecordedCompletion(Scenario scene, Event event) {
+        return COMPLETION_EVENT.equals(event.eventType())
+                && goalScope(scene) == GoalScope.RUN_GRAPH
+                && (scene.expansionPolicy() == null
+                        || !claimsExternalScope(Objects.toString(event.payload().get("summary"), "")));
+    }
 
     /** Checks stored query scope when full graph authorization has not been established. @author czhcc-trsdsj\codexsandboxoffline */
     public static boolean visibleQuery(Event event, Set<String> scope) {
@@ -45,21 +119,52 @@ public final class ObjectiveEvidence {
     /** 当前查询证据须与来源运行、图谱版本和覆盖修订一致。 @author czhcc-trsdsj\codexsandboxoffline */
     public static boolean usableForCompletion(
             Event event, Set<String> scope, long version, boolean fullScope, KnowledgeCoverage coverage) {
+        return completionCheck(event, scope, version, fullScope, coverage, GoalScope.RUN_GRAPH)
+                == CompletionCheck.SUPPORTED;
+    }
+
+    /** Separates local search completeness, authorized visibility and the proof required by the goal. @author czhcc-trsdsj\codexsandboxoffline */
+    public static CompletionCheck completionCheck(
+            Event event,
+            Set<String> scope,
+            long version,
+            boolean fullScope,
+            KnowledgeCoverage coverage,
+            GoalScope goal) {
         var payload = event.payload();
+        if (goal == GoalScope.UNDETERMINED) {
+            return CompletionCheck.GOAL_SCOPE_UNDETERMINED;
+        }
         if (visibleQuery(event, scope, fullScope)
                 && payload.get("result") instanceof Map<?, ?> result
                 && result.get("version") instanceof Number observed
                 && observed.longValue() == version
                 && KnowledgeCoverage.current(coverage, event.runId(), result)) {
-            if (result.get("pathRanking") instanceof Map<?, ?> ranking)
-                return Boolean.TRUE.equals(ranking.get("complete"))
-                        && !Boolean.TRUE.equals(ranking.get("tiesTruncated"));
-            return !Boolean.TRUE.equals(result.get("truncated"));
+            if (Boolean.TRUE.equals(result.get("truncated"))
+                    || Boolean.TRUE.equals(result.get("hasMore"))
+                    || result.get("pathRanking") instanceof Map<?, ?> ranking
+                            && (!Boolean.TRUE.equals(ranking.get("complete"))
+                                    || Boolean.TRUE.equals(ranking.get("tiesTruncated")))) {
+                return CompletionCheck.SEARCH_INCOMPLETE;
+            }
+            if (goal == GoalScope.RUN_GRAPH) {
+                return CompletionCheck.SUPPORTED;
+            }
+            // Even COMPLETE is limited to its declared query range. GRAPH_QUERY_RESULT is always a
+            // local projection and carries no independently verified whole-provider graph certificate.
+            return switch (Objects.toString(result.get("externalCoverage"), "UNKNOWN")) {
+                case "PARTIAL" -> CompletionCheck.EXTERNAL_COVERAGE_PARTIAL;
+                case "COMPLETE" -> CompletionCheck.EXTERNAL_SCOPE_UNVERIFIED;
+                default -> CompletionCheck.EXTERNAL_COVERAGE_UNKNOWN;
+            };
         }
-        return visibleAction(event, scope, fullScope)
+        if (visibleAction(event, scope, fullScope)
                 && ("ACTION_ACCEPTED".equals(event.eventType())
                         || "ACTION_TASK_RECEIPT".equals(event.eventType())
-                                && Boolean.TRUE.equals(payload.get("accepted")));
+                                && Boolean.TRUE.equals(payload.get("accepted")))) {
+            return goal == GoalScope.RUN_GRAPH ? CompletionCheck.SUPPORTED : CompletionCheck.EXTERNAL_SCOPE_UNVERIFIED;
+        }
+        return CompletionCheck.EVIDENCE_UNAVAILABLE;
     }
 
     private static boolean visibleAction(Event event, Set<String> scope, boolean fullScope) {
@@ -291,6 +396,7 @@ public final class ObjectiveEvidence {
                 "version",
                 "scope",
                 "coverageRevision",
+                "evidenceScope",
                 "externalCoverage",
                 "evidence",
                 "totalObjects",

@@ -65,7 +65,7 @@ final class RunTerminationPolicy {
                 && scenario.team().conditions().isEmpty()
                 && scheduler.pendingEvents(id) == 0
                 && store.events(id, 0).reversed().stream()
-                        .anyMatch(e -> ObjectiveEvidence.COMPLETION_EVENT.equals(e.eventType())
+                        .anyMatch(e -> ObjectiveEvidence.supportsRecordedCompletion(scenario, e)
                                 && e.payload().get("round") instanceof Number round
                                 && round.intValue() == run.step()
                                 && e.payload().get("version") instanceof Number version
@@ -217,10 +217,18 @@ final class RunTerminationPolicy {
                                 run.step(),
                                 pending,
                                 unhandledInputs(id, scene));
+        var scope = ObjectiveEvidence.goalScope(scene);
         String objectiveStatus = switch (result.result()) {
             case "SUCCEEDED" -> "MET";
             case "FAILED" -> "NOT_MET";
-            case "NO_CONDITIONS" -> answered ? "ANSWERED" : "UNVERIFIABLE";
+            case "NO_CONDITIONS" ->
+                answered
+                        ? "ANSWERED"
+                        : switch (scope) {
+                            case EXTERNAL_GRAPH -> "DATA_REQUIRED";
+                            case UNDETERMINED -> "GOAL_SCOPE_UNDETERMINED";
+                            case RUN_GRAPH -> "UNVERIFIABLE";
+                        };
             default -> "UNVERIFIABLE";
         };
         String reason = switch (result.result()) {

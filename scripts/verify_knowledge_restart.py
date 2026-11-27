@@ -126,7 +126,7 @@ def phase_one(api):
         "name": "Local MCP restart", "worldId": world["id"], "maxSteps": 5, "maxEvents": 200,
         "scheduling": {"contractVersion": 1, "mode": "EVENT_DRIVEN", "timeUnit": "TICK", "maxWorkPerTime": 20},
         "agents": [{"id": "reader", "name": "Reader", "goal": "fixture", "modelId": model["id"],
-                    "allowedActions": [], "visibleEntityIds": ["account_a"], "maxDecisions": 3}],
+                    "allowedActions": ["TRANSFER"], "visibleEntityIds": ["account_a"], "maxDecisions": 3}],
         "expansionPolicy": {
             "operators": ["admin"], "maxCalls": 4, "maxDepth": 2, "maxEntitiesPerCall": 4,
             "maxRelationsPerCall": 10, "maxTotalImported": 10, "sources": {"local-fixture": {
@@ -137,6 +137,7 @@ def phase_one(api):
                             "relations": {}},
                 "initialIdentities": {"entities": {}, "relations": {}},
                 "readersByExternalId": {"C": ["reader"]},
+                "actionRolesByExternalId": {"C": ["reader"]},
             }},
         },
     })
@@ -161,24 +162,49 @@ def phase_one(api):
     sequence = receipt["eventSequence"]
     assert api(root + f"/replay?sequence={sequence-1}") == before
     assert api(root + f"/replay?sequence={sequence}") == state
-    return root, before, state, receipt, imported["id"], candidate["id"], request
+    action_state = api(root + "/actions", "POST", {
+        "agentId": "reader", "expectedVersion": state["version"],
+        "decision": {"actionType": "TRANSFER", "targetId": "account_a",
+                     "parameters": {"sourceId": imported["id"], "amount": "1.00", "currency": "CNY"},
+                     "reason": "fixture transfer"},
+    }, "fixture-transfer")
+    changed = next(event for event in api(root + "/events") if event["eventType"] == "WORLD_STATE_CHANGED")
+    assert action_state["version"] == state["version"] + 1
+    assert next(e for e in action_state["entities"] if e["id"] == imported["id"])["properties"]["balanceMinor"] == 4900
+    return root, before, state, receipt, imported["id"], candidate["id"], request, action_state, changed["sequence"]
 
 
 def phase_two(api, case):
-    root, before, state, receipt, entity, candidate, request = case
-    assert api(root + "/state") == state
+    root, before, state, receipt, entity, candidate, request, action_state, action_cut = case
+    assert api(root + "/state") == action_state
     assert api(root + "/knowledge/query", "POST", request, expected=409) is None
-    assert api(root + "/knowledge/imports", "POST", {"candidateId": candidate}) == receipt
-    source = api(root + "/knowledge/provenance?" + urllib.parse.urlencode({"objectId": entity}))
+    retry = api(root + "/knowledge/imports", "POST", {"candidateId": candidate})
+    for item in (receipt, retry):
+        for field in ("changedFields", "readers", "actionRoles"):
+            if field in item:
+                item[field] = {key: sorted(values) for key, values in item[field].items()}
+    assert retry == receipt
+    endpoint = "/knowledge/provenance?" + urllib.parse.urlencode({"objectId": entity})
+    source = api(root + endpoint)
     assert source[0]["externalId"] == "C" and source[0]["receiptId"] == receipt["receiptId"]
+    simulated = next(item for item in source if item["origin"] == "SIMULATED")
+    assert simulated["sourceRunId"] == root.rsplit("/", 1)[1]
+    assert simulated["eventSequence"] == action_cut and "properties.balanceMinor" in simulated["fields"]
+    for item in source:
+        item["fields"].sort()
     sequence = receipt["eventSequence"]
-    for point, expected in [(sequence-1, before), (sequence, state)]:
+    for point, expected in [(sequence-1, before), (sequence, state), (action_cut, action_state)]:
         assert api(root + f"/replay?sequence={point}") == expected
         branch = api(root + "/fork", "POST", {"sequence": point, "label": "restart fixture"}, f"fork-{point}")
         child = f"/runs/{branch['id']}"
         assert api(child + "/state")["entities"] == expected["entities"]
-        assert (entity in api(child + "/agents")[0]["visibleEntityIds"]) == (point == sequence)
+        assert (entity in api(child + "/agents")[0]["visibleEntityIds"]) == (point >= sequence)
         api(child + "/knowledge/imports", "POST", {"candidateId": candidate}, expected=400)
+        current_source = api(child + endpoint)
+        for item in current_source:
+            item["fields"].sort()
+        expected_source = source if point >= action_cut else source[:1] if point >= sequence else []
+        assert current_source == expected_source
 
 
 def main():
@@ -214,7 +240,7 @@ def main():
         assert first != second
         phase_two(api, case)
     report = {"result": "PASS", "beforePid": first, "afterPid": second,
-              "importSequence": case[3]["eventSequence"], "mcpCalls": mcp.calls}
+              "importSequence": case[3]["eventSequence"], "simulatedFieldSequence": case[8], "mcpCalls": mcp.calls}
     (workspace / "result.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report))
 

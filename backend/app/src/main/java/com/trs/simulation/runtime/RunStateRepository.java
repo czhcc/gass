@@ -48,6 +48,31 @@ final class RunStateRepository {
                 after);
     }
 
+    List<Event> fieldHistory(String id) {
+        // A branch's baseline was taken at its recorded parent sequence, which remains immutable.
+        return db.query(
+                """
+                WITH RECURSIVE lineage(run_id,depth,through_sequence) AS (
+                    SELECT ?,0,NULL
+                    UNION ALL
+                    SELECT b.parent_run_id,l.depth+1,b.parent_sequence
+                    FROM simulation_branch b JOIN lineage l ON b.run_id=l.run_id
+                )
+                SELECT e.* FROM lineage l JOIN simulation_event e ON e.run_id=l.run_id
+                WHERE (l.through_sequence IS NULL OR e.sequence_no<=l.through_sequence)
+                  AND e.event_type IN ('WORLD_EXPANDED','WORLD_STATE_CHANGED')
+                ORDER BY l.depth DESC,e.sequence_no
+                """,
+                (row, index) -> new Event(
+                        row.getString("run_id"),
+                        row.getLong("sequence_no"),
+                        row.getString("event_type"),
+                        row.getLong("simulation_time"),
+                        row.getString("agent_id"),
+                        Json.read(row.getString("payload_json"), Map.class)),
+                id);
+    }
+
     Event event(RuleWork.EventRef ref) {
         return db
                 .query(

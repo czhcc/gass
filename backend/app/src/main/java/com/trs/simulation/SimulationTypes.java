@@ -2,7 +2,8 @@ package com.trs.simulation;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.trs.simulation.knowledge.ExpansionPolicy;
+import com.trs.simulation.contract.ExpansionInput;
+import com.trs.simulation.contract.FrozenExpansion;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -336,7 +337,27 @@ public final class SimulationTypes {
             Long horizonSimulationTime,
             Integer horizonRound,
             Boolean requireQuiescence,
-            String completionMode) {
+            String completionMode,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String objectiveScope) {
+        /** Preserves the original evaluation-policy constructor and JSON shape. @author czhcc-trsdsj\codexsandboxoffline */
+        public EvaluationPolicy(
+                String mode,
+                Integer earliestRound,
+                Long earliestSimulationTime,
+                Long horizonSimulationTime,
+                Integer horizonRound,
+                Boolean requireQuiescence,
+                String completionMode) {
+            this(
+                    mode,
+                    earliestRound,
+                    earliestSimulationTime,
+                    horizonSimulationTime,
+                    horizonRound,
+                    requireQuiescence,
+                    completionMode,
+                    null);
+        }
         /** Fills defaults and validates the ordering of configured evaluation points. @author czhcc-trsdsj\codexsandboxoffline */
         public EvaluationPolicy {
             earliestRound = earliestRound == null ? 0 : earliestRound;
@@ -351,6 +372,8 @@ public final class SimulationTypes {
                     || ("HORIZON".equals(completionMode) && horizonSimulationTime == null && horizonRound == null)
                     || (horizonRound != null && horizonSimulationTime != null)
                     || ("QUIESCENCE".equals(completionMode) && !requireQuiescence)
+                    || (objectiveScope != null
+                            && !List.of("RUN_GRAPH", "EXTERNAL_GRAPH").contains(objectiveScope))
                     || (mode != null && !List.of("TEXT_ONLY", "CONDITIONS").contains(mode))) {
                 throw new IllegalArgumentException("Invalid evaluation policy");
             }
@@ -374,7 +397,36 @@ public final class SimulationTypes {
 
             @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> ruleIds,
 
-            @JsonInclude(JsonInclude.Include.NON_NULL) ExpansionPolicy expansionPolicy) {
+            @JsonInclude(JsonInclude.Include.NON_NULL) FrozenExpansion expansionPolicy) {
+        /** Stores the original scenario configuration without coupling to its provider. @author czhcc-trsdsj\codexsandboxoffline */
+        public Scenario(
+                String id,
+                String name,
+                String worldId,
+                List<AgentDefinition> agents,
+                int maxSteps,
+                int maxEvents,
+                TeamConfig team,
+                String objective,
+                SchedulingPolicy scheduling,
+                EvaluationPolicy evaluationPolicy,
+                List<String> ruleIds,
+                ExpansionInput expansionPolicy) {
+            this(
+                    id,
+                    name,
+                    worldId,
+                    agents,
+                    maxSteps,
+                    maxEvents,
+                    team,
+                    objective,
+                    scheduling,
+                    evaluationPolicy,
+                    ruleIds,
+                    expansionPolicy == null ? null : expansionPolicy.expansionSnapshot());
+        }
+
         /** 保留阶段四场景构造接口。 @author czhcc-trsdsj\codexsandboxoffline */
         public Scenario(
                 String id,

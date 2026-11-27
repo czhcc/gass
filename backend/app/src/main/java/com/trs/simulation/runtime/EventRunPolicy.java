@@ -62,8 +62,9 @@ final class EventRunPolicy {
 
     boolean answered(String id, long version) {
         var coverage = store.knowledgeCoverage(id);
+        var scene = store.scenario(id);
         return store.events(id, 0).reversed().stream()
-                .anyMatch(event -> ObjectiveEvidence.COMPLETION_EVENT.equals(event.eventType())
+                .anyMatch(event -> ObjectiveEvidence.supportsRecordedCompletion(scene, event)
                         && event.payload().get("version") instanceof Number value
                         && value.longValue() == version
                         && KnowledgeCoverage.current(coverage, event.runId(), event.payload()));

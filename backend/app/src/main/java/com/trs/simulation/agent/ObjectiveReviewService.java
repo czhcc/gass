@@ -41,6 +41,23 @@ final class ObjectiveReviewService {
                 && host.initial().entities().stream().allMatch(e -> scope.contains(e.id()));
         var history = host.history();
         var coverage = host.knowledgeCoverage();
+        var scene = host.scenario();
+        var goal = ObjectiveEvidence.goalScope(scene);
+        if (goal != ObjectiveEvidence.GoalScope.RUN_GRAPH
+                && scene.objective() != null
+                && "NO_CONDITIONS".equals(outcome.result())) {
+            var limits = goal == ObjectiveEvidence.GoalScope.UNDETERMINED
+                    ? "GOAL_SCOPE_UNDETERMINED：请明确目标是否只涉及当前授权运行图谱。"
+                    : "DATA_REQUIRED：外部全图覆盖未获验证。当前授权图谱的结果仅支持局部结论。";
+            var references = history.reversed().stream()
+                    .filter(event -> ObjectiveEvidence.COMPLETION_DEFERRED.equals(event.eventType())
+                            && master.id().equals(event.agentId())
+                            && KnowledgeCoverage.current(coverage, event.runId(), event.payload()))
+                    .map(Event::sequence)
+                    .limit(1)
+                    .toList();
+            return new ObjectiveReview(limits, references, limits);
+        }
         var evidence = new LinkedHashMap<Long, Map<String, Object>>();
         if (fullScope)
             history.stream()
@@ -49,7 +66,7 @@ final class ObjectiveReviewService {
                     .ifPresent(e -> evidence.put(e.sequence(), Map.of("type", e.eventType())));
 
         var completion = history.reversed().stream()
-                .filter(e -> ObjectiveEvidence.COMPLETION_EVENT.equals(e.eventType())
+                .filter(e -> ObjectiveEvidence.supportsRecordedCompletion(scene, e)
                         && e.payload().get("round") instanceof Number round
                         && (host.scenario().eventDriven() || round.intValue() == outcome.evaluatedRound())
                         && e.payload().get("version") instanceof Number version

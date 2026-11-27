@@ -318,6 +318,65 @@ class KnowledgeRuntimeTest {
                         item.origin().equals("SIMULATED") && item.fields().contains("properties.balanceMinor")));
     }
 
+    @Test
+    void simulatedFieldProvenanceUsesTheExactForkCutAndSurvivesNestedForks() {
+        String run = createRun();
+        var receipt = imports.commit(
+                run, OPERATOR, imports.query(run, OPERATOR, PROVIDER, QUERY).id());
+        var imported = runs.state(run).entities().stream()
+                .filter(e -> "External C".equals(e.name()))
+                .findFirst()
+                .orElseThrow()
+                .id();
+        var before = history.fork(run, receipt.eventSequence(), "Before action", "source-before")
+                .id();
+        var written = runs.intervene(
+                run,
+                "source-action",
+                "writer",
+                new Decision(
+                        "TRANSFER",
+                        "account_a",
+                        Map.of("sourceId", imported, "amount", "1.00", "currency", "CNY"),
+                        "fixture"),
+                receipt.stateVersion());
+        long cut = runs.events(run, 0).stream()
+                .filter(e -> e.eventType().equals("WORLD_STATE_CHANGED"))
+                .findFirst()
+                .orElseThrow()
+                .sequence();
+        var after = history.fork(run, cut, "After action", "source-after").id();
+        var leaf = history.fork(after, runs.events(after, 0).getLast().sequence(), "Nested", "source-leaf")
+                .id();
+        assertEquals(written.entities(), runs.state(after).entities());
+        assertEquals(written.entities(), runs.state(leaf).entities());
+        assertTrue(imports.provenance(before, OPERATOR, imported).stream()
+                .noneMatch(row -> row.origin().equals("SIMULATED")));
+        var expected = imports.provenance(run, OPERATOR, imported);
+        assertEquals(expected, imports.provenance(after, OPERATOR, imported));
+        assertEquals(expected, imports.provenance(leaf, OPERATOR, imported));
+
+        var unchanged = imports.commit(
+                after, OPERATOR, imports.query(after, OPERATOR, PROVIDER, QUERY).id());
+        assertEquals(written.version(), unchanged.stateVersion());
+        assertEquals(written.entities(), runs.state(after).entities());
+        assertEquals(expected, imports.provenance(after, OPERATOR, imported));
+        assertEquals(expected, imports.provenance(run, OPERATOR, imported));
+        var childEdit = runs.intervene(
+                after,
+                "branch-only-edit",
+                "writer",
+                new Decision("FLAG_RISK", imported, Map.of(), "fixture"),
+                unchanged.stateVersion());
+        assertEquals(unchanged.stateVersion() + 1, childEdit.version());
+        var branchRows = imports.provenance(after, OPERATOR, imported);
+        assertEquals(expected.size() + 1, branchRows.size());
+        assertEquals(after, branchRows.getLast().sourceRunId());
+        assertTrue(branchRows.getLast().fields().contains("properties.riskFlag"));
+        assertEquals(expected, imports.provenance(run, OPERATOR, imported));
+        assertEquals(expected, imports.provenance(leaf, OPERATOR, imported));
+    }
+
     private String createRun() {
         var world = worlds.create(Examples.bankTransfer());
         var mapping = new OntologyMapping(

@@ -10,6 +10,7 @@ import com.trs.simulation.SimulationTypes.World;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.domain.DomainEnvironment;
 import com.trs.simulation.domain.examples.Examples;
+import com.trs.simulation.knowledge.ExpansionPolicy;
 import com.trs.simulation.rule.TriggerRuleCatalog;
 import com.trs.simulation.scenario.ScenarioProfiles;
 import com.trs.simulation.state.OntologyConstraints;
@@ -367,11 +368,13 @@ public class WorldService {
                             evaluation.horizonSimulationTime(),
                             evaluation.horizonRound(),
                             evaluation.requireQuiescence(),
-                            evaluation.completionMode());
+                            evaluation.completionMode(),
+                            evaluation.objectiveScope());
         }
         if (s.expansionPolicy() != null) {
-            s.expansionPolicy().validate(w);
-            s.expansionPolicy().validateReaders(agents);
+            var expansion = ExpansionPolicy.from(s.expansionPolicy());
+            expansion.validate(w);
+            expansion.validateReaders(agents);
         }
         require(Json.write(s).length() < 200000, "Scenario configuration too large");
         if (s.id() != null) scenario(s.id());

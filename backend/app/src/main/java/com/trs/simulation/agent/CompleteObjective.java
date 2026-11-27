@@ -2,6 +2,8 @@ package com.trs.simulation.agent;
 
 import com.trs.simulation.SimulationTypes.TaskRecord;
 import com.trs.simulation.evidence.ObjectiveEvidence;
+import com.trs.simulation.evidence.ObjectiveEvidence.CompletionCheck;
+import com.trs.simulation.evidence.ObjectiveEvidence.GoalScope;
 import com.trs.simulation.graph.KnowledgeCoverage;
 import io.agentscope.core.message.ToolResultBlock;
 import io.agentscope.core.tool.AgentTool;
@@ -90,7 +92,8 @@ final class CompleteObjective implements AgentTool {
             } catch (NumberFormatException | ArithmeticException invalid) {
                 return ToolResultBlock.error("Evidence references must be integer event sequences");
             }
-            var master = host.scenario().agents().stream()
+            var scene = host.scenario();
+            var master = scene.agents().stream()
                     .filter(agent -> agent.id().equals(root.agentId()))
                     .findFirst()
                     .orElseThrow();
@@ -100,20 +103,53 @@ final class CompleteObjective implements AgentTool {
             boolean fullScope = state.entities().stream().allMatch(e -> visible.contains(e.id()))
                     && host.initial().entities().stream().allMatch(e -> visible.contains(e.id()));
             var coverage = host.knowledgeCoverage();
-            var valid = host.history().stream()
-                    .filter(e -> references.contains(e.sequence())
-                            && ObjectiveEvidence.usableForCompletion(e, visible, version, fullScope, coverage))
-                    .count();
-            if (valid != references.size())
-                return ToolResultBlock.error(
-                        "Use only recorded, visible, complete current-version queries or accepted Action evidence");
+            var goal = ObjectiveEvidence.goalScope(scene);
+            var claimedScope = scene.expansionPolicy() != null && ObjectiveEvidence.claimsExternalScope(summary)
+                    ? GoalScope.EXTERNAL_GRAPH
+                    : goal;
+            var checks = host.history().stream()
+                    .filter(event -> references.contains(event.sequence()))
+                    .map(event -> ObjectiveEvidence.completionCheck(
+                            event, visible, version, fullScope, coverage, claimedScope))
+                    .toList();
+            var result = checks.size() != references.size()
+                    ? CompletionCheck.EVIDENCE_UNAVAILABLE
+                    : checks.stream()
+                            .filter(check -> check != CompletionCheck.SUPPORTED)
+                            .findFirst()
+                            .orElse(CompletionCheck.SUPPORTED);
+            if (result != CompletionCheck.SUPPORTED) {
+                return defer(version, coverage, claimedScope, result);
+            }
             var completion = new java.util.LinkedHashMap<String, Object>(Map.of(
                     "summary", summary, "evidenceSequences", references, "round", host.round(), "version", version));
+            if (coverage != null) {
+                completion.put("goalScope", goal.name());
+            }
             KnowledgeCoverage.annotate(coverage, completion);
             host.record(ObjectiveEvidence.COMPLETION_EVENT, root.agentId(), completion);
             completed = true;
             return ToolResultBlock.text(
                     "Text objective completion recorded. Return the round report with no further tasks.");
         });
+    }
+
+    private ToolResultBlock defer(long version, KnowledgeCoverage coverage, GoalScope goal, CompletionCheck check) {
+        if (coverage != null || goal != GoalScope.RUN_GRAPH) {
+            var details = new java.util.LinkedHashMap<String, Object>(Map.of(
+                    "reasonCode", check.name(), "goalScope", goal.name(), "round", host.round(), "version", version));
+            KnowledgeCoverage.annotate(coverage, details);
+            host.record(ObjectiveEvidence.COMPLETION_DEFERRED, root.agentId(), details);
+        }
+        return ToolResultBlock.error(
+                switch (check) {
+                    case GOAL_SCOPE_UNDETERMINED ->
+                        "GOAL_SCOPE_UNDETERMINED: Specify whether the objective concerns the authorized run graph.";
+                    case EXTERNAL_COVERAGE_PARTIAL, EXTERNAL_COVERAGE_UNKNOWN, EXTERNAL_SCOPE_UNVERIFIED ->
+                        check.name() + ": DATA_REQUIRED. Local search cannot establish coverage of the external graph.";
+                    case SEARCH_INCOMPLETE -> "SEARCH_INCOMPLETE: Refine or finish the authorized query.";
+                    default ->
+                        "Use only recorded, visible, complete current-version queries or accepted Action evidence";
+                });
     }
 }

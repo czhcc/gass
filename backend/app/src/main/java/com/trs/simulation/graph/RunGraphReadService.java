@@ -65,6 +65,7 @@ public class RunGraphReadService {
             KnowledgeCoverage.annotate(coverage, scoped);
             // 已导入事实扩大可见子图。局部路径完备仍不能证明外部全图已查全。
             scoped.put("externalCoverage", "UNKNOWN");
+            scoped.put("evidenceScope", "AUTHORIZED_RUN_GRAPH");
             result = Collections.unmodifiableMap(scoped);
         }
         cache.put(key, result);

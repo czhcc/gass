@@ -103,7 +103,10 @@ public class KnowledgeExpansionService {
             long eventSequence,
             long simulationTime,
             long stateVersion,
-            Set<String> fields) {}
+            Set<String> fields,
+
+            @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+            String sourceRunId) {}
 
     /** 查询时预留配额，候选生效前重新校验运行状态。 @author czhcc-trsdsj\codexsandboxoffline */
     public Candidate query(String runId, String operator, String providerCode, Query query) {
@@ -435,7 +438,7 @@ public class KnowledgeExpansionService {
             return allowed(runId, actor, provider);
         }
         task.check().run();
-        var policy = store.scenario(runId).expansionPolicy();
+        var policy = ExpansionPolicy.from(store.scenario(runId).expansionPolicy());
         var source = policy == null ? null : policy.sources().get(provider);
         if (source == null
                 || !source.workerQueries().getOrDefault(actor, Set.of()).contains(query)) {
@@ -526,7 +529,24 @@ public class KnowledgeExpansionService {
 
     /** 从已持久字段来源读取外部事实，不再查询数据源。 @author czhcc-trsdsj\codexsandboxoffline */
     public List<Provenance> provenance(String runId, String operator, String objectId) {
-        operatorPolicy(runId, operator);
+        synchronized (runs) {
+            operatorPolicy(runId, operator);
+            return fieldProvenance(runId, objectId);
+        }
+    }
+
+    private List<Provenance> fieldProvenance(String runId, String objectId) {
+        if (objectId == null || objectId.isBlank()) {
+            throw new IllegalArgumentException("A provenance object is required");
+        }
+        var history = store.fieldHistory(runId);
+        var sourceRuns = new LinkedHashMap<String, String>();
+        for (var event : history) {
+            if ("WORLD_EXPANDED".equals(event.eventType())
+                    && event.payload().get("receiptId") instanceof String receipt) {
+                sourceRuns.putIfAbsent(receipt, event.runId());
+            }
+        }
         var imports = importRecords(runId);
         var rows = new java.util.ArrayList<Provenance>();
         for (var entry : imports) {
@@ -552,11 +572,12 @@ public class KnowledgeExpansionService {
                             receipt.eventSequence(),
                             receipt.simulationTime(),
                             receipt.stateVersion(),
-                            fields)));
+                            fields,
+                            sourceRuns.get(receipt.receiptId()))));
         }
         var relation = objectId.startsWith("relation:");
         var target = relation ? objectId.substring("relation:".length()) : objectId;
-        for (var event : store.events(runId, 0)) {
+        for (var event : history) {
             if (!"WORLD_STATE_CHANGED".equals(event.eventType())
                     || !(event.payload().get("stateDiff") instanceof List<?> changes)
                     || !(event.payload().get("version") instanceof Number version)
@@ -587,7 +608,8 @@ public class KnowledgeExpansionService {
                         event.sequence(),
                         event.simulationTime(),
                         version.longValue(),
-                        keys));
+                        keys,
+                        event.runId()));
             }
         }
         return List.copyOf(rows);
@@ -607,7 +629,7 @@ public class KnowledgeExpansionService {
     }
 
     private ExpansionPolicy operatorPolicy(String runId, String operator) {
-        var policy = store.scenario(runId).expansionPolicy();
+        var policy = ExpansionPolicy.from(store.scenario(runId).expansionPolicy());
         if (policy == null || !policy.operators().contains(operator)) {
             throw new IllegalArgumentException("External expansion is outside this operator's policy");
         }

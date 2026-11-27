@@ -232,3 +232,9 @@ V7 仅新增计时与原因字段，不清理数据、不改写历史事件。�
 - `POST /api/runs/{id}/knowledge/grants/revoke` 接收 `roleId` 和 `objectId`，同时撤销导入产生的读权和本地 Action 授权。重复撤销幂等，后续重导入保留撤销。历史分支按分支点继承当时的授权。
 - `GET /api/runs/{id}/knowledge/provenance?objectId=...` 返回提供者、外部 ID、查询批次、抓取时间、导入序号和字段。关系 ID 使用 `relation:<id>`，模拟写入条目标记 `SIMULATED` 并引用 Action。来源和预览由被冻结的操作人范围保护。
 - 可通过部署属性 `studio.knowledge.provider-config` 指向可信本地 JSON 注册表。其 `sources` 元素包含 `providerCode`、`endpoint`、`readOnlyTools`、`timeoutMilliseconds`、`maximumBytes` 和可选 `credentialEnvironment`。凭证值只通过部署所引用的环境变量提供。
+
+### 第五阶段范围和历史来源
+
+- 文字目标可在 `evaluationPolicy.objectiveScope` 明确指定 `RUN_GRAPH` 或 `EXTERNAL_GRAPH`。未指定时，外部扩展场景仅在冻结目标明确限定当前运行图谱或模拟逻辑时点、且结论范围清楚时接受局部证据。外部目标或范围不明确时，完成工具分别返回 `DATA_REQUIRED` 或 `GOAL_SCOPE_UNDETERMINED`，并写入 `OBJECTIVE_COMPLETION_DEFERRED`。
+- `GRAPH_QUERY_RESULT` 的 `pathRanking.complete` 描述算法搜索。分页或截断和 `scopeIds` 另行校验。当前运行图谱的 `evidenceScope=AUTHORIZED_RUN_GRAPH`，外部批次的 `COMPLETE` 只对应其声明的查询范围。两者都无法证明外部全图完整。
+- 来源查询在可核实情况下返回 `sourceRunId`。它与 `eventSequence` 一起定位原导入或模拟 Action。分支返回所选截点的来源和该分支自己的后续来源。旧记录缺少可验证事件或字段差异时，接口保留可证实的来源。
