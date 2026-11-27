@@ -154,3 +154,11 @@
 - 继续使用已冻结清单。持久化按角色对新导入对象的读权及独立的本地 Action 授权，保留显式任务范围与历史分支隔离。
 - 运行缓存和当前目标证据按覆盖修订校验。后端 145 项、前端 86 项、门禁单测 37 项通过，Spotless 和生产构建通过。
 - [第五阶段开发与测试记录](acceptance/stage-05/development.md)
+
+## 第五阶段开发完成（待独立验收）
+
+- 分支 `feat/knowledge-graph-expansion`，基线 `2aa1f0b2344393304ca966b64f42669658ea12dd`，候选 `28b903253a2f73da33b60a9a0e836eaf8daae92e`。
+- 保留批准后冻结的 100 项必验和 1 项条件检查，清单 SHA-256 为 `4a9da357bc353a32c41635f86b7dad51f767106b2380d39905728bcb4e71fbad`，自动 Stage Gate 等待独立验收结果。
+- 交付只读外部接入、智能体候选申请、持久化审批与撤销、分币种评价、字段来源、覆盖修订及历史分支。导入不推进逻辑时间或进入 ECA 业务传播。
+- 后端 151 项、前端 86 项、累计专项 47 项及门禁单测 37 项通过。生产构建、原 HTTP/SSE/浏览器回归、V9/V10/V12/V13 回放、前置阶段与第五阶段真实进程重启通过。
+- [第五阶段候选登记](acceptance/stage-05/candidate.json) · [开发报告](acceptance/stage-05/development.md) · [冻结清单](acceptance/stage-05/check-manifest.json)
