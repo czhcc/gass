@@ -1,3 +1,6 @@
 # Acceptance records and their hash files are verified byte for byte across checkouts.
 *.json -text
 *.sha256 -text
+
+# Keep the independent reviewer report byte-for-byte as delivered.
+attempt-01/review.md -text
