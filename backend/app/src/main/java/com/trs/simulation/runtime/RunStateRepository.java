@@ -5,9 +5,14 @@ import com.trs.simulation.SimulationTypes.Scenario;
 import com.trs.simulation.SimulationTypes.State;
 import com.trs.simulation.SimulationTypes.World;
 import com.trs.simulation.common.Json;
+import com.trs.simulation.graph.KnowledgeCoverage;
+import com.trs.simulation.state.VisibilityPolicy;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /** Reads frozen run data and maintains the durable event log. @author czhcc-trsdsj\codexsandboxoffline */
@@ -75,6 +80,59 @@ final class RunStateRepository {
 
     Scenario scenario(String id) {
         return Json.read(one("SELECT scenario_json FROM simulation_run WHERE id=?", id), Scenario.class);
+    }
+
+    Scenario scopedScenario(String id) {
+        var scene = scenario(id);
+        if (scene.expansionPolicy() == null) {
+            return scene;
+        }
+        var readers = new HashMap<String, Set<String>>();
+        var actionRoles = new HashMap<String, Set<String>>();
+        for (var receipt : db.query(
+                "SELECT receipt_json FROM simulation_knowledge_import WHERE run_id=?",
+                (row, index) -> Json.read(row.getString(1), KnowledgeExpansionService.Receipt.class),
+                id)) {
+            receipt.readers()
+                    .forEach((role, objects) -> readers.computeIfAbsent(role, key -> new HashSet<>())
+                            .addAll(objects));
+            receipt.actionRoles()
+                    .forEach((role, objects) -> actionRoles
+                            .computeIfAbsent(role, key -> new HashSet<>())
+                            .addAll(objects));
+        }
+        if (readers.isEmpty()) {
+            return scene;
+        }
+        var roles = scene.agents().stream()
+                .map(role -> VisibilityPolicy.grantRunAccess(
+                        role, readers.getOrDefault(role.id(), Set.of()), actionRoles.getOrDefault(role.id(), Set.of())))
+                .toList();
+        return new Scenario(
+                scene.id(),
+                scene.name(),
+                scene.worldId(),
+                roles,
+                scene.maxSteps(),
+                scene.maxEvents(),
+                scene.team(),
+                scene.objective(),
+                scene.scheduling(),
+                scene.evaluationPolicy(),
+                scene.ruleIds(),
+                scene.expansionPolicy());
+    }
+
+    KnowledgeCoverage knowledgeCoverage(String id) {
+        if (scenario(id).expansionPolicy() == null) {
+            return null;
+        }
+        return new KnowledgeCoverage(
+                id,
+                db.queryForObject(
+                        "SELECT COALESCE(MAX(import_order),0) FROM simulation_knowledge_import WHERE run_id=?",
+                        Long.class,
+                        id));
     }
 
     void saveGraph(State current, State next) {

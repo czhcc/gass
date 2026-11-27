@@ -7,6 +7,7 @@ import com.trs.simulation.common.Json;
 import com.trs.simulation.evaluation.BusinessEvaluation;
 import com.trs.simulation.evidence.ObjectiveEvidence;
 import com.trs.simulation.evidence.TaskEvidence;
+import com.trs.simulation.graph.KnowledgeCoverage;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
@@ -57,6 +58,7 @@ final class RunTerminationPolicy {
                     scenario.agents().size(),
                     "All agents submitted accepted END decisions",
                     "");
+        var coverage = store.knowledgeCoverage(id);
         if (!scenario.eventDriven()
                 && checkSteps
                 && scenario.objective() != null
@@ -67,7 +69,10 @@ final class RunTerminationPolicy {
                                 && e.payload().get("round") instanceof Number round
                                 && round.intValue() == run.step()
                                 && e.payload().get("version") instanceof Number version
-                                && version.longValue() == run.version())) return evaluateHorizon(id, scenario, true);
+                                && version.longValue() == run.version()
+                                && KnowledgeCoverage.current(coverage, e.runId(), e.payload()))) {
+            return evaluateHorizon(id, scenario, true);
+        }
         if (!scenario.eventDriven() && checkSteps && run.step() >= scenario.maxSteps()) {
             if (scenario.objective() != null
                     && db.queryForObject(

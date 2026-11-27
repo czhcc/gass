@@ -371,6 +371,7 @@ public class WorldService {
         }
         if (s.expansionPolicy() != null) {
             s.expansionPolicy().validate(w);
+            s.expansionPolicy().validateReaders(agents);
         }
         require(Json.write(s).length() < 200000, "Scenario configuration too large");
         if (s.id() != null) scenario(s.id());

@@ -116,7 +116,8 @@ final class AgentContextBuilder {
                 if (!actions.isEmpty() && Json.write(actions).length() <= 6000)
                     result.put("recentActionEvidence", actions);
             }
-            var previousQueries = ObjectiveEvidence.recentGraphEvidence(history, state.version(), scope, fullScope);
+            var previousQueries = ObjectiveEvidence.recentGraphEvidence(
+                    history, state.version(), scope, fullScope, host.knowledgeCoverage());
             if (!previousQueries.isEmpty()) {
                 result.put("recentGraphEvidence", previousQueries);
                 if (Json.write(result).length() > 32000) result.remove("recentGraphEvidence");

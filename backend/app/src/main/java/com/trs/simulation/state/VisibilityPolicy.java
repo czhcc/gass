@@ -91,6 +91,34 @@ public final class VisibilityPolicy {
                 limited.taskScopeLimit());
     }
 
+    /** 将已持久批准的运行对象授权应用于冻结角色，再由任务委派计算最终范围。 @author czhcc-trsdsj\codexsandboxoffline */
+    public static AgentDefinition grantRunAccess(
+            AgentDefinition agent, Collection<String> objectIds, Collection<String> writableIds) {
+        if (objectIds.isEmpty()) {
+            return agent;
+        }
+        var granted = new TreeSet<>(agent.visibleEntityIds());
+        granted.addAll(objectIds);
+        if (agent.taskScopeLimit() != null) {
+            granted.retainAll(agent.taskScopeLimit());
+        }
+        var readOnly = new HashSet<>(agent.readOnlyEntityIds());
+        readOnly.addAll(objectIds);
+        readOnly.removeAll(writableIds);
+        readOnly.retainAll(granted);
+        return new AgentDefinition(
+                agent.id(),
+                agent.name(),
+                agent.goal(),
+                agent.modelId(),
+                agent.allowedActions(),
+                List.copyOf(granted),
+                agent.maxDecisions(),
+                agent.runtime(),
+                agent.taskScopeLimit(),
+                readOnly);
+    }
+
     private static AgentDefinition scoped(
             AgentDefinition agent, List<String> grants, List<String> actions, Set<String> limit) {
         return new AgentDefinition(
@@ -102,7 +130,8 @@ public final class VisibilityPolicy {
                 grants,
                 agent.maxDecisions(),
                 agent.runtime(),
-                limit);
+                limit,
+                agent.readOnlyEntityIds());
     }
 
     /** Includes only visible objects, edges and properties that contain no known hidden graph identity. @author czhcc-trsdsj\codexsandboxoffline */

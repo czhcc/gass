@@ -14,6 +14,7 @@ import com.trs.simulation.SimulationTypes.State;
 import com.trs.simulation.SimulationTypes.TaskRequest;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.evidence.ObjectiveEvidence;
+import com.trs.simulation.graph.KnowledgeCoverage;
 import com.trs.simulation.graph.RunGraphReadService;
 import com.trs.simulation.state.VisibilityPolicy;
 import java.util.List;
@@ -38,6 +39,41 @@ class ObjectiveGraphQueryTest {
             edge("root", "other", true),
             edge("other", "b", false));
     private final Map<String, Object> ranking = Map.of("from", "root", "rankByType", "TEAM");
+
+    @Test
+    void importedCoverageSeparatesSameVersionCachesAndCompletionEvidence() {
+        var state = new State("coverage-run", 2, 3, entities, relations);
+        var scope = Set.of("root", "a", "b", "end", "other");
+        var worker = new AgentDefinition(
+                "query",
+                "Query",
+                "Path",
+                "mock",
+                List.of(),
+                List.copyOf(scope),
+                3,
+                new AgentRuntime("QUERY", "query", "graph", List.of("graph_path")));
+        var oldCoverage = new KnowledgeCoverage(state.runId(), 4);
+        var newCoverage = new KnowledgeCoverage(state.runId(), 5);
+        var initial = graph.read(worker, state, "graph_path", ranking, oldCoverage);
+        assertTrue(graph.read(worker, state, "graph_path", ranking, oldCoverage).reused());
+        var refreshed = graph.read(worker, state, "graph_path", ranking, newCoverage);
+        assertFalse(refreshed.reused());
+        assertEquals("UNKNOWN", refreshed.result().get("externalCoverage"));
+        assertEquals(true, ((Map<?, ?>) refreshed.result().get("pathRanking")).get("complete"));
+        var event = new Event(
+                state.runId(),
+                10,
+                "GRAPH_QUERY_RESULT",
+                2,
+                worker.id(),
+                Map.of("scopeIds", initial.scopeIds(), "result", initial.result()));
+        assertTrue(ObjectiveEvidence.usableForCompletion(event, scope, 3, true, oldCoverage));
+        assertFalse(ObjectiveEvidence.usableForCompletion(event, scope, 3, true, newCoverage));
+        assertFalse(ObjectiveEvidence.usableForCompletion(event, scope, 3, true, new KnowledgeCoverage("branch", 4)));
+        assertTrue(ObjectiveEvidence.recentGraphEvidence(List.of(event), 3, scope, true, newCoverage)
+                .isEmpty());
+    }
 
     @Test
     void legacyQueryWithoutScopeNeedsProvenFullVisibility() {

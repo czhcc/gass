@@ -8,6 +8,7 @@ import com.trs.simulation.SimulationTypes.Scenario;
 import com.trs.simulation.SimulationTypes.State;
 import com.trs.simulation.SimulationTypes.TaskRecord;
 import com.trs.simulation.SimulationTypes.TaskRequest;
+import com.trs.simulation.graph.KnowledgeCoverage;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +18,10 @@ import reactor.core.publisher.Mono;
 public interface HierarchyHost {
     /** Frozen scene. @author czhcc-trsdsj\codexsandboxoffline */
     Scenario scenario();
+    /** 当前图谱的覆盖修订。未启用外部扩展时为空。 @author czhcc-trsdsj\codexsandboxoffline */
+    default KnowledgeCoverage knowledgeCoverage() {
+        return null;
+    }
     /** Latest committed state. @author czhcc-trsdsj\codexsandboxoffline */
     State state();
     /** Frozen original state for stable scope and invariant evaluation. @author czhcc-trsdsj\codexsandboxoffline */

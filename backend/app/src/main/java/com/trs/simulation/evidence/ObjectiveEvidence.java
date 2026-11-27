@@ -4,6 +4,7 @@ import com.trs.simulation.SimulationTypes.Event;
 import com.trs.simulation.SimulationTypes.Relation;
 import com.trs.simulation.SimulationTypes.State;
 import com.trs.simulation.common.Json;
+import com.trs.simulation.graph.KnowledgeCoverage;
 import com.trs.simulation.state.VisibilityPolicy;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,11 +39,18 @@ public final class ObjectiveEvidence {
 
     /** Authorizes a citation within the current graph version or a visible historical Action. @author czhcc-trsdsj\codexsandboxoffline */
     public static boolean usableForCompletion(Event event, Set<String> scope, long version, boolean fullScope) {
+        return usableForCompletion(event, scope, version, fullScope, null);
+    }
+
+    /** 当前查询证据须与来源运行、图谱版本和覆盖修订一致。 @author czhcc-trsdsj\codexsandboxoffline */
+    public static boolean usableForCompletion(
+            Event event, Set<String> scope, long version, boolean fullScope, KnowledgeCoverage coverage) {
         var payload = event.payload();
         if (visibleQuery(event, scope, fullScope)
                 && payload.get("result") instanceof Map<?, ?> result
                 && result.get("version") instanceof Number observed
-                && observed.longValue() == version) {
+                && observed.longValue() == version
+                && KnowledgeCoverage.current(coverage, event.runId(), result)) {
             if (result.get("pathRanking") instanceof Map<?, ?> ranking)
                 return Boolean.TRUE.equals(ranking.get("complete"))
                         && !Boolean.TRUE.equals(ranking.get("tiesTruncated"));
@@ -282,6 +290,8 @@ public final class ObjectiveEvidence {
         for (String key : List.of(
                 "version",
                 "scope",
+                "coverageRevision",
+                "externalCoverage",
                 "evidence",
                 "totalObjects",
                 "totalRelations",
@@ -314,13 +324,20 @@ public final class ObjectiveEvidence {
     /** Selects distinct visible queries for the current state version. @author czhcc-trsdsj\codexsandboxoffline */
     public static List<Map<String, Object>> recentGraphEvidence(
             List<Event> history, long version, Set<String> visible, boolean fullScope) {
+        return recentGraphEvidence(history, version, visible, fullScope, null);
+    }
+
+    /** 保留当前覆盖修订的最近查询，避免重用过期的范围或覆盖结论。 @author czhcc-trsdsj\codexsandboxoffline */
+    public static List<Map<String, Object>> recentGraphEvidence(
+            List<Event> history, long version, Set<String> visible, boolean fullScope, KnowledgeCoverage coverage) {
         var seen = new HashSet<Map<String, Object>>();
         var evidence = new ArrayList<Map<String, Object>>();
         for (var query : history.reversed()) {
             if (!visibleQuery(query, visible, fullScope)
                     || !(query.payload().get("result") instanceof Map<?, ?> result)
                     || !(result.get("version") instanceof Number observed)
-                    || observed.longValue() != version) continue;
+                    || observed.longValue() != version
+                    || !KnowledgeCoverage.current(coverage, query.runId(), result)) continue;
             var entry = queryEvidence(query, result);
             if (!seen.add(entry)) continue;
             var referenced = new LinkedHashMap<>(entry);

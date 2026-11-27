@@ -61,7 +61,21 @@ public class KnowledgeExpansionService {
             ExternalSubgraph.Coverage coverage,
             Map<String, Set<String>> changedFields,
             List<String> conflicts,
-            Map<String, Long> importedBalanceMinor) {}
+            Map<String, Long> importedBalanceMinor,
+
+            @com.fasterxml.jackson.annotation.JsonInclude(
+                    com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
+            Map<String, Set<String>> readers,
+
+            @com.fasterxml.jackson.annotation.JsonInclude(
+                    com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
+            Map<String, Set<String>> actionRoles) {
+        /** 历史收据可能没有附加读者。 @author czhcc-trsdsj\codexsandboxoffline */
+        public Receipt {
+            readers = readers == null ? Map.of() : Map.copyOf(readers);
+            actionRoles = actionRoles == null ? Map.of() : Map.copyOf(actionRoles);
+        }
+    }
 
     /** 绑定发起者、生命周期、版本和查询条件的服务端持久记录。 @author czhcc-trsdsj\codexsandboxoffline */
     private record StoredCandidate(
@@ -235,7 +249,9 @@ public class KnowledgeExpansionService {
                 batch.coverage(),
                 preview.changedFields(),
                 preview.conflicts(),
-                preview.importedBalanceMinor());
+                preview.importedBalanceMinor(),
+                grantedObjects(source, batch, preview, source.readersByExternalId()),
+                grantedObjects(source, batch, preview, source.actionRolesByExternalId()));
         store.append(
                 runId,
                 "WORLD_EXPANDED",
@@ -273,6 +289,31 @@ public class KnowledgeExpansionService {
                 runId,
                 id);
         return receipt;
+    }
+
+    private Map<String, Set<String>> grantedObjects(
+            ExpansionPolicy.Source source,
+            ExternalSubgraph batch,
+            SubgraphImport.Preview preview,
+            Map<String, Set<String>> approvedRoles) {
+        var liveIds =
+                preview.state().entities().stream().map(entity -> entity.id()).collect(Collectors.toSet());
+        var readers = new java.util.TreeMap<String, Set<String>>();
+        for (var entity : batch.entities()) {
+            if (source.initialIdentities().entities().containsKey(entity.externalId())) {
+                // 导入不能借用一个原有本地对象，为它发放额外读取权限。
+                continue;
+            }
+            var internalId = preview.identities().entities().get(entity.externalId());
+            if (internalId == null || !liveIds.contains(internalId)) {
+                continue;
+            }
+            for (var reader : approvedRoles.getOrDefault(entity.externalId(), Set.of())) {
+                readers.computeIfAbsent(reader, key -> new java.util.TreeSet<>())
+                        .add(internalId);
+            }
+        }
+        return readers;
     }
 
     private ExpansionPolicy allowed(String id, String operator, String provider) {

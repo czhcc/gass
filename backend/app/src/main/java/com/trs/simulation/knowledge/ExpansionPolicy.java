@@ -6,6 +6,7 @@ import com.trs.simulation.SimulationTypes.World;
 import com.trs.simulation.knowledge.SubgraphImport.Identities;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /** 运行冻结的管理员数据源配置、显式身份关联和扩展配额。 @author czhcc-trsdsj\codexsandboxoffline */
 public record ExpansionPolicy(
@@ -43,7 +44,57 @@ public record ExpansionPolicy(
     }
 
     /** 绑定本体修订与已有世界对象。 @author czhcc-trsdsj\codexsandboxoffline */
-    public record Source(OntologyMapping mapping, Identities initialIdentities) {}
+    public record Source(
+            OntologyMapping mapping,
+            Identities initialIdentities,
+
+            @com.fasterxml.jackson.annotation.JsonInclude(
+                    com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
+            Map<String, Set<String>> readersByExternalId,
+
+            @com.fasterxml.jackson.annotation.JsonInclude(
+                    com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
+            Map<String, Set<String>> actionRolesByExternalId) {
+        /** 冻结外部对象的读取授权及独立的本地 Action 访问授权。 @author czhcc-trsdsj\codexsandboxoffline */
+        public Source {
+            readersByExternalId = freeze(readersByExternalId);
+            actionRolesByExternalId = freeze(actionRolesByExternalId);
+            for (var grant : actionRolesByExternalId.entrySet()) {
+                if (!readersByExternalId.getOrDefault(grant.getKey(), Set.of()).containsAll(grant.getValue())) {
+                    throw new IllegalArgumentException("External object Action access requires an explicit reader");
+                }
+            }
+        }
+
+        /** 兼容仅配置动态读取授权的场景。 @author czhcc-trsdsj\codexsandboxoffline */
+        public Source(
+                OntologyMapping mapping, Identities initialIdentities, Map<String, Set<String>> readersByExternalId) {
+            this(mapping, initialIdentities, readersByExternalId, Map.of());
+        }
+
+        /** 兼容未配置动态授权的场景。 @author czhcc-trsdsj\codexsandboxoffline */
+        public Source(OntologyMapping mapping, Identities initialIdentities) {
+            this(mapping, initialIdentities, Map.of(), Map.of());
+        }
+
+        private static Map<String, Set<String>> freeze(Map<String, Set<String>> grants) {
+            if (grants == null) {
+                return Map.of();
+            }
+            grants.keySet().forEach(ExternalSubgraph::requireIdentifier);
+            return grants.entrySet().stream()
+                    .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, entry -> Set.copyOf(entry.getValue())));
+        }
+    }
+
+    /** 仅允许对当前冻结场景中的角色发放授权。 @author czhcc-trsdsj\codexsandboxoffline */
+    public void validateReaders(Set<String> sceneAgentIds) {
+        if (sources.values().stream()
+                .flatMap(source -> source.readersByExternalId().values().stream())
+                .anyMatch(readers -> readers.isEmpty() || !sceneAgentIds.containsAll(readers))) {
+            throw new IllegalArgumentException("Unknown or empty reader set for external entity");
+        }
+    }
 
     /** 校验已绑定目标及允许的内部类型均来自当前本体。 @author czhcc-trsdsj\codexsandboxoffline */
     public void validate(World world) {

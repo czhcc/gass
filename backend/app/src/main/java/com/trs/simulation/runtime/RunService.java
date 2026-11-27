@@ -335,7 +335,7 @@ public class RunService {
      * Returns the frozen agent configuration for activity and intervention controls. @author agent
      */
     public List<AgentDefinition> agents(String id) {
-        return store.scenario(id).agents();
+        return store.scopedScenario(id).agents();
     }
 
     /** Seeds a configured example input using this run's frozen world and an idempotent key. @author czhcc-trsdsj\codexsandboxoffline */
@@ -352,7 +352,7 @@ public class RunService {
             return new ActionCatalog(
                     world.domainCode(),
                     state.version(),
-                    store.scenario(id).agents().stream()
+                    store.scopedScenario(id).agents().stream()
                             .map(agent -> {
                                 boolean ended = store.hasEnded(id, agent.id());
                                 return new AgentCapabilities(
@@ -406,7 +406,7 @@ public class RunService {
 
     /** Reports strict scheduling metadata and work status without executing the queue. @author czhcc-trsdsj\codexsandboxoffline */
     public synchronized Map<String, Object> scheduling(String id) {
-        var scene = store.scenario(id);
+        var scene = store.scopedScenario(id);
         var current = state(id);
         if (!scene.eventDriven()) {
             return Map.of("mode", "TASK_DRIVEN", "simulationTime", current.simulationTime());
@@ -442,7 +442,7 @@ public class RunService {
      */
     public synchronized void inject(String id, String key, ScheduledInput event) {
         var run = get(id);
-        var scenario = store.scenario(id);
+        var scenario = store.scopedScenario(id);
         if (!scenario.eventDriven() && !List.of("PAUSED", "RUNNING").contains(run.status()))
             throw new IllegalStateException("Run is terminal");
         if (key == null
@@ -511,7 +511,7 @@ public class RunService {
             activeStarts.put(id, nanoClock.getAsLong());
         }
         try {
-            var scenario = store.scenario(id);
+            var scenario = store.scopedScenario(id);
             if (scenario.eventDriven()) return stepEventClock(id, command, scenario, lease);
             if (scenario.team() == null) {
                 synchronized (this) {
@@ -655,7 +655,7 @@ public class RunService {
             prepareRound(id, command);
             lease = invocations.get(id);
         }
-        var scenario = store.scenario(id);
+        var scenario = store.scopedScenario(id);
         if (!List.of("PAUSED", "RUNNING").contains(get(id).status())) {
             reviewAtHorizon(id, scenario, lease);
             return state(id);
@@ -716,7 +716,7 @@ public class RunService {
 
     private void prepareRound(String id, String command) {
         var run = get(id);
-        var scenario = store.scenario(id);
+        var scenario = store.scopedScenario(id);
         if (checkTermination(id, scenario, true)) return;
         scheduler.advance(id, command, run.step());
     }
@@ -860,7 +860,7 @@ public class RunService {
         if (store.businessChangeCount(id) >= changeBudget
                 || store.eventCount(id) > store.scenario(id).maxEvents() - 10)
             throw new IllegalStateException("Run budget exhausted");
-        var scenario = store.scenario(id);
+        var scenario = store.scopedScenario(id);
         var agent = scenario.agents().stream()
                 .filter(a -> a.id().equals(agentId))
                 .findFirst()

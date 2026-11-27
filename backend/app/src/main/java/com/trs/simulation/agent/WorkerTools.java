@@ -71,7 +71,7 @@ final class WorkerTools {
         host.check();
         if (++queries > 5) throw new IllegalArgumentException("Task query limit reached");
         var args = arguments == null ? Map.<String, Object>of() : arguments;
-        var read = graph.read(agent, host.state(), tool, args);
+        var read = graph.read(agent, host.state(), tool, args, host.knowledgeCoverage());
         var result = read.result();
         if (Json.write(result).length() > 24000)
             throw new IllegalArgumentException("Query result too large; reduce limit");

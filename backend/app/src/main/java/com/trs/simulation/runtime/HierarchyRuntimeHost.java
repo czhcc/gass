@@ -13,6 +13,7 @@ import com.trs.simulation.SimulationTypes.TeamConfig;
 import com.trs.simulation.agent.HierarchyHost;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.evidence.TaskEvidence;
+import com.trs.simulation.graph.KnowledgeCoverage;
 import com.trs.simulation.model.ModelService;
 import com.trs.simulation.runtime.RunService.Lease;
 import com.trs.simulation.state.VisibilityPolicy;
@@ -66,8 +67,14 @@ final class HierarchyRuntimeHost implements HierarchyHost {
     /** Frozen configuration. @author czhcc-trsdsj\codexsandboxoffline */
     @Override
     public Scenario scenario() {
-        return store.scenario(id);
+        return store.scopedScenario(id);
     }
+    /** 当前运行的数据覆盖修订。 @author czhcc-trsdsj\codexsandboxoffline */
+    @Override
+    public KnowledgeCoverage knowledgeCoverage() {
+        return store.knowledgeCoverage(id);
+    }
+
     /** Latest committed state. @author czhcc-trsdsj\codexsandboxoffline */
     @Override
     public State state() {

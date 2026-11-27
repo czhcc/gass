@@ -2,6 +2,7 @@ package com.trs.simulation.agent;
 
 import com.trs.simulation.SimulationTypes.TaskRecord;
 import com.trs.simulation.evidence.ObjectiveEvidence;
+import com.trs.simulation.graph.KnowledgeCoverage;
 import io.agentscope.core.message.ToolResultBlock;
 import io.agentscope.core.tool.AgentTool;
 import io.agentscope.core.tool.ToolCallParam;
@@ -98,25 +99,18 @@ final class CompleteObjective implements AgentTool {
             long version = state.version();
             boolean fullScope = state.entities().stream().allMatch(e -> visible.contains(e.id()))
                     && host.initial().entities().stream().allMatch(e -> visible.contains(e.id()));
+            var coverage = host.knowledgeCoverage();
             var valid = host.history().stream()
                     .filter(e -> references.contains(e.sequence())
-                            && ObjectiveEvidence.usableForCompletion(e, visible, version, fullScope))
+                            && ObjectiveEvidence.usableForCompletion(e, visible, version, fullScope, coverage))
                     .count();
             if (valid != references.size())
                 return ToolResultBlock.error(
                         "Use only recorded, visible, complete current-version queries or accepted Action evidence");
-            host.record(
-                    ObjectiveEvidence.COMPLETION_EVENT,
-                    root.agentId(),
-                    Map.of(
-                            "summary",
-                            summary,
-                            "evidenceSequences",
-                            references,
-                            "round",
-                            host.round(),
-                            "version",
-                            version));
+            var completion = new java.util.LinkedHashMap<String, Object>(Map.of(
+                    "summary", summary, "evidenceSequences", references, "round", host.round(), "version", version));
+            KnowledgeCoverage.annotate(coverage, completion);
+            host.record(ObjectiveEvidence.COMPLETION_EVENT, root.agentId(), completion);
             completed = true;
             return ToolResultBlock.text(
                     "Text objective completion recorded. Return the round report with no further tasks.");

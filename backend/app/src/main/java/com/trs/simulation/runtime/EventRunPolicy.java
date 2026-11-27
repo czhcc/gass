@@ -5,6 +5,7 @@ import com.trs.simulation.SimulationTypes.Run;
 import com.trs.simulation.SimulationTypes.Scenario;
 import com.trs.simulation.SimulationTypes.State;
 import com.trs.simulation.evidence.ObjectiveEvidence;
+import com.trs.simulation.graph.KnowledgeCoverage;
 import java.util.Objects;
 
 /** Interprets the frozen event-mode clock and evaluation boundaries. @author czhcc-trsdsj\codexsandboxoffline */
@@ -50,18 +51,22 @@ final class EventRunPolicy {
                         && policy.horizonRound() != null
                         && run.step() < policy.horizonRound())) return true;
         if (answered(run.id(), current.version())) return false;
+        var coverage = store.knowledgeCoverage(run.id());
         return store.events(run.id(), 0).reversed().stream()
                 .noneMatch(event -> "REASONING_ROUND_FINISHED".equals(event.eventType())
                         && event.simulationTime() == current.simulationTime()
                         && event.payload().get("inputVersion") instanceof Number version
-                        && version.longValue() == current.version());
+                        && version.longValue() == current.version()
+                        && KnowledgeCoverage.current(coverage, event.runId(), event.payload()));
     }
 
     boolean answered(String id, long version) {
+        var coverage = store.knowledgeCoverage(id);
         return store.events(id, 0).reversed().stream()
                 .anyMatch(event -> ObjectiveEvidence.COMPLETION_EVENT.equals(event.eventType())
                         && event.payload().get("version") instanceof Number value
-                        && value.longValue() == version);
+                        && value.longValue() == version
+                        && KnowledgeCoverage.current(coverage, event.runId(), event.payload()));
     }
 
     /** Captures the deterministic evaluation boundary and remaining work. @author czhcc-trsdsj\codexsandboxoffline */

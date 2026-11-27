@@ -25,7 +25,12 @@ public class RunGraphReadService {
 
     /** Identifies the authorized projection and effective query arguments. @author czhcc-trsdsj\codexsandboxoffline */
     private record QueryKey(
-            String runId, long version, Set<String> scope, String tool, Map<String, Object> arguments) {}
+            String runId,
+            long version,
+            Set<String> scope,
+            KnowledgeCoverage coverage,
+            String tool,
+            Map<String, Object> arguments) {}
 
     /** Reads the graph without requesting cache provenance. @author czhcc-trsdsj\codexsandboxoffline */
     public Map<String, Object> query(AgentDefinition agent, State state, String tool, Map<String, Object> arguments) {
@@ -33,15 +38,35 @@ public class RunGraphReadService {
     }
 
     /** Enforces read permissions and reuses bounded results for equivalent requests on the same snapshot. @author czhcc-trsdsj\codexsandboxoffline */
-    public synchronized GraphRead read(AgentDefinition agent, State state, String tool, Map<String, Object> arguments) {
+    public GraphRead read(AgentDefinition agent, State state, String tool, Map<String, Object> arguments) {
+        return read(agent, state, tool, arguments, null);
+    }
+
+    /** 按授权、图谱版本和外部覆盖修订隔离读取与缓存。 @author czhcc-trsdsj\codexsandboxoffline */
+    public synchronized GraphRead read(
+            AgentDefinition agent,
+            State state,
+            String tool,
+            Map<String, Object> arguments,
+            KnowledgeCoverage coverage) {
+        if (coverage != null && !coverage.runId().equals(state.runId())) {
+            throw new IllegalArgumentException("Coverage does not belong to the graph run");
+        }
         if (agent.runtime() == null || !agent.runtime().tools().contains(tool) || !TOOLS.contains(tool))
             throw new IllegalArgumentException("Query tool is not permitted for this role");
         var ids = VisibilityPolicy.readableIds(agent, state);
         var args = normalized(tool, arguments);
-        var key = new QueryKey(state.runId(), state.version(), ids, tool, args);
+        var key = new QueryKey(state.runId(), state.version(), ids, coverage, tool, args);
         var previous = cache.get(key);
         if (previous != null) return new GraphRead(previous, true, List.copyOf(ids));
         var result = query(ids, state, tool, args);
+        if (coverage != null) {
+            var scoped = new LinkedHashMap<>(result);
+            KnowledgeCoverage.annotate(coverage, scoped);
+            // 已导入事实扩大可见子图。局部路径完备仍不能证明外部全图已查全。
+            scoped.put("externalCoverage", "UNKNOWN");
+            result = Collections.unmodifiableMap(scoped);
+        }
         cache.put(key, result);
         if (cache.size() > 128) cache.pollFirstEntry();
         return new GraphRead(result, false, List.copyOf(ids));

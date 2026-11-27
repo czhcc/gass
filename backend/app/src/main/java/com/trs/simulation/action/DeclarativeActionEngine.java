@@ -45,13 +45,13 @@ public final class DeclarativeActionEngine {
         var result = new ArrayList<ActionCapability>();
         var scope = VisibilityPolicy.readableIds(agent, state);
         for (var entity : state.entities()) {
-            if (!scope.contains(entity.id())) continue;
+            if (!scope.contains(entity.id()) || agent.readOnlyEntityIds().contains(entity.id())) continue;
             for (var action : definitions(world, entity)) {
                 if (!agent.allowedActions().contains(action.actionType())) continue;
                 Map<String, List<String>> options = Map.of();
                 String blocked = "";
                 try {
-                    options = options(action, variables(agent, entity, Map.of(), state));
+                    options = options(agent, action, variables(agent, entity, Map.of(), state));
                     for (var c : action.program().conditions()) {
                         if (java.util.regex.Pattern.compile("\\bparams\\b")
                                 .matcher(c.expression())
@@ -114,7 +114,7 @@ public final class DeclarativeActionEngine {
                     d.targetKind() == null || d.targetKind().equals("ENTITY"),
                     "ACTION_TARGET_INVALID",
                     "Business actions require an ENTITY target");
-            var target = visible(agent, original, d.targetId());
+            var target = writable(agent, original, d.targetId());
             var a = definitions(world, target).stream()
                     .filter(x -> x.actionType().equals(d.actionType()))
                     .findFirst()
@@ -131,7 +131,7 @@ public final class DeclarativeActionEngine {
                         Boolean.TRUE.equals(CelExpressions.evaluate(c.expression(), context)),
                         "ACTION_PRECONDITION_FAILED",
                         c.messageEn());
-            var options = options(a, context);
+            var options = options(agent, a, context);
             for (var entry : options.entrySet())
                 if (d.parameters().containsKey(entry.getKey()))
                     require(
@@ -227,6 +227,15 @@ public final class DeclarativeActionEngine {
         return entity.orElseThrow();
     }
 
+    private Entity writable(AgentDefinition agent, State state, String id) {
+        var entity = visible(agent, state, id);
+        require(
+                !agent.readOnlyEntityIds().contains(id),
+                "ACTION_TARGET_READ_ONLY",
+                "External object is approved only for reading");
+        return entity;
+    }
+
     private Map<String, Object> variables(
             AgentDefinition a, Entity target, Map<String, Object> parameters, State state) {
         var ids = VisibilityPolicy.readableIds(a, state);
@@ -281,7 +290,7 @@ public final class DeclarativeActionEngine {
         return value;
     }
 
-    private Map<String, List<String>> options(ActionDefinition a, Map<String, Object> vars) {
+    private Map<String, List<String>> options(AgentDefinition agent, ActionDefinition a, Map<String, Object> vars) {
         var result = new LinkedHashMap<String, List<String>>();
         var visibleIds = ((List<?>) vars.get("entities"))
                 .stream()
@@ -307,6 +316,11 @@ public final class DeclarativeActionEngine {
                     "ACTION_PROGRAM_INVALID",
                     "Options must reference visible existing objects");
             result.put(entry.getKey(), candidates);
+        }
+        if (!agent.readOnlyEntityIds().isEmpty()) {
+            result.replaceAll((name, ids) -> ids.stream()
+                    .filter(id -> !agent.readOnlyEntityIds().contains(id))
+                    .toList());
         }
         return result;
     }
@@ -363,7 +377,7 @@ public final class DeclarativeActionEngine {
     }
 
     private State setProperty(AgentDefinition agent, State s, Map<String, Object> args) {
-        var e = visible(agent, s, text(args, "object"));
+        var e = writable(agent, s, text(args, "object"));
         String property = text(args, "property");
         require(
                 property.matches("[A-Za-z][A-Za-z0-9_]{0,63}")
@@ -391,8 +405,8 @@ public final class DeclarativeActionEngine {
 
     private State disable(World w, AgentDefinition agent, State s, Map<String, Object> args, Set<String> affected) {
         String from = text(args, "source"), to = text(args, "target"), type = text(args, "relationType");
-        visible(agent, s, from);
-        visible(agent, s, to);
+        writable(agent, s, from);
+        writable(agent, s, to);
         require(w.relationTypes().contains(type), "ACTION_PROGRAM_INVALID", "Unknown relation type");
         var ids = s.relations().stream()
                 .filter(r -> r.enabled()
@@ -421,8 +435,8 @@ public final class DeclarativeActionEngine {
 
     private State transfer(World w, AgentDefinition agent, State s, Map<String, Object> args) {
         require(w.domainCode().equals("bank"), "ACTION_PRECONDITION_FAILED", "Money transfers require a bank world");
-        var source = visible(agent, s, text(args, "source"));
-        var target = visible(agent, s, text(args, "target"));
+        var source = writable(agent, s, text(args, "source"));
+        var target = writable(agent, s, text(args, "target"));
         require(
                 source.type().equals("BANK_ACCOUNT")
                         && target.type().equals("BANK_ACCOUNT")

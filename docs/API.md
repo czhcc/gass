@@ -220,3 +220,7 @@ V7 仅新增计时与原因字段，不清理数据、不改写历史事件。�
 操作人由登录会话确认。每次查询开始和返回后均检查运行保持暂停且无在途轮次，导入时再次复验候选身份、版本、生命周期、五分钟有效期和预算。候选只适用于发起它的运行和操作人。派生分支继承分支点之前已导入的数据及身份映射，可在外部源断开时读取，不接受父分支生成的候选 ID。
 
 导入成功写入来源为 `EXTERNAL_IMPORT` 的 `WORLD_EXPANDED`。真实数据变化增加图谱版本，模拟时间和轮次保持原值。导入采用 FILL_MISSING，不覆盖已有属性或恢复失效关系。启用扩展的银行运行评价分别提供 `initialMinorByCurrency`、`currentMinorByCurrency`、`importDeltaMinorByCurrency` 和 `actionDeltaMinorByCurrency`。分支比较记录已导入批次的基线是否一致。
+
+数据源映射可配置 `readersByExternalId`，为指定新导入对象授予场景角色读取权。可选 `actionRolesByExternalId` 必须是相同对象已批准读者的子集，且执行时仍需该角色已有的具体 Action 权限。两类授权保存在导入收据中，已存在的本地对象不会借显式身份映射获得新的动态权限。显式委派任务范围继续限定最终可见对象。
+
+启用外部扩展时，运行图谱查询会返回 `coverageRevision` 和 `externalCoverage`。本地路径算法的 `complete` 仅适用于本次授权的运行子图。仍无法确定整个外部图谱时，`externalCoverage` 为 `UNKNOWN`。

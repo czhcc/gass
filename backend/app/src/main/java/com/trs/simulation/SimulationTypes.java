@@ -167,10 +167,36 @@ public final class SimulationTypes {
             List<String> visibleEntityIds,
             int maxDecisions,
             AgentRuntime runtime,
-            @JsonIgnore Set<String> taskScopeLimit) {
+            @JsonIgnore Set<String> taskScopeLimit,
+            @JsonIgnore Set<String> readOnlyEntityIds) {
         /** Copies the internal scope limit so a delegated grant cannot change after creation. @author czhcc-trsdsj\codexsandboxoffline */
         public AgentDefinition {
             taskScopeLimit = taskScopeLimit == null ? null : Set.copyOf(taskScopeLimit);
+            readOnlyEntityIds = readOnlyEntityIds == null ? Set.of() : Set.copyOf(readOnlyEntityIds);
+        }
+
+        /** 保留已有委派定义构造契约。 @author czhcc-trsdsj\codexsandboxoffline */
+        public AgentDefinition(
+                String id,
+                String name,
+                String goal,
+                String modelId,
+                List<String> allowedActions,
+                List<String> visibleEntityIds,
+                int maxDecisions,
+                AgentRuntime runtime,
+                Set<String> taskScopeLimit) {
+            this(
+                    id,
+                    name,
+                    goal,
+                    modelId,
+                    allowedActions,
+                    visibleEntityIds,
+                    maxDecisions,
+                    runtime,
+                    taskScopeLimit,
+                    Set.of());
         }
 
         /** Creates a frozen role with its normal derived visibility. @author czhcc-trsdsj\codexsandboxoffline */

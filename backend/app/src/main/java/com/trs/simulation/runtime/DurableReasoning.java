@@ -2,6 +2,7 @@ package com.trs.simulation.runtime;
 
 import com.trs.simulation.SimulationTypes.Decision;
 import com.trs.simulation.common.Json;
+import com.trs.simulation.graph.KnowledgeCoverage;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -87,18 +88,15 @@ final class DurableReasoning {
 
     void finish(String id, Pending round, EventClockScheduler queue) {
         tx.executeWithoutResult(status -> {
-            store.append(
-                    id,
-                    "REASONING_ROUND_FINISHED",
-                    round.time(),
-                    null,
-                    Map.of(
-                            "round",
-                            round.number(),
-                            "inputVersion",
-                            round.inputVersion(),
-                            "stateVersion",
-                            store.state(id).version()));
+            var finished = new java.util.LinkedHashMap<String, Object>(Map.of(
+                    "round",
+                    round.number(),
+                    "inputVersion",
+                    round.inputVersion(),
+                    "stateVersion",
+                    store.state(id).version()));
+            KnowledgeCoverage.annotate(store.knowledgeCoverage(id), finished);
+            store.append(id, "REASONING_ROUND_FINISHED", round.time(), null, finished);
             closePending(id);
             queue.completeReasoningInputs(id);
         });
