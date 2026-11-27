@@ -83,7 +83,15 @@ final class HierarchyRuntimeHost implements HierarchyHost {
     @Override
     public Map<String, Object> externalQuery(TaskRecord task, String provider, Query query) {
         var candidate = expansion.queryForTask(id, activeExternalTask(task.taskId()), provider, query);
+        var audit = store.events(id, 0).reversed().stream()
+                .filter(event -> "EXTERNAL_GRAPH_QUERY".equals(event.eventType())
+                        && candidate.id().equals(event.payload().get("candidateId"))
+                        && task.taskId().equals(event.payload().get("taskId")))
+                .findFirst()
+                .orElseThrow();
         return Map.of(
+                "evidenceSequence",
+                audit.sequence(),
                 "candidateId",
                 candidate.id(),
                 "providerCode",

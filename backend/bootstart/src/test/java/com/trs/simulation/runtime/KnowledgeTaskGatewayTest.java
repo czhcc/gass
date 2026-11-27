@@ -126,6 +126,73 @@ class KnowledgeTaskGatewayTest {
         }
     }
 
+    @Test
+    void exactAuthorizedExternalWitnessProvesPresenceWithoutWholeSourceCoverage() {
+        var run = run();
+        var task = new TaskScope("existence-task", "worker", "parent", Set.of("account_a"), false, () -> {});
+        var query = new Query(Operation.GET_ENTITY, "C", 0, 1);
+        expansions.queryForTask(run, task, "fixture", query);
+        var witness = runs.events(run, 0).getLast();
+        var raw = (Map<?, ?>) witness.payload().get("coverage");
+        assertEquals("UNKNOWN", raw.get("completeness"));
+
+        var scene = new com.trs.simulation.SimulationTypes.Scenario(
+                null,
+                "Existence",
+                "world",
+                List.of(),
+                5,
+                100,
+                null,
+                "Find one matching record",
+                null,
+                new com.trs.simulation.SimulationTypes.EvaluationPolicy(
+                        "TEXT_ONLY",
+                        1,
+                        0L,
+                        null,
+                        null,
+                        true,
+                        "OBJECTIVE",
+                        "EXTERNAL_GRAPH",
+                        new com.trs.simulation.SimulationTypes.ExternalExistence("fixture", "C")));
+        var graph = runs.state(run);
+        var revision = new com.trs.simulation.graph.KnowledgeCoverage(run, 0);
+        var context = new com.trs.simulation.evidence.ObjectiveProof.Context(
+                scene, graph, graph, Set.of("account_a"), "parent", revision);
+        var proof = com.trs.simulation.evidence.ObjectiveProof.assess(
+                context, List.of(witness), Set.of(witness.sequence()));
+        assertEquals(com.trs.simulation.evidence.ObjectiveEvidence.CompletionCheck.SUPPORTED, proof.check());
+        assertTrue(proof.summary().contains("fixture"));
+        assertTrue(proof.summary().contains("fixed"));
+        var wrongReader = new com.trs.simulation.evidence.ObjectiveProof.Context(
+                scene, graph, graph, Set.of("account_a"), "other", revision);
+        assertEquals(
+                com.trs.simulation.evidence.ObjectiveEvidence.CompletionCheck.EVIDENCE_UNAVAILABLE,
+                com.trs.simulation.evidence.ObjectiveProof.assess(
+                                wrongReader, List.of(witness), Set.of(witness.sequence()))
+                        .check());
+        var stale = new com.trs.simulation.evidence.ObjectiveProof.Context(
+                scene,
+                graph,
+                graph,
+                Set.of("account_a"),
+                "parent",
+                new com.trs.simulation.graph.KnowledgeCoverage(run, 1));
+        assertEquals(
+                com.trs.simulation.evidence.ObjectiveEvidence.CompletionCheck.EVIDENCE_UNAVAILABLE,
+                com.trs.simulation.evidence.ObjectiveProof.assess(stale, List.of(witness), Set.of(witness.sequence()))
+                        .check());
+
+        var narrow = new TaskScope("narrow-existence", "worker", "parent", Set.of("account_a"), true, () -> {});
+        expansions.queryForTask(run, narrow, "fixture", query);
+        var empty = runs.events(run, 0).getLast();
+        assertEquals(
+                com.trs.simulation.evidence.ObjectiveEvidence.CompletionCheck.EVIDENCE_UNAVAILABLE,
+                com.trs.simulation.evidence.ObjectiveProof.assess(context, List.of(empty), Set.of(empty.sequence()))
+                        .check());
+    }
+
     private String run() {
         var world = worlds.create(Examples.bankTransfer());
         var model = models.mock().id();
@@ -150,7 +217,7 @@ class KnowledgeTaskGatewayTest {
                 Identities.empty(),
                 Map.of("C", Set.of("worker", "parent")),
                 Map.of(),
-                Map.of("worker", Set.of(QUERY)));
+                Map.of("worker", Set.of(QUERY, new Query(Operation.GET_ENTITY, "C", 0, 1))));
         var scene = worlds.scenario(new Scenario(
                 null,
                 "Worker fixture",
@@ -200,6 +267,14 @@ class KnowledgeTaskGatewayTest {
                     Thread.currentThread().interrupt();
                     throw new IllegalStateException("Fixture interrupted");
                 }
+            }
+            if (query.operation() == Operation.GET_ENTITY) {
+                return new ExternalSubgraph(
+                        "fixed",
+                        "2026-01-01T00:00:00Z",
+                        new Coverage("source:C", "UNKNOWN", false, false),
+                        List.of(new ExternalEntity("C", "account", "Visible", Map.of("amount", 5000, "ccy", "CNY"))),
+                        List.of());
             }
             return new ExternalSubgraph(
                     "fixed",

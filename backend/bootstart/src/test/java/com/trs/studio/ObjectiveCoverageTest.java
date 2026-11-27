@@ -82,6 +82,17 @@ class ObjectiveCoverageTest {
                         GoalScope.RUN_GRAPH));
     }
 
+    @Test
+    void timeDoesNotAuthorizeAnUnboundedComparisonOrNegativeConclusion() {
+        for (var goal : java.util.List.of(
+                "At tick 0, compare every item held by the registered data provider",
+                "Before simulation tick 3, use the complete collection to determine the best match",
+                "At tick 7 determine that a more relevant result never existed in any data feed",
+                "涵盖所有记录进行比较，在模拟时刻 0 给出总体第一名")) {
+            assertEquals(GoalScope.UNDETERMINED, ObjectiveEvidence.goalScope(null, goal, true), goal);
+        }
+    }
+
     private CompletionCheck check(GoalScope scope, String coverage, boolean complete, boolean truncated, boolean ties) {
         return ObjectiveEvidence.completionCheck(
                 evidence(coverage, complete, truncated, ties), SCOPE, 3, true, REVISION, scope);

@@ -1,6 +1,6 @@
 # 第五阶段开发进展
 
-状态为待重新验收。修复候选在本报告提交后单独登记。
+状态为待第三次独立验收。修复候选的完整 Git SHA 在同目录 candidate.json 单独登记。
 
 ## 实施范围
 
@@ -127,3 +127,43 @@ SimulationTypes.java 和 WorldService.java 支持冻结 evaluationPolicy.objecti
 | 阶段四 ECA 进程恢复 | D:/temp/gass-stage05-fix-prior-processes-ns68hvnn/rule_restart/rule-restart-trace.json | f930e07082af8fe02cf09e01371fe6a4f22d6ecdf93ee039d3e31bca1fbfe308 |
 | 浏览器生产构建回归 | D:/temp/gass-stage05-fix-legacy-xphg795z/candidate-browser-verified-meta.json | 6a6343e6f95d12f97d3db8bd15d1da68de09a94164c06d0ef8793be18bd7e68b |
 | 修复后的断源重启来源回归 | D:/temp/gass-stage05-fix-final-restart-1795762364003/result.json | ddeafee06f0a2d112c05bdbcaa31e4f287d44dffadd098d229c8ddeff69b0f29 |
+
+## 第二次缺陷修复（STAGE05-003）
+
+第二次独立验收在候选 `177f62657eb800760a9263ed23989f1fb30596af` 上确认 E2E-K、S5-15 未通过。先以未修改的 EV-314 ReviewerStage5ScopeMatrixTest 复现。原候选运行 4 项，1 项失败。显式外部范围和当前局部目标行为符合预期；对未指定图谱范围、要求在 T0 比较数据源全部记录的任务，系统接受了外部覆盖为 UNKNOWN 的本地路径排名。
+
+### 第一次修复遗漏的边界
+
+第一次修复把声明的外部范围正确地传给证据校验，但 `ObjectiveEvidence.goalScope` 对未声明范围的目标还使用模拟时刻或局部词语片段推断 LOCAL_WORLD。T0 由此隐式改写了结论范围。`complete_objective` 随后只按运行子图规则校验引用，导致当前授权子图的完整搜索被拿来支撑数据源全量结论。最终评估还存在从既有完成事件和模型摘要产生完成表述的路径。
+
+### 服务端验证和输出
+
+- `ObjectiveEvidence.java` 与 `ObjectiveProof.java` 分别处理目标范围和证明。优先采用冻结的结构化范围。扩展场景中的自由文本须具有可验证的局部边界，或经受限的单对象观测语法绑定到唯一的冻结对象并由授权点查证实；其余无明确范围的请求保留为 UNDETERMINED。T0 或其他逻辑时刻继续约束评价时间，独立于结论范围。
+- `RunStateRepository.java` 提供运行、图谱版本、任务有效授权及覆盖修订。`CompleteObjective.java`、`EventRunPolicy.java`、`RunTerminationPolicy.java` 与 `ObjectiveReviewService.java` 使用同一套充分性判断。分别核对来源、范围、授权、版本、搜索完成、截断和分页。无法证明目标时记录 OBJECTIVE_COMPLETION_DEFERRED，已有完成事件也须在扩展场景重新验明证据。扩展场景的完成摘要和最终结果由服务端从验明的证据生成，并描述结果所适用的图谱范围。
+- `SimulationTypes.java` 与 `WorldService.java` 支持可选的冻结 `evaluationPolicy.externalExistence`。`KnowledgeExpansionService.java` 与 `HierarchyRuntimeHost.java` 仅从已经授权且实际返回指定记录的外部点查生成来源、版本和记录标识证明。合法存在性目标即使在整体覆盖 UNKNOWN 时仍可完成。缺少目标匹配的可核验全量证明时，外部全量排名、否定结论或不确定范围的目标仍需补证；局部标记 COMPLETE 也无法满足外部全量需求。兼容旧的冻结策略、构造接口及事件数据。
+- 原基线、批准、冻结清单和 Stage Gate 保持原样。两次独立验收的正式记录和原始证据分别核对 335 项、330 项 SHA-256。累计回归再次覆盖包边界、历史分支来源、权限隔离、事件去重、暂停和重启恢复及 ECA 传播。真实业务 MCP 保留原批准适用条件，本轮使用本地测试服务。
+
+### 开发测试
+
+- 在修改实现前增加失败回归。`ObjectiveCoverageTest.java` 覆盖显式外部 UNKNOWN/PARTIAL、不同措辞的无边界全量请求、带时刻的全量请求、否定性和模糊范围、完整覆盖与搜索截断和覆盖范围不匹配，以及过期与非授权证据。`ScopedCompletionTest.java` 覆盖拒绝后无完成事件、授权当前子图排名、单对象观测和服务端最终报告。`KnowledgeTaskGatewayTest.java` 使用本地外部服务验证准确的存在性证据、旧修订和窄授权。
+- JDK 21 上用 Maven 3.9.16 离线执行 `mvn -B -o -s <本机设置> package`。后端 160 项通过，无失败、错误或跳过，打包和 Spotless 通过。原验收夹具使用隔离副本运行，合计 71 项通过，包含前四阶段累计 47 项及本阶段 24 项。同一份 EV-314 在修复后 4 项通过，原时刻夹具仍在允许时间完成合法局部目标。
+- `pnpm test` 86 项通过，`pnpm build` 退出 0，仍有已有的 Comparison 分块体积提示。`python scripts/acceptance/test_stage5_architecture.py` 通过，源码和编译后包图均无循环。`python -m unittest discover -s scripts/acceptance -p test_stage_gate.py` 37 项通过。
+- 实际 JVM 复测第三阶段待研判与执行中任务重启恢复、第四阶段 ECA 事务恢复；第五阶段以本地 MCP 完成导入、模拟更新后中断进程与关闭知识源，重启后通过历史分支、字段来源和旧 HTTP/SSE/Fork 冒烟。
+- 本记录为开发自测。第五阶段待第三次独立验收。
+
+| 证据 | 本机路径 | SHA-256 |
+|---|---|---|
+| 原 EV-314 在旧候选上的断言失败 | D:/temp/gass-s5-scope-red-opjclayr/reproduction.log | be4292b1a9117f7be6ad0e6ebdc2363cfea26fb73403120a34a2f4e5f4d1ee5b |
+| 原候选的带时刻全量误判 | D:/temp/gass-s5-scope-red-opjclayr/scope-timed-provider.json | 1e6500e2098bbb9c85a22cbcffa01672bbbac5b31bdf6d86a7a210492007f7ce |
+| 后端全量、格式校验和打包 | D:/temp/gass-s5-scope-full.log | 2c46b4bf76795813cc9dcaf31cb3a89f1a265189348c1ef88ab853cf75f7380a |
+| 原验收夹具与累计回归 | D:/temp/gass-s5-scope-green-ho8oka72/cumulative-final.log | bff49004520331d8aedec4dc7b4ee5da59846d2b5a031684e6e548d8d878be96 |
+| 同一带时刻目标修复后延后完成 | D:/temp/gass-s5-scope-green-ho8oka72/scope-timed-provider.json | cd3eccf2975f03ea55bc2d6214a1ebf55adeaba602de7a61dc8393ea5a890c6d |
+| 同一显式外部目标修复后待补数据 | D:/temp/gass-s5-scope-green-ho8oka72/scope-external.json | 0049ad9e939892eebc0284130c0d900bf12e8999575dcce07a038210b9c2729c |
+| 同一当前局部目标修复后正常完成 | D:/temp/gass-s5-scope-green-ho8oka72/scope-local.json | 13dcd78f205c377ad2cc582c0f1b4e16663b6985a4ce5021eef3dc09b33ccd49 |
+| 前端全量及生产构建 | D:/temp/gass-s5-scope-frontend.log | 93d223f6adb533dce22b7fe4c9ca001df8c562ac608d4f5b10265352cfacc6bb |
+| 源码和编译包图、清单与原始证据核对 | D:/temp/gass-s5-scope-immutable-architecture.json | cdf8018c66b2590dbc979848ab016fea2a3653095d335abc37345d38ff1f68ff |
+| 第三阶段待研判进程恢复 | D:/temp/gass-s5-scope-prior-processes-e2dgjdh8/pending_restart/pending-restart-trace.json | 2b7bee0c75bfa9cfe2e2a24741512662aa73f6c49d242de484cd1f9b70bf5fe3 |
+| 第三阶段任务进程恢复 | D:/temp/gass-s5-scope-prior-processes-e2dgjdh8/task_restart/task-restart-trace.json | 37649c3bd7f695063586309cae1475a001a7263c65258c8e5515003f794e4aa4 |
+| 第四阶段 ECA 进程恢复 | D:/temp/gass-s5-scope-prior-processes-e2dgjdh8/rule_restart/rule-restart-trace.json | cfc120023a2e51ffe41fa90f94f2d3795b2b269115ea0c9404b1e67b7cb8fb29 |
+| 最终产物的第五阶段断源重启及分支来源 | D:/temp/gass-s5-scope-final-restart-1795765685494/result.json | e5d87e1b43f32413daf66f3b3833a88218d567e9a8609061c5fddd4217ba1649 |
+| 最终产物的旧 HTTP/SSE/Fork 冒烟 | D:/temp/gass-s5-scope-final-restart-1795765685494/legacy-smoke.log | 770795a0a58bbb4ce6edc3b1ad9aad189d46562dbfffbf9b355537f58a236908 |

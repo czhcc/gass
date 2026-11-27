@@ -6,8 +6,9 @@ import com.trs.simulation.SimulationTypes.Scenario;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.evaluation.BusinessEvaluation;
 import com.trs.simulation.evidence.ObjectiveEvidence;
+import com.trs.simulation.evidence.ObjectiveEvidence.CompletionCheck;
+import com.trs.simulation.evidence.ObjectiveProof;
 import com.trs.simulation.evidence.TaskEvidence;
-import com.trs.simulation.graph.KnowledgeCoverage;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
@@ -58,19 +59,12 @@ final class RunTerminationPolicy {
                     scenario.agents().size(),
                     "All agents submitted accepted END decisions",
                     "");
-        var coverage = store.knowledgeCoverage(id);
         if (!scenario.eventDriven()
                 && checkSteps
                 && scenario.objective() != null
                 && scenario.team().conditions().isEmpty()
                 && scheduler.pendingEvents(id) == 0
-                && store.events(id, 0).reversed().stream()
-                        .anyMatch(e -> ObjectiveEvidence.supportsRecordedCompletion(scenario, e)
-                                && e.payload().get("round") instanceof Number round
-                                && round.intValue() == run.step()
-                                && e.payload().get("version") instanceof Number version
-                                && version.longValue() == run.version()
-                                && KnowledgeCoverage.current(coverage, e.runId(), e.payload()))) {
+                && completionInRound(id, run.step())) {
             return evaluateHorizon(id, scenario, true);
         }
         if (!scenario.eventDriven() && checkSteps && run.step() >= scenario.maxSteps()) {
@@ -273,6 +267,15 @@ final class RunTerminationPolicy {
                             "pendingWork",
                             pending));
         });
+    }
+
+    private boolean completionInRound(String id, int step) {
+        var context = store.objectiveContext(id);
+        var history = store.events(id, 0);
+        return history.reversed().stream()
+                .anyMatch(event -> event.payload().get("round") instanceof Number round
+                        && round.intValue() == step
+                        && ObjectiveProof.recorded(context, history, event).check() == CompletionCheck.SUPPORTED);
     }
 
     private long unhandledInputs(String id, Scenario scene) {

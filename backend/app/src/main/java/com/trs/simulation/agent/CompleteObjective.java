@@ -4,6 +4,7 @@ import com.trs.simulation.SimulationTypes.TaskRecord;
 import com.trs.simulation.evidence.ObjectiveEvidence;
 import com.trs.simulation.evidence.ObjectiveEvidence.CompletionCheck;
 import com.trs.simulation.evidence.ObjectiveEvidence.GoalScope;
+import com.trs.simulation.evidence.ObjectiveProof;
 import com.trs.simulation.graph.KnowledgeCoverage;
 import io.agentscope.core.message.ToolResultBlock;
 import io.agentscope.core.tool.AgentTool;
@@ -38,7 +39,7 @@ final class CompleteObjective implements AgentTool {
     /** Explains the boundary between model completion and configured engine conditions. @author czhcc-trsdsj\codexsandboxoffline */
     @Override
     public String getDescription() {
-        return "Finish the saved text objective immediately when evidence answers it. Requires the public answer and event sequences from current graph reads or accepted Action receipts. Ends delegation for this objective.";
+        return "Finish the saved text objective immediately when evidence answers it. Requires the public answer and event sequences from current graph reads, accepted Action receipts or an approved external observation. Ends delegation for this objective.";
     }
 
     /** Accepts a bounded public answer and unique trace references. @author czhcc-trsdsj\codexsandboxoffline */
@@ -100,29 +101,25 @@ final class CompleteObjective implements AgentTool {
             var visible = host.visibleIds(master);
             var state = host.state();
             long version = state.version();
-            boolean fullScope = state.entities().stream().allMatch(e -> visible.contains(e.id()))
-                    && host.initial().entities().stream().allMatch(e -> visible.contains(e.id()));
             var coverage = host.knowledgeCoverage();
             var goal = ObjectiveEvidence.goalScope(scene);
-            var claimedScope = scene.expansionPolicy() != null && ObjectiveEvidence.claimsExternalScope(summary)
-                    ? GoalScope.EXTERNAL_GRAPH
-                    : goal;
-            var checks = host.history().stream()
-                    .filter(event -> references.contains(event.sequence()))
-                    .map(event -> ObjectiveEvidence.completionCheck(
-                            event, visible, version, fullScope, coverage, claimedScope))
-                    .toList();
-            var result = checks.size() != references.size()
-                    ? CompletionCheck.EVIDENCE_UNAVAILABLE
-                    : checks.stream()
-                            .filter(check -> check != CompletionCheck.SUPPORTED)
-                            .findFirst()
-                            .orElse(CompletionCheck.SUPPORTED);
-            if (result != CompletionCheck.SUPPORTED) {
-                return defer(version, coverage, claimedScope, result);
+            var proof = ObjectiveProof.assess(
+                    new ObjectiveProof.Context(scene, host.initial(), state, visible, master.id(), coverage),
+                    host.history(),
+                    references);
+            if (proof.check() != CompletionCheck.SUPPORTED) {
+                return defer(version, coverage, goal, proof.check());
             }
+            // The submitted text is a proposal. Expansion objectives publish only the server's scoped answer.
             var completion = new java.util.LinkedHashMap<String, Object>(Map.of(
-                    "summary", summary, "evidenceSequences", references, "round", host.round(), "version", version));
+                    "summary",
+                    coverage == null ? summary : proof.summary(),
+                    "evidenceSequences",
+                    references,
+                    "round",
+                    host.round(),
+                    "version",
+                    version));
             if (coverage != null) {
                 completion.put("goalScope", goal.name());
             }

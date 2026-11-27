@@ -235,6 +235,12 @@ V7 仅新增计时与原因字段，不清理数据、不改写历史事件。�
 
 ### 第五阶段范围和历史来源
 
-- 文字目标可在 `evaluationPolicy.objectiveScope` 明确指定 `RUN_GRAPH` 或 `EXTERNAL_GRAPH`。未指定时，外部扩展场景仅在冻结目标明确限定当前运行图谱或模拟逻辑时点、且结论范围清楚时接受局部证据。外部目标或范围不明确时，完成工具分别返回 `DATA_REQUIRED` 或 `GOAL_SCOPE_UNDETERMINED`，并写入 `OBJECTIVE_COMPLETION_DEFERRED`。
+- 文字目标可在 `evaluationPolicy.objectiveScope` 明确指定 `RUN_GRAPH` 或 `EXTERNAL_GRAPH`。未指定时，外部扩展场景仅在冻结目标明确限定当前运行图谱或能由当前点查证实唯一的冻结对象时接受局部证据。外部目标或范围不明确时，完成工具分别返回 `DATA_REQUIRED` 或 `GOAL_SCOPE_UNDETERMINED`，并写入 `OBJECTIVE_COMPLETION_DEFERRED`。
 - `GRAPH_QUERY_RESULT` 的 `pathRanking.complete` 描述算法搜索。分页或截断和 `scopeIds` 另行校验。当前运行图谱的 `evidenceScope=AUTHORIZED_RUN_GRAPH`，外部批次的 `COMPLETE` 只对应其声明的查询范围。两者都无法证明外部全图完整。
 - 来源查询在可核实情况下返回 `sourceRunId`。它与 `eventSequence` 一起定位原导入或模拟 Action。分支返回所选截点的来源和该分支自己的后续来源。旧记录缺少可验证事件或字段差异时，接口保留可证实的来源。
+
+### 文字目标的范围与外部存在性
+
+评价时点只控制何时评价。未声明范围的扩展运行只接受语法明确限定当前图谱的查询，或能在冻结世界里唯一识别对象并由当前授权点查证实的观察。其余目标返回 `GOAL_SCOPE_UNDETERMINED` 或 `DATA_REQUIRED`。待补数据的记录使用 `OBJECTIVE_COMPLETION_DEFERRED`，不产生完成事件。
+
+已配置只读来源的文字目标可以在 `evaluationPolicy` 中声明 `objectiveScope="EXTERNAL_GRAPH"`，并提供 `externalExistence` 对象，包含 `providerCode` 和 `externalId`。这是指定记录的正向存在性要求。只有该来源的授权 `GET_ENTITY` 审计确实返回该记录且来源版本、运行版本、覆盖修订和接收角色均可核对时，才能使用该事件编号完成目标。缺少记录的结果不构成不存在的证明。外部来源的 `COMPLETE` 仅适用于其声明的返回范围。

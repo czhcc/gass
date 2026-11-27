@@ -248,6 +248,17 @@ public class KnowledgeExpansionService {
         audit.put("sourceVersion", batch.sourceVersion());
         audit.put("coverage", batch.coverage());
         audit.put("inputVersion", candidate.version());
+        // This certificate is derived from the authorized projection, not from tool arguments or model text.
+        if (task != null
+                && query.operation() == KnowledgeGraphProvider.Operation.GET_ENTITY
+                && batch.sourceVersion() != null
+                && !batch.sourceVersion().isBlank()
+                && batch.entities().stream().anyMatch(entity -> query.selector().equals(entity.externalId()))) {
+            audit.put("existenceWitness", query.selector());
+            audit.put("parentAgentId", task.parent());
+            audit.put("scopeIds", new java.util.TreeSet<>(task.visible()));
+            audit.put("coverageRevision", candidate.coverageRevision());
+        }
         store.append(runId, "EXTERNAL_GRAPH_QUERY", store.state(runId).simulationTime(), null, audit);
         return new Candidate(id, candidate.provider(), candidate.version(), batch);
     }

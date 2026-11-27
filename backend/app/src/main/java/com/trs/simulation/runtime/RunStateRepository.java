@@ -5,6 +5,7 @@ import com.trs.simulation.SimulationTypes.Scenario;
 import com.trs.simulation.SimulationTypes.State;
 import com.trs.simulation.SimulationTypes.World;
 import com.trs.simulation.common.Json;
+import com.trs.simulation.evidence.ObjectiveProof;
 import com.trs.simulation.graph.KnowledgeCoverage;
 import com.trs.simulation.state.VisibilityPolicy;
 import java.util.HashMap;
@@ -92,6 +93,24 @@ final class RunStateRepository {
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Rule source event is missing"));
+    }
+
+    ObjectiveProof.Context objectiveContext(String id) {
+        var scene = scopedScenario(id);
+        var current = state(id);
+        var root = scene.team() == null
+                ? null
+                : scene.agents().stream()
+                        .filter(role -> scene.team().rootAgentId().equals(role.id()))
+                        .findFirst()
+                        .orElse(null);
+        return new ObjectiveProof.Context(
+                scene,
+                initialState(id),
+                current,
+                root == null ? Set.of() : VisibilityPolicy.readableIds(root, current),
+                root == null ? null : root.id(),
+                knowledgeCoverage(id));
     }
 
     State initialState(String id) {

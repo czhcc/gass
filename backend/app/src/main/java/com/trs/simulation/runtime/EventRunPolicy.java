@@ -4,7 +4,8 @@ import com.trs.simulation.SimulationTypes.EvaluationPolicy;
 import com.trs.simulation.SimulationTypes.Run;
 import com.trs.simulation.SimulationTypes.Scenario;
 import com.trs.simulation.SimulationTypes.State;
-import com.trs.simulation.evidence.ObjectiveEvidence;
+import com.trs.simulation.evidence.ObjectiveEvidence.CompletionCheck;
+import com.trs.simulation.evidence.ObjectiveProof;
 import com.trs.simulation.graph.KnowledgeCoverage;
 import java.util.Objects;
 
@@ -61,13 +62,14 @@ final class EventRunPolicy {
     }
 
     boolean answered(String id, long version) {
-        var coverage = store.knowledgeCoverage(id);
-        var scene = store.scenario(id);
-        return store.events(id, 0).reversed().stream()
-                .anyMatch(event -> ObjectiveEvidence.supportsRecordedCompletion(scene, event)
-                        && event.payload().get("version") instanceof Number value
-                        && value.longValue() == version
-                        && KnowledgeCoverage.current(coverage, event.runId(), event.payload()));
+        var proofContext = store.objectiveContext(id);
+        if (proofContext.current().version() != version) {
+            return false;
+        }
+        var history = store.events(id, 0);
+        return history.reversed().stream()
+                .anyMatch(event ->
+                        ObjectiveProof.recorded(proofContext, history, event).check() == CompletionCheck.SUPPORTED);
     }
 
     /** Captures the deterministic evaluation boundary and remaining work. @author czhcc-trsdsj\codexsandboxoffline */

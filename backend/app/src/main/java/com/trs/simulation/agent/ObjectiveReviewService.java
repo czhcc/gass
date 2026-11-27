@@ -7,6 +7,8 @@ import com.trs.simulation.SimulationTypes.Event;
 import com.trs.simulation.SimulationTypes.ObjectiveReview;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.evidence.ObjectiveEvidence;
+import com.trs.simulation.evidence.ObjectiveEvidence.CompletionCheck;
+import com.trs.simulation.evidence.ObjectiveProof;
 import com.trs.simulation.graph.KnowledgeCoverage;
 import com.trs.simulation.model.ModelService;
 import io.agentscope.core.ReActAgent;
@@ -43,12 +45,23 @@ final class ObjectiveReviewService {
         var coverage = host.knowledgeCoverage();
         var scene = host.scenario();
         var goal = ObjectiveEvidence.goalScope(scene);
+        var proofContext = new ObjectiveProof.Context(scene, host.initial(), state, scope, master.id(), coverage);
+        var completion = history.reversed().stream()
+                .filter(event -> event.payload().get("round") instanceof Number round
+                        && (scene.eventDriven() || round.intValue() == outcome.evaluatedRound())
+                        && ObjectiveProof.recorded(proofContext, history, event).check() == CompletionCheck.SUPPORTED)
+                .findFirst();
         if (goal != ObjectiveEvidence.GoalScope.RUN_GRAPH
                 && scene.objective() != null
                 && "NO_CONDITIONS".equals(outcome.result())) {
+            if (completion.isPresent()) {
+                var answer = completion.get();
+                var proof = ObjectiveProof.recorded(proofContext, history, answer);
+                return new ObjectiveReview(proof.summary(), List.of(answer.sequence()), "结论仅适用于已核实的指定外部记录。");
+            }
             var limits = goal == ObjectiveEvidence.GoalScope.UNDETERMINED
                     ? "GOAL_SCOPE_UNDETERMINED：请明确目标是否只涉及当前授权运行图谱。"
-                    : "DATA_REQUIRED：外部全图覆盖未获验证。当前授权图谱的结果仅支持局部结论。";
+                    : "DATA_REQUIRED：外部范围的证据不足。当前授权图谱的结果仅支持局部结论。";
             var references = history.reversed().stream()
                     .filter(event -> ObjectiveEvidence.COMPLETION_DEFERRED.equals(event.eventType())
                             && master.id().equals(event.agentId())
@@ -65,14 +78,6 @@ final class ObjectiveReviewService {
                     .reduce((a, b) -> b)
                     .ifPresent(e -> evidence.put(e.sequence(), Map.of("type", e.eventType())));
 
-        var completion = history.reversed().stream()
-                .filter(e -> ObjectiveEvidence.supportsRecordedCompletion(scene, e)
-                        && e.payload().get("round") instanceof Number round
-                        && (host.scenario().eventDriven() || round.intValue() == outcome.evaluatedRound())
-                        && e.payload().get("version") instanceof Number version
-                        && version.longValue() == state.version()
-                        && KnowledgeCoverage.current(coverage, e.runId(), e.payload()))
-                .findFirst();
         var cited = new HashSet<Long>();
         if (completion.isPresent() && completion.get().payload().get("evidenceSequences") instanceof List<?> references)
             references.forEach(reference -> {
@@ -173,6 +178,9 @@ final class ObjectiveReviewService {
                     .toList();
             if (citations.isEmpty())
                 throw new IllegalArgumentException("Master conclusion has no verifiable evidence references");
+            if (coverage != null && scene.objective() != null) {
+                return boundedFinalAnswer(proofContext, history, citations);
+            }
             String limitations = review.limitations() == null ? "" : review.limitations();
             return new ObjectiveReview(
                     review.conclusion(),
@@ -182,6 +190,15 @@ final class ObjectiveReviewService {
                     boundedReviewText(review.history()),
                     boundedReviewText(review.finalState()));
         }
+    }
+
+    static ObjectiveReview boundedFinalAnswer(
+            ObjectiveProof.Context context, List<Event> history, List<Long> citations) {
+        var proof = ObjectiveProof.assess(context, history, new LinkedHashSet<>(citations));
+        var limitations = "结论仅适用于当前授权运行范围。外部全量数据未验证。";
+        return proof.check() == CompletionCheck.SUPPORTED
+                ? new ObjectiveReview(proof.summary(), citations, limitations)
+                : new ObjectiveReview("当前引用不足以得出经核验的目标结论。", List.of(), limitations);
     }
 
     private String boundedReviewText(String text) {

@@ -329,6 +329,23 @@ public final class SimulationTypes {
         }
     }
 
+    /** A positive observation of a specific record at an approved external source. @author czhcc-trsdsj\codexsandboxoffline */
+    public record ExternalExistence(String providerCode, String externalId) {
+        /** Freezes the exact provider and record identity. @author czhcc-trsdsj\codexsandboxoffline */
+        public ExternalExistence {
+            if (providerCode == null
+                    || providerCode.isBlank()
+                    || providerCode.length() > 300
+                    || externalId == null
+                    || externalId.isBlank()
+                    || externalId.length() > 300
+                    || providerCode.chars().anyMatch(Character::isISOControl)
+                    || externalId.chars().anyMatch(Character::isISOControl)) {
+                throw new IllegalArgumentException("External existence requires an exact source and record");
+            }
+        }
+    }
+
     /** Freezes the deterministic prerequisites for assessing a run. @author czhcc-trsdsj\codexsandboxoffline */
     public record EvaluationPolicy(
             String mode,
@@ -338,7 +355,30 @@ public final class SimulationTypes {
             Integer horizonRound,
             Boolean requireQuiescence,
             String completionMode,
-            @JsonInclude(JsonInclude.Include.NON_NULL) String objectiveScope) {
+            @JsonInclude(JsonInclude.Include.NON_NULL) String objectiveScope,
+            @JsonInclude(JsonInclude.Include.NON_NULL) ExternalExistence externalExistence) {
+        /** Preserves the evaluation policy with only the declared objective scope. @author czhcc-trsdsj\codexsandboxoffline */
+        public EvaluationPolicy(
+                String mode,
+                Integer earliestRound,
+                Long earliestSimulationTime,
+                Long horizonSimulationTime,
+                Integer horizonRound,
+                Boolean requireQuiescence,
+                String completionMode,
+                String objectiveScope) {
+            this(
+                    mode,
+                    earliestRound,
+                    earliestSimulationTime,
+                    horizonSimulationTime,
+                    horizonRound,
+                    requireQuiescence,
+                    completionMode,
+                    objectiveScope,
+                    null);
+        }
+
         /** Preserves the original evaluation-policy constructor and JSON shape. @author czhcc-trsdsj\codexsandboxoffline */
         public EvaluationPolicy(
                 String mode,
@@ -374,6 +414,8 @@ public final class SimulationTypes {
                     || ("QUIESCENCE".equals(completionMode) && !requireQuiescence)
                     || (objectiveScope != null
                             && !List.of("RUN_GRAPH", "EXTERNAL_GRAPH").contains(objectiveScope))
+                    || (externalExistence != null
+                            && (!"EXTERNAL_GRAPH".equals(objectiveScope) || "CONDITIONS".equals(mode)))
                     || (mode != null && !List.of("TEXT_ONLY", "CONDITIONS").contains(mode))) {
                 throw new IllegalArgumentException("Invalid evaluation policy");
             }

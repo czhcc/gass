@@ -369,7 +369,16 @@ public class WorldService {
                             evaluation.horizonRound(),
                             evaluation.requireQuiescence(),
                             evaluation.completionMode(),
-                            evaluation.objectiveScope());
+                            evaluation.objectiveScope(),
+                            evaluation.externalExistence());
+        }
+        if (evaluation != null && evaluation.externalExistence() != null) {
+            require(
+                    s.expansionPolicy() != null
+                            && s.expansionPolicy()
+                                    .sources()
+                                    .containsKey(evaluation.externalExistence().providerCode()),
+                    "External existence must reference a configured source");
         }
         if (s.expansionPolicy() != null) {
             var expansion = ExpansionPolicy.from(s.expansionPolicy());

@@ -27,16 +27,6 @@ public final class ObjectiveEvidence {
             "(?iu)\\b(?:external|outside)\\s+(?:knowledge|graph|data|source|corpus|the (?:run|simulation))\\b"
                     + "|\\bbeyond (?:this|the) (?:local|current) (?:run|graph)\\b"
                     + "|外部(?:知识|图谱|数据|来源|全图)|(?:超出|超越)(?:本地|当前)(?:推演|图谱)");
-    private static final Pattern RUN_SCOPE = Pattern.compile(
-            "(?iu)\\b(?:current|local|runtime|simulated|simulation|authorized)\\s+(?:local\\s+)?(?:run|graph|world|subgraph)\\b"
-                    + "|(?:本地|当前|本次|当前授权)(?:运行|推演|模拟|子图|图谱|世界)");
-
-    private static final Pattern UNSCOPED_WHOLE_GRAPH = Pattern.compile(
-            "(?iu)\\b(?:all|entire|whole|global)\\s+(?:of\\s+the\\s+)?(?:knowledge\\s+)?(?:graph|network)\\b|全图|全局图谱");
-    private static final Pattern SIMULATION_TIME_BOUND =
-            Pattern.compile("(?iu)\\b(?:wait\\s+until|before|after|at|by)\\s+(?:simulation\\s+)?tick\\s+[0-9]+\\b"
-                    + "|(?:等待|等到|截至|在)(?:逻辑|模拟|推演)(?:时刻|时间|时点)\\s*[0-9]+");
-
     /** Maximum scope that a scenario's completion is required to establish. @author czhcc-trsdsj\codexsandboxoffline */
     public enum GoalScope {
         RUN_GRAPH,
@@ -75,9 +65,7 @@ public final class ObjectiveEvidence {
                 || !expansionEnabled
                 || objective == null
                 || objective.isBlank()
-                || !UNSCOPED_WHOLE_GRAPH.matcher(objective).find()
-                        && (RUN_SCOPE.matcher(objective).find()
-                                || SIMULATION_TIME_BOUND.matcher(objective).find())) {
+                || ObjectiveProof.declaresLocalRequest(objective)) {
             return GoalScope.RUN_GRAPH;
         }
         return GoalScope.UNDETERMINED;
