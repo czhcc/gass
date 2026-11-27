@@ -176,3 +176,10 @@
 - STAGE05-001 将冻结配置移至无业务依赖的共享契约。STAGE05-002 按历史分支截点保留原始来源运行与事件序号。STAGE05-003 由服务端区分局部与外部全图目标并验证证据范围，覆盖未验证时记录待补数据。
 - 后端 155 项、前端 86 项、累计原夹具 66 项及门禁单测 37 项通过。架构检查、Spotless、生产构建、真实 JVM 的分支来源、待研判和 ECA 恢复复测通过。
 - [复验候选登记](acceptance/stage-05/candidate.json) · [缺陷根因与实际测试证据](acceptance/stage-05/development.md) · [第一次独立验收](acceptance/stage-05/attempt-01/review.md)
+
+## 第五阶段独立验收（第 2 次）
+
+- 原始基线 `2aa1f0b2344393304ca966b64f42669658ea12dd`，修复候选 `177f62657eb800760a9263ed23989f1fb30596af`。冻结批准、两份指南、首轮四份验收记录及 335 项原始证据均核对。
+- 100 项适用必验中 98 项通过、2 项失败，真实只读 MCP 业务联调条件不适用。原始夹具在旧候选上复现，在新候选通过。STAGE05-001、STAGE05-002 关闭，STAGE05-003 仍开放，影响 `E2E-K`、`S5-15`。
+- 新的范围对照验证合法局部目标仍可完成。含逻辑时刻的全数据源目标仍会用外部覆盖 UNKNOWN 的局部证据完成。37 项门禁单测、候选后端 155 项、前端 86 项及构建均通过，独立 Stage Gate 退出 `1`，第六阶段未获准入。
+- [独立验收报告](acceptance/stage-05/attempt-02/review.md) · [机器可读结果](acceptance/stage-05/attempt-02/result.json) · [证据索引](acceptance/stage-05/attempt-02/evidence-index.json) · [Stage Gate 报告](acceptance/stage-05/attempt-02/gate-report.json)
