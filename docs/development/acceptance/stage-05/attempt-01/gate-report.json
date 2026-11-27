@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "stage": 5,
+  "attempt": 1,
+  "status": "FAILED",
+  "exitCode": 1,
+  "nextStageAllowed": false,
+  "startedAt": "2026-11-27T06:24:40.269910+00:00",
+  "endedAt": "2026-11-27T06:24:40.621052+00:00",
+  "reason": "required review check G-03: FAILED"
+}

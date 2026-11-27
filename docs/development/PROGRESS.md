@@ -162,3 +162,10 @@
 - 交付只读外部接入、智能体候选申请、持久化审批与撤销、分币种评价、字段来源、覆盖修订及历史分支。导入不推进逻辑时间或进入 ECA 业务传播。
 - 后端 151 项、前端 86 项、累计专项 47 项及门禁单测 37 项通过。生产构建、原 HTTP/SSE/浏览器回归、V9/V10/V12/V13 回放、前置阶段与第五阶段真实进程重启通过。
 - [第五阶段候选登记](acceptance/stage-05/candidate.json) · [开发报告](acceptance/stage-05/development.md) · [冻结清单](acceptance/stage-05/check-manifest.json)
+
+## 第五阶段独立验收（第 1 次）
+
+- 原始基线 `2aa1f0b2344393304ca966b64f42669658ea12dd`，候选 `28b903253a2f73da33b60a9a0e836eaf8daae92e`。第四阶段通过记录、冻结清单及原批准记录核对通过。
+- 100 项适用必验中 95 项通过、5 项失败，真实只读业务 MCP 条件不适用。待修复 STAGE05-001 包循环、STAGE05-002 分支字段来源丢失、STAGE05-003 局部证据错误完成外部全图目标。
+- 候选后端 151 项、前端 86 项及生产构建通过。Stage Gate 退出 `1`，`nextStageAllowed=false`，第六阶段未获准入。
+- [独立验收报告](acceptance/stage-05/attempt-01/review.md) · [机器可读结果](acceptance/stage-05/attempt-01/result.json) · [证据索引](acceptance/stage-05/attempt-01/evidence-index.json) · [Stage Gate 报告](acceptance/stage-05/attempt-01/gate-report.json)
