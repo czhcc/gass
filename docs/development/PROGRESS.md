@@ -129,3 +129,10 @@
 - 79 项必验和累计回归通过。设备 T0/T1/T2 传播零模型调用，规则收据和因果引用可追溯。同一 SQLite 跨 JVM 恢复、父子分支隔离、V9/V10/V12 升级与真实浏览器规则管理通过。
 - 后端 132 项、前端 86 项及生产构建通过。Stage Gate 退出 `0`，`nextStageAllowed=true`，第五阶段获得准入。
 - [独立验收报告](acceptance/stage-04/attempt-01/review.md) · [机器可读结果](acceptance/stage-04/attempt-01/result.json) · [证据索引](acceptance/stage-04/attempt-01/evidence-index.json) · [Stage Gate 报告](acceptance/stage-04/attempt-01/gate-report.json)
+
+## 第五阶段开工准备（待批准）
+
+- 已核对第四阶段第一次独立验收及候选完整 SHA。79 项通过，Stage Gate 退出 0、`nextStageAllowed=true`。已准入的候选与合入后的 `main` 在后端、前端及脚本代码一致；历史独立验收材料保留原记录。
+- 开发分支 `feat/knowledge-graph-expansion`，基线 `2aa1f0b2344393304ca966b64f42669658ea12dd`。基线完整后端 132 项、前端 86 项、门禁单测 34 项通过；Spotless 与生产构建通过，Vite 保留既有分块体积提示。
+- 草案包含第四阶段冻结的 79 项累计检查、第五阶段新增 21 项必验和真实只读 MCP 联调条件项。新增场景采用 Reviewer 独立 Mock 和本地 MCP 协议服务；默认不启用真实业务源和外部 LLM，拟沿用自动 Stage Gate。
+- [开发基线与第四阶段收尾记录](acceptance/stage-05/baseline.json) · [第五阶段必验清单草案](acceptance/stage-05/check-manifest.draft.json)
