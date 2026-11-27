@@ -136,3 +136,9 @@
 - 开发分支 `feat/knowledge-graph-expansion`，基线 `2aa1f0b2344393304ca966b64f42669658ea12dd`。基线完整后端 132 项、前端 86 项、门禁单测 34 项通过；Spotless 与生产构建通过，Vite 保留既有分块体积提示。
 - 草案包含第四阶段冻结的 79 项累计检查、第五阶段新增 21 项必验和真实只读 MCP 联调条件项。新增场景采用 Reviewer 独立 Mock 和本地 MCP 协议服务；默认不启用真实业务源和外部 LLM，拟沿用自动 Stage Gate。
 - [开发基线与第四阶段收尾记录](acceptance/stage-05/baseline.json) · [第五阶段必验清单草案](acceptance/stage-05/check-manifest.draft.json)
+
+## 第五阶段输入冻结（开发中）
+
+- 项目负责人明确批准验收清单及自动 Stage Gate 准入，接收记录时间 2026-11-27T11:37:10.3187195+08:00，冻结时间 2026-11-27T11:37:46.218553+08:00。
+- 冻结 SHA-256 为 4a9da357bc353a32c41635f86b7dad51f767106b2380d39905728bcb4e71fbad。候选 SHA 待开发完成后单独登记。
+- [冻结清单](acceptance/stage-05/check-manifest.json) · [校验文件](acceptance/stage-05/check-manifest.sha256)
