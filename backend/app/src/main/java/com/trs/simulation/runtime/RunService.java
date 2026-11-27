@@ -80,6 +80,7 @@ public class RunService {
     private final DecisionProvider decisions;
     private final HierarchicalCoordinator hierarchy;
     private final ModelService models;
+    private final org.springframework.beans.factory.ObjectProvider<KnowledgeExpansionService> expansion;
     private final Map<String, Lease> invocations = new HashMap<>();
     /** Cancellation ownership for one round, shared by every nested task. @author czhcc-trsdsj\codexsandboxoffline */
     static final class Lease {
@@ -112,7 +113,8 @@ public class RunService {
             List<DomainEnvironment> plugins,
             HierarchicalCoordinator hierarchy,
             ModelService models,
-            TriggerRuleCatalog rules) {
+            TriggerRuleCatalog rules,
+            org.springframework.beans.factory.ObjectProvider<KnowledgeExpansionService> expansion) {
         this.db = db;
         this.store = new RunStateRepository(db);
         this.eventClock = new EventClockScheduler(db, tx, store);
@@ -128,6 +130,7 @@ public class RunService {
         this.decisions = decisions;
         this.hierarchy = hierarchy;
         this.models = models;
+        this.expansion = expansion;
         plugins.forEach(p -> domains.put(p.domainCode(), p));
     }
 
@@ -279,6 +282,7 @@ public class RunService {
             db.update("DELETE FROM simulation_reasoning_action WHERE run_id=?", id);
             db.update("DELETE FROM simulation_reasoning_round WHERE run_id=?", id);
             db.update("DELETE FROM simulation_action_receipt WHERE run_id=?", id);
+            db.update("DELETE FROM simulation_knowledge_revocation WHERE run_id=?", id);
             db.update("DELETE FROM simulation_knowledge_import WHERE run_id=?", id);
             db.update("DELETE FROM simulation_knowledge_candidate WHERE run_id=?", id);
             db.update("DELETE FROM simulation_snapshot WHERE run_id=?", id);
@@ -504,6 +508,7 @@ public class RunService {
             if (workerToken != null
                     && (!workerToken.equals(active.get(id)) || !get(id).status().equals("RUNNING"))) return state(id);
             if (reasoning.finishedCommand(id, command)) return state(id);
+            if (waitForKnowledgeReview(id)) return state(id);
             if (!List.of("PAUSED", "RUNNING").contains(get(id).status()))
                 throw new IllegalStateException("Run is terminal");
             if (invocations.containsKey(id)) throw new IllegalStateException("Run is already computing a round");
@@ -564,7 +569,7 @@ public class RunService {
                 reasoning.finish(id, round, eventClock);
                 if (stopOnWorkBudget(id, scene, slice)) return state(id);
             }
-            if (checkTermination(id, scene, false)) return state(id);
+            if (waitForKnowledgeReview(id) || checkTermination(id, scene, false)) return state(id);
             var verdict = eventPolicy.verdict(get(id), scene, state(id));
             if (verdict != null) {
                 termination.concludeEventRun(
@@ -663,7 +668,7 @@ public class RunService {
         if (scenario.team() != null) {
             runHierarchy(id, lease);
             synchronized (this) {
-                if (!lease.cancelled) checkTermination(id, scenario, true);
+                if (!lease.cancelled && !waitForKnowledgeReview(id)) checkTermination(id, scenario, true);
             }
             reviewAtHorizon(id, scenario, lease);
             return state(id);
@@ -893,11 +898,33 @@ public class RunService {
         return get(id);
     }
 
+    private boolean waitForKnowledgeReview(String id) {
+        if (!store.pendingKnowledgeReview(id)) {
+            return false;
+        }
+        if ("RUNNING".equals(get(id).status())) {
+            tx.executeWithoutResult(status -> {
+                db.update("UPDATE simulation_run SET status='PAUSED' WHERE id=?", id);
+                store.append(
+                        id,
+                        "RUN_PAUSED",
+                        state(id).simulationTime(),
+                        null,
+                        Map.of("reasonCode", "EXTERNAL_IMPORT_APPROVAL_PENDING"));
+            });
+            active.remove(id);
+        }
+        return true;
+    }
+
     /** Starts bounded automatic advancement on a virtual thread. @author agent */
     public synchronized Run resume(String id) {
         var r = get(id);
         if (r.status().equals("RUNNING")) return r;
         if (!r.status().equals("PAUSED")) throw new IllegalStateException("Only paused simulations can resume");
+        if (store.pendingKnowledgeReview(id)) {
+            throw new IllegalStateException("External import approval pending");
+        }
         if (invocations.containsKey(id))
             throw new IllegalStateException("A round is still active; wait for it to finish");
         db.update("UPDATE simulation_run SET status='RUNNING' WHERE id=?", id);
@@ -1080,7 +1107,8 @@ public class RunService {
     }
 
     private HierarchyRuntimeHost hierarchyHost(String id, Lease lease, boolean reviewOnly) {
-        return new HierarchyRuntimeHost(this, db, tx, models, store, commits, reasoning, id, lease, reviewOnly);
+        return new HierarchyRuntimeHost(
+                this, db, tx, models, store, commits, reasoning, expansion.getObject(), id, lease, reviewOnly);
     }
 
     void checkInvocation(String id, Lease lease, boolean reviewOnly) {

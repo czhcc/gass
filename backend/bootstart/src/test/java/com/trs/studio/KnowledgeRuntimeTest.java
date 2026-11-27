@@ -51,6 +51,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @Import(KnowledgeRuntimeTest.ProviderConfig.class)
 class KnowledgeRuntimeTest {
     private static final Query QUERY = new Query(Operation.SEARCH, "test account", 0, 5);
+    private static final Query MIXED = new Query(Operation.SEARCH, "mixed currencies", 0, 5);
     private static final String PROVIDER = "bank-fixture";
     private static final String OPERATOR = "fixture-owner";
 
@@ -235,6 +236,88 @@ class KnowledgeRuntimeTest {
         assertEquals(Map.of("CNY", 5000L), runs.evaluate(run).get("importDeltaMinorByCurrency"));
     }
 
+    @Test
+    void revocationKeepsTheGraphVersionAndHistoricalGrantAndDoesNotRegrantOnRepeatedImport() {
+        var run = createRun();
+        var receipt = imports.commit(
+                run, OPERATOR, imports.query(run, OPERATOR, PROVIDER, QUERY).id());
+        var id = runs.state(run).entities().stream()
+                .filter(entity -> entity.name().equals("External C"))
+                .findFirst()
+                .orElseThrow()
+                .id();
+        assertThrows(IllegalArgumentException.class, () -> imports.revoke(run, "another-user", "reader", id));
+        var revision = imports.revoke(run, OPERATOR, "reader", id);
+        assertEquals(receipt.stateVersion(), runs.state(run).version());
+        assertEquals(revision, imports.revoke(run, OPERATOR, "reader", id));
+        imports.commit(
+                run, OPERATOR, imports.query(run, OPERATOR, PROVIDER, QUERY).id());
+        assertTrue(runs.agents(run).stream()
+                .filter(agent -> agent.id().equals("reader"))
+                .noneMatch(agent -> agent.visibleEntityIds().contains(id)));
+        var before = history.fork(run, receipt.eventSequence(), "before revoke", "before-revoke");
+        var after = history.fork(run, revision, "after revoke", "after-revoke");
+        assertTrue(runs.agents(before.id()).stream()
+                .filter(agent -> agent.id().equals("reader"))
+                .anyMatch(agent -> agent.visibleEntityIds().contains(id)));
+        assertTrue(runs.agents(after.id()).stream()
+                .filter(agent -> agent.id().equals("reader"))
+                .noneMatch(agent -> agent.visibleEntityIds().contains(id)));
+    }
+
+    @Test
+    void operatorCanReadOnlyAuthorizedFieldProvenanceFromFrozenReceipts() {
+        var run = createRun();
+        var receipt = imports.commit(
+                run, OPERATOR, imports.query(run, OPERATOR, PROVIDER, QUERY).id());
+        var id = runs.state(run).entities().stream()
+                .filter(entity -> entity.name().equals("External C"))
+                .findFirst()
+                .orElseThrow()
+                .id();
+        assertThrows(IllegalArgumentException.class, () -> imports.provenance(run, "another-user", id));
+        var field = imports.provenance(run, OPERATOR, id).stream()
+                .filter(row -> row.fields().contains("balanceMinor"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals("C", field.externalId());
+        assertEquals(receipt.receiptId(), field.receiptId());
+        assertEquals(receipt.stateVersion(), field.stateVersion());
+    }
+
+    @Test
+    void importedAccountParticipatesInAuthorizedTransferAndCurrenciesStaySeparate() {
+        var run = createRun();
+        var receipt = imports.commit(
+                run, OPERATOR, imports.query(run, OPERATOR, PROVIDER, MIXED).id());
+        var state = runs.state(run);
+        var imported = state.entities().stream()
+                .filter(entity -> entity.name().equals("External C"))
+                .findFirst()
+                .orElseThrow()
+                .id();
+        assertEquals(Map.of("CNY", 5000L, "USD", 1200L), receipt.importedBalanceMinor());
+        var decision = new Decision(
+                "TRANSFER", "account_a", Map.of("sourceId", imported, "amount", "1.00", "currency", "CNY"), "fixture");
+        var next = runs.intervene(run, "external-transfer", "writer", decision, state.version());
+        assertEquals(state.version() + 1, next.version());
+        assertEquals(
+                4900L,
+                ((Number) next.entities().stream()
+                                .filter(entity -> imported.equals(entity.id()))
+                                .findFirst()
+                                .orElseThrow()
+                                .properties()
+                                .get("balanceMinor"))
+                        .longValue());
+        var metrics = runs.evaluate(run);
+        assertEquals(Map.of("CNY", 0L, "USD", 0L), metrics.get("actionDeltaMinorByCurrency"));
+        assertTrue(!metrics.containsKey("totalMinor"));
+        assertTrue(imports.provenance(run, OPERATOR, imported).stream()
+                .anyMatch(item ->
+                        item.origin().equals("SIMULATED") && item.fields().contains("properties.balanceMinor")));
+    }
+
     private String createRun() {
         var world = worlds.create(Examples.bankTransfer());
         var mapping = new OntologyMapping(
@@ -291,7 +374,7 @@ class KnowledgeRuntimeTest {
                                 "Writer",
                                 "Test",
                                 agent.modelId(),
-                                List.of("FLAG_RISK"),
+                                List.of("FLAG_RISK", "TRANSFER"),
                                 List.of("account_a"),
                                 3)),
                 5,
@@ -320,6 +403,20 @@ class KnowledgeRuntimeTest {
                                     new Coverage("accounts", "PARTIAL", false, false),
                                     List.of(new ExternalEntity(
                                             "C", "account", "External C", Map.of("amount", 5000L, "ccy", "CNY"))),
+                                    List.of()),
+                            MIXED,
+                            new ExternalSubgraph(
+                                    "mixed-v1",
+                                    "2026-01-01T00:00:00Z",
+                                    new Coverage("accounts", "PARTIAL", false, false),
+                                    List.of(
+                                            new ExternalEntity(
+                                                    "C", "account", "External C", Map.of("amount", 5000, "ccy", "CNY")),
+                                            new ExternalEntity(
+                                                    "D",
+                                                    "account",
+                                                    "External D",
+                                                    Map.of("amount", 1200, "ccy", "USD"))),
                                     List.of())));
         }
     }

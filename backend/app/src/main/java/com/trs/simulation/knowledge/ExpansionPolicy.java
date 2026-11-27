@@ -3,6 +3,7 @@ package com.trs.simulation.knowledge;
 import com.trs.simulation.SimulationTypes.Entity;
 import com.trs.simulation.SimulationTypes.Relation;
 import com.trs.simulation.SimulationTypes.World;
+import com.trs.simulation.knowledge.KnowledgeGraphProvider.Query;
 import com.trs.simulation.knowledge.SubgraphImport.Identities;
 import java.util.Map;
 import java.util.Set;
@@ -54,16 +55,38 @@ public record ExpansionPolicy(
 
             @com.fasterxml.jackson.annotation.JsonInclude(
                     com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
-            Map<String, Set<String>> actionRolesByExternalId) {
+            Map<String, Set<String>> actionRolesByExternalId,
+
+            @com.fasterxml.jackson.annotation.JsonInclude(
+                    com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
+            Map<String, Set<Query>> workerQueries) {
         /** 冻结外部对象的读取授权及独立的本地 Action 访问授权。 @author czhcc-trsdsj\codexsandboxoffline */
         public Source {
             readersByExternalId = freeze(readersByExternalId);
             actionRolesByExternalId = freeze(actionRolesByExternalId);
+            workerQueries = workerQueries == null
+                    ? Map.of()
+                    : workerQueries.entrySet().stream()
+                            .collect(Collectors.toUnmodifiableMap(
+                                    Map.Entry::getKey, entry -> Set.copyOf(entry.getValue())));
+            if (workerQueries.values().stream().anyMatch(queries -> queries.isEmpty() || queries.size() > 20)) {
+                throw new IllegalArgumentException("Invalid external worker query allowlist");
+            }
+
             for (var grant : actionRolesByExternalId.entrySet()) {
                 if (!readersByExternalId.getOrDefault(grant.getKey(), Set.of()).containsAll(grant.getValue())) {
                     throw new IllegalArgumentException("External object Action access requires an explicit reader");
                 }
             }
+        }
+
+        /** 兼容仅配置操作人和导入授权的场景。 @author czhcc-trsdsj\codexsandboxoffline */
+        public Source(
+                OntologyMapping mapping,
+                Identities initialIdentities,
+                Map<String, Set<String>> readersByExternalId,
+                Map<String, Set<String>> actionRolesByExternalId) {
+            this(mapping, initialIdentities, readersByExternalId, actionRolesByExternalId, Map.of());
         }
 
         /** 兼容仅配置动态读取授权的场景。 @author czhcc-trsdsj\codexsandboxoffline */

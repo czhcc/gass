@@ -101,6 +101,17 @@ final class RunStateRepository {
                             .computeIfAbsent(role, key -> new HashSet<>())
                             .addAll(objects));
         }
+        db.queryForList("SELECT role_id,object_id FROM simulation_knowledge_revocation WHERE run_id=?", id)
+                .forEach(row -> {
+                    var role = row.get("role_id");
+                    var object = row.get("object_id");
+                    if (readers.containsKey(role)) {
+                        readers.get(role).remove(object);
+                    }
+                    if (actionRoles.containsKey(role)) {
+                        actionRoles.get(role).remove(object);
+                    }
+                });
         if (readers.isEmpty()) {
             return scene;
         }
@@ -123,16 +134,38 @@ final class RunStateRepository {
                 scene.expansionPolicy());
     }
 
+    static final long KNOWLEDGE_CANDIDATE_TTL_MILLIS =
+            java.time.Duration.ofMinutes(5).toMillis();
+
+    boolean pendingKnowledgeReview(String id) {
+        var revision = knowledgeCoverage(id);
+        if (revision == null) {
+            return false;
+        }
+        return db.queryForObject(
+                        """
+                SELECT COUNT(*) FROM simulation_knowledge_candidate
+                WHERE run_id=? AND task_id IS NOT NULL AND import_requested=1
+                AND response_json IS NOT NULL AND created_at>?
+                AND state_version=JSON_EXTRACT((SELECT state_json FROM simulation_run WHERE id=?),'$.version')
+                AND coverage_revision=?
+                """,
+                        Long.class,
+                        id,
+                        System.currentTimeMillis() - KNOWLEDGE_CANDIDATE_TTL_MILLIS,
+                        id,
+                        revision.revision())
+                > 0;
+    }
+
     KnowledgeCoverage knowledgeCoverage(String id) {
         if (scenario(id).expansionPolicy() == null) {
             return null;
         }
-        return new KnowledgeCoverage(
-                id,
-                db.queryForObject(
-                        "SELECT COALESCE(MAX(import_order),0) FROM simulation_knowledge_import WHERE run_id=?",
-                        Long.class,
-                        id));
+        return new KnowledgeCoverage(id, db.queryForObject("""
+                SELECT COALESCE(MAX(sequence_no),0) FROM simulation_event
+                WHERE run_id=? AND event_type IN ('WORLD_EXPANDED','EXTERNAL_GRANT_REVOKED')
+                """, Long.class, id));
     }
 
     void saveGraph(State current, State next) {

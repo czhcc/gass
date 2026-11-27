@@ -22,6 +22,15 @@ import com.trs.simulation.SimulationTypes.World;
 import com.trs.simulation.agent.AgentScopeDecisionProvider;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.history.HistoryService;
+import com.trs.simulation.knowledge.ExpansionPolicy;
+import com.trs.simulation.knowledge.ExternalSubgraph;
+import com.trs.simulation.knowledge.KnowledgeGraphProvider;
+import com.trs.simulation.knowledge.KnowledgeGraphProvider.Operation;
+import com.trs.simulation.knowledge.KnowledgeGraphProvider.Query;
+import com.trs.simulation.knowledge.MockKnowledgeGraphProvider;
+import com.trs.simulation.knowledge.OntologyMapping;
+import com.trs.simulation.knowledge.SubgraphImport.Identities;
+import com.trs.simulation.runtime.KnowledgeExpansionService;
 import com.trs.simulation.runtime.RunService;
 import com.trs.simulation.world.WorldService;
 import java.net.CookieManager;
@@ -32,12 +41,16 @@ import java.net.http.HttpResponse;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -46,6 +59,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {"spring.datasource.url=jdbc:sqlite::memory:", "spring.datasource.hikari.maximum-pool-size=1"})
+@Import(RulePropagationIntegrationTest.FailedSource.class)
 class RulePropagationIntegrationTest {
     @LocalServerPort
     int port;
@@ -64,6 +78,30 @@ class RulePropagationIntegrationTest {
 
     @MockitoBean
     AgentScopeDecisionProvider decisions;
+
+    private static final Query FAILED = new Query(Operation.SEARCH, "fixture-failed", 0, 2);
+
+    @Autowired
+    KnowledgeExpansionService knowledge;
+
+    /** 固定故障设备，走真实外部导入而非合成事件。 @author czhcc-trsdsj\codexsandboxoffline */
+    @TestConfiguration(proxyBeanMethods = false)
+    static class FailedSource {
+        @Bean
+        KnowledgeGraphProvider failedFixture() {
+            return new MockKnowledgeGraphProvider(
+                    "failed-fixture",
+                    Map.of(
+                            FAILED,
+                            new ExternalSubgraph(
+                                    "fixed",
+                                    "2026-01-01T00:00:00Z",
+                                    new ExternalSubgraph.Coverage("fixture", "PARTIAL", false, false),
+                                    List.of(new ExternalSubgraph.ExternalEntity(
+                                            "offline", "device", "Imported failure", Map.of("status", "FAILED"))),
+                                    List.of())));
+        }
+    }
 
     private final HttpClient http =
             HttpClient.newBuilder().cookieHandler(new CookieManager()).build();
@@ -268,6 +306,63 @@ class RulePropagationIntegrationTest {
                 runs.events(run.id(), 0).stream()
                         .filter(e -> "RULE_ACTION_SCHEDULED".equals(e.eventType()))
                         .count());
+    }
+
+    @Test
+    void externalFailedDeviceImportDoesNotQueueEcaAndRealFailureStillPropagates() throws Exception {
+        var world = fixture(false);
+        post("/auth/login", Map.of("username", "admin", "password", "123456"));
+        var rule = publish(body(world.id(), "DEVICE", "SYSTEM", "MARK_UNAVAILABLE", "'B'", "1"));
+        var source = new ExpansionPolicy.Source(
+                new OntologyMapping(
+                        "failed-fixture",
+                        1,
+                        Map.of(
+                                "device",
+                                new OntologyMapping.EntityType(
+                                        "DEVICE",
+                                        Map.of(
+                                                "status",
+                                                new OntologyMapping.Field("status", OntologyMapping.Unit.VALUE)))),
+                        Map.of()),
+                Identities.empty());
+        var scene = worlds.scenario(new com.trs.simulation.SimulationTypes.Scenario(
+                null,
+                "External ECA",
+                world.id(),
+                List.of(new AgentDefinition(
+                        "operator", "Operator", "Observe", "mock", List.of("FAIL_DEVICE"), List.of("A", "B"), 10)),
+                10,
+                500,
+                null,
+                null,
+                new SchedulingPolicy(1, "EVENT_DRIVEN", "TICK", 40),
+                null,
+                List.of(rule),
+                new ExpansionPolicy(Set.of("owner"), Map.of("failed-fixture", source), 3, 1, 2, 2, 3)));
+        var run = runs.create(scene.id());
+        var candidate = knowledge.query(run.id(), "owner", "failed-fixture", FAILED);
+        var receipt = knowledge.commit(run.id(), "owner", candidate.id());
+        assertEquals(0, runs.state(run.id()).simulationTime());
+        assertEquals(0, runs.get(run.id()).step());
+        assertEquals("AVAILABLE", status(run.id(), "B"));
+        assertTrue(runs.events(run.id(), 0).stream()
+                .noneMatch(event -> Set.of(
+                                "WORLD_STATE_CHANGED",
+                                "ENTITY_CREATED",
+                                "PROPERTY_CHANGED",
+                                "RULE_MATCHED",
+                                "AUTO_ACTION")
+                        .contains(event.eventType())));
+        runs.intervene(
+                run.id(),
+                "genuine-fail",
+                "operator",
+                new Decision("FAIL_DEVICE", "A", Map.of(), "simulation", "ENTITY"),
+                receipt.stateVersion());
+        drain(run.id());
+        assertEquals("UNAVAILABLE", status(run.id(), "B"));
+        verifyNoInteractions(decisions);
     }
 
     private Run setup(World world) throws Exception {

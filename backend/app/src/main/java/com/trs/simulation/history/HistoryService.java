@@ -156,6 +156,11 @@ public class HistoryService {
                         SELECT ?, candidate_id,provider_code,import_order,0,entity_count,identities_json,receipt_json
                         FROM simulation_knowledge_import WHERE run_id=? AND event_sequence<=?
                         """, child, parent, sequence);
+                db.update("""
+                        INSERT INTO simulation_knowledge_revocation
+                        SELECT ?,role_id,object_id,0 FROM simulation_knowledge_revocation
+                        WHERE run_id=? AND event_sequence<=?
+                        """, child, parent, sequence);
                 append(
                         child,
                         "BRANCH_CREATED",

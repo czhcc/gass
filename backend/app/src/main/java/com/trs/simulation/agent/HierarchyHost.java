@@ -9,6 +9,7 @@ import com.trs.simulation.SimulationTypes.State;
 import com.trs.simulation.SimulationTypes.TaskRecord;
 import com.trs.simulation.SimulationTypes.TaskRequest;
 import com.trs.simulation.graph.KnowledgeCoverage;
+import com.trs.simulation.knowledge.KnowledgeGraphProvider.Query;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,6 +23,16 @@ public interface HierarchyHost {
     default KnowledgeCoverage knowledgeCoverage() {
         return null;
     }
+    /** 查询当前委派允许的外部数据。 @author czhcc-trsdsj\codexsandboxoffline */
+    default Map<String, Object> externalQuery(TaskRecord task, String provider, Query query) {
+        throw new IllegalArgumentException("External graph is unavailable for this task");
+    }
+
+    /** 仅申请导入，批准独立于模型工具。 @author czhcc-trsdsj\codexsandboxoffline */
+    default void requestExternalImport(TaskRecord task, String candidateId) {
+        throw new IllegalArgumentException("External import is unavailable for this task");
+    }
+
     /** Latest committed state. @author czhcc-trsdsj\codexsandboxoffline */
     State state();
     /** Frozen original state for stable scope and invariant evaluation. @author czhcc-trsdsj\codexsandboxoffline */

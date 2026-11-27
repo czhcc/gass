@@ -6,6 +6,8 @@ import com.trs.simulation.SimulationTypes.Decision;
 import com.trs.simulation.SimulationTypes.TaskRecord;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.graph.RunGraphReadService;
+import com.trs.simulation.knowledge.KnowledgeGraphProvider.Operation;
+import com.trs.simulation.knowledge.KnowledgeGraphProvider.Query;
 import com.trs.simulation.state.VisibilityPolicy;
 import io.agentscope.core.message.ToolResultBlock;
 import io.agentscope.core.tool.AgentTool;
@@ -101,6 +103,27 @@ final class WorkerTools {
         queryResults.add(cited);
         return cited;
     }
+    /** 查询冻结白名单中的外部图谱。 @author czhcc-trsdsj\codexsandboxoffline */
+    @Tool(
+            name = "external_graph_query",
+            description = "Read an approved external graph selector for this task",
+            readOnly = true)
+    public Map<String, Object> externalQuery(
+            @ToolParam(name = "provider") String provider,
+            @ToolParam(name = "operation") String operation,
+            @ToolParam(name = "selector") String selector,
+            @ToolParam(name = "depth") int depth,
+            @ToolParam(name = "limit") int limit) {
+        return host.externalQuery(task, provider, new Query(Operation.valueOf(operation), selector, depth, limit));
+    }
+
+    /** 只申请导入工具查询返回的候选。 @author czhcc-trsdsj\codexsandboxoffline */
+    @Tool(name = "world_request_import", description = "Request operator approval for a previously returned candidate")
+    public Map<String, Object> requestExternalImport(@ToolParam(name = "candidateId") String candidateId) {
+        host.requestExternalImport(task, candidateId);
+        return Map.of("candidateId", candidateId, "status", "PENDING_APPROVAL");
+    }
+
     /** Lists current executable schemas; a query role cannot obtain mutation authority. @author czhcc-trsdsj\codexsandboxoffline */
     @Tool(
             name = "action_capabilities",

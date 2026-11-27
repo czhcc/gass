@@ -224,3 +224,11 @@ V7 仅新增计时与原因字段，不清理数据、不改写历史事件。�
 数据源映射可配置 `readersByExternalId`，为指定新导入对象授予场景角色读取权。可选 `actionRolesByExternalId` 必须是相同对象已批准读者的子集，且执行时仍需该角色已有的具体 Action 权限。两类授权保存在导入收据中，已存在的本地对象不会借显式身份映射获得新的动态权限。显式委派任务范围继续限定最终可见对象。
 
 启用外部扩展时，运行图谱查询会返回 `coverageRevision` 和 `externalCoverage`。本地路径算法的 `complete` 仅适用于本次授权的运行子图。仍无法确定整个外部图谱时，`externalCoverage` 为 `UNKNOWN`。
+
+### 智能体申请和范围修订
+
+- 数据源可配置每个 QUERY 角色的 `workerQueries`，每项冻结结构化操作、选择器、深度和限制。获准的任务可通过 `external_graph_query` 获取投影后的候选，通过 `world_request_import` 提交审批申请。两步都由服务端核对当前委派租约。显式任务范围不能发现新对象，普通委派只看到父角色和当前角色都已获准读取的新对象。
+- `GET /api/runs/{id}/knowledge/candidates/{id}` 供获准操作人预览完整的已投影申请。使用原导入接口批准，或以 `POST /api/runs/{id}/knowledge/candidates/{id}/reject` 拒绝。有效申请等待时保持当前逻辑时点，批准、拒绝、失效或超时后可继续。
+- `POST /api/runs/{id}/knowledge/grants/revoke` 接收 `roleId` 和 `objectId`，同时撤销导入产生的读权和本地 Action 授权。重复撤销幂等，后续重导入保留撤销。历史分支按分支点继承当时的授权。
+- `GET /api/runs/{id}/knowledge/provenance?objectId=...` 返回提供者、外部 ID、查询批次、抓取时间、导入序号和字段。关系 ID 使用 `relation:<id>`，模拟写入条目标记 `SIMULATED` 并引用 Action。来源和预览由被冻结的操作人范围保护。
+- 可通过部署属性 `studio.knowledge.provider-config` 指向可信本地 JSON 注册表。其 `sources` 元素包含 `providerCode`、`endpoint`、`readOnlyTools`、`timeoutMilliseconds`、`maximumBytes` 和可选 `credentialEnvironment`。凭证值只通过部署所引用的环境变量提供。

@@ -14,6 +14,7 @@ import com.trs.simulation.agent.HierarchyHost;
 import com.trs.simulation.common.Json;
 import com.trs.simulation.evidence.TaskEvidence;
 import com.trs.simulation.graph.KnowledgeCoverage;
+import com.trs.simulation.knowledge.KnowledgeGraphProvider.Query;
 import com.trs.simulation.model.ModelService;
 import com.trs.simulation.runtime.RunService.Lease;
 import com.trs.simulation.state.VisibilityPolicy;
@@ -40,6 +41,7 @@ final class HierarchyRuntimeHost implements HierarchyHost {
     private final RunStateRepository store;
     private final ActionCommitService commits;
     private final DurableReasoning reasoning;
+    private final KnowledgeExpansionService expansion;
 
     HierarchyRuntimeHost(
             RunService runs,
@@ -49,6 +51,7 @@ final class HierarchyRuntimeHost implements HierarchyHost {
             RunStateRepository store,
             ActionCommitService commits,
             DurableReasoning reasoning,
+            KnowledgeExpansionService expansion,
             String id,
             Lease lease,
             boolean reviewOnly) {
@@ -59,6 +62,7 @@ final class HierarchyRuntimeHost implements HierarchyHost {
         this.store = store;
         this.commits = commits;
         this.reasoning = reasoning;
+        this.expansion = expansion;
         this.id = id;
         this.lease = lease;
         this.reviewOnly = reviewOnly;
@@ -73,6 +77,53 @@ final class HierarchyRuntimeHost implements HierarchyHost {
     @Override
     public KnowledgeCoverage knowledgeCoverage() {
         return store.knowledgeCoverage(id);
+    }
+
+    /** 将外部读取交给持久候选服务，不长时间占用运行锁。 @author czhcc-trsdsj\codexsandboxoffline */
+    @Override
+    public Map<String, Object> externalQuery(TaskRecord task, String provider, Query query) {
+        var candidate = expansion.queryForTask(id, activeExternalTask(task.taskId()), provider, query);
+        return Map.of(
+                "candidateId",
+                candidate.id(),
+                "providerCode",
+                candidate.providerCode(),
+                "inputVersion",
+                candidate.inputVersion(),
+                "batch",
+                candidate.batch(),
+                "evidence",
+                "EXTERNAL");
+    }
+
+    /** 将同一工作项的候选交给操作人审批。 @author czhcc-trsdsj\codexsandboxoffline */
+    @Override
+    public void requestExternalImport(TaskRecord task, String candidateId) {
+        expansion.requestForTask(id, activeExternalTask(task.taskId()), candidateId);
+    }
+
+    private KnowledgeExpansionService.TaskScope activeExternalTask(String taskId) {
+        synchronized (runs) {
+            check();
+            var active = runs.tasks(id).stream()
+                    .filter(task -> taskId.equals(task.taskId())
+                            && task.parentTaskId() != null
+                            && "RUNNING".equals(task.status()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Active worker task required"));
+            var scene = scenario();
+            var effective = taskAgent(scene, active.agentId(), active.request());
+            if (reviewOnly || !"QUERY".equals(effective.runtime().role())) {
+                throw new IllegalArgumentException("External graph access requires a query worker");
+            }
+            return new KnowledgeExpansionService.TaskScope(
+                    taskId,
+                    effective.id(),
+                    scene.team().rootAgentId(),
+                    visibleIds(effective),
+                    effective.taskScopeLimit() != null,
+                    () -> activeExternalTask(taskId));
+        }
     }
 
     /** Latest committed state. @author czhcc-trsdsj\codexsandboxoffline */

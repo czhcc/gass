@@ -369,6 +369,16 @@ public class HierarchicalCoordinator {
                                 () -> {
                                     var tools = toolkit();
                                     tools.registerTool(worker);
+                                    var expansion = host.scenario().expansionPolicy();
+                                    if (expansion == null
+                                            || !"QUERY"
+                                                    .equals(effective.runtime().role())
+                                            || expansion.sources().values().stream()
+                                                    .noneMatch(source -> source.workerQueries()
+                                                            .containsKey(effective.id()))) {
+                                        tools.removeTool("external_graph_query");
+                                        tools.removeTool("world_request_import");
+                                    }
                                     if (effective.runtime().role().equals("QUERY"))
                                         tools.removeTool("action_capabilities");
                                     else
