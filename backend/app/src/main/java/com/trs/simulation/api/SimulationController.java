@@ -261,7 +261,8 @@ public class SimulationController {
                 s.team(),
                 s.objective(),
                 s.scheduling(),
-                s.evaluationPolicy()));
+                s.evaluationPolicy(),
+                s.ruleIds()));
     }
 
     /** Creates a paused run for inspection or single-step. @author agent */

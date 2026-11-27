@@ -41,6 +41,10 @@ COMMAND_PATTERNS = {
     "STAGE3-RECOVERY": r"-Dtest=ReviewerStage3RecoveryTest .*test$",
     "STAGE3-EVALUATION": r"-Dtest=ReviewerStage3EvaluationTest .*test$",
     "STAGE3-TERMINATION-E2E": r"-Dtest=ReviewerStage3TerminationFlowTest .*test$",
+    "STAGE4-PROPAGATION": r"-Dtest=ReviewerStage4PropagationTest .*test$",
+    "STAGE4-RULE-SAFETY": r"-Dtest=ReviewerStage4RuleSafetyTest .*test$",
+    "STAGE4-RECOVERY": r"-Dtest=ReviewerStage4RecoveryTest .*test$",
+    "STAGE4-MANAGEMENT": r"-Dtest=ReviewerStage4ManagementTest .*test$",
     "GATE-TEST": r"python(?:\.exe)? -m unittest discover -s scripts[/\\]acceptance -p test_stage_gate\.py$",
 }
 REQUIRED_SUITES = {
@@ -63,6 +67,10 @@ REQUIRED_SUITES = {
     "STAGE3-RECOVERY": {"com.trs.studio.ReviewerStage3RecoveryTest"},
     "STAGE3-EVALUATION": {"com.trs.studio.ReviewerStage3EvaluationTest"},
     "STAGE3-TERMINATION-E2E": {"com.trs.studio.ReviewerStage3TerminationFlowTest"},
+    "STAGE4-PROPAGATION": {"com.trs.studio.ReviewerStage4PropagationTest"},
+    "STAGE4-RULE-SAFETY": {"com.trs.studio.ReviewerStage4RuleSafetyTest"},
+    "STAGE4-RECOVERY": {"com.trs.studio.ReviewerStage4RecoveryTest"},
+    "STAGE4-MANAGEMENT": {"com.trs.studio.ReviewerStage4ManagementTest"},
 }
 
 
@@ -568,8 +576,8 @@ def main():
     parser.add_argument("--attempt", type=int, default=2)
     parser.add_argument("--report", type=Path, help="alternate output file, useful for reruns")
     args = parser.parse_args()
-    if args.stage not in {1, 2, 3} or args.attempt < (2 if args.stage == 1 else 1):
-        parser.error("supported attempts are stage 1 attempt 2+ and stages 2–3 attempt 1+")
+    if args.stage not in {1, 2, 3, 4} or args.attempt < (2 if args.stage == 1 else 1):
+        parser.error("supported attempts are stage 1 attempt 2+ and stages 2–4 attempt 1+")
     repo = Path(__file__).resolve().parents[2]
     output = args.report or repo/f"docs/development/acceptance/stage-{args.stage:02}/attempt-{args.attempt:02}/gate-report.json"
     started = datetime.now(timezone.utc).isoformat()

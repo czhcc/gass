@@ -27,6 +27,7 @@ final class EventRunPolicy {
         if (needsObjectiveRound(run, scene, current) || horizonReached(run.step(), now, policy)) return now;
         if ("OBJECTIVE".equals(policy.completionMode())
                 && !policy.requireQuiescence()
+                && queue.pendingRuleWork(run.id()) == 0
                 && answered(run.id(), current.version())) {
             long evaluationTime = Math.max(now, policy.earliestSimulationTime());
             if (due == null || evaluationTime < due) return evaluationTime;
@@ -81,6 +82,7 @@ final class EventRunPolicy {
         if (ready
                 && answered
                 && "OBJECTIVE".equals(policy.completionMode())
+                && queue.pendingRuleWork(run.id()) == 0
                 && (!policy.requireQuiescence() || remaining == 0)) {
             return new Verdict(remaining == 0 ? "QUIESCENT" : "PENDING", remaining, true, true);
         }

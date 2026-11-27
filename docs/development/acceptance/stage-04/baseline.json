@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "stage": 4,
+  "baselineCommit": "f67ef4851405f91f2b8ce56d01f7b0a99860e7ec",
+  "branch": "feat/eca-propagation",
+  "capturedAt": "2026-11-27T09:07:50.655646+08:00",
+  "timeZone": "Asia/Shanghai",
+  "worktree": {
+    "sourceBranch": "main",
+    "sourceStatus": "本地 main 与 origin/main 引用相同。开分支前 git status 仅列出未跟踪 .idea/。",
+    "beforeDraftStatus": "?? .idea/",
+    "excludedFromBaseline": [
+      ".idea/"
+    ],
+    "admittedCodeComparison": "第三阶段获准候选与本基线的 backend、frontend、scripts 文件无差异。"
+  },
+  "plans": {
+    "development": {
+      "path": "docs/GASS_AI开发实施指南.md",
+      "version": "修订版 2（2026-11-25）",
+      "sha256": "bc91f91cc12a5081a24980fbddc9615927a650a49cdb3392ee48c9edfff4f475"
+    },
+    "acceptance": {
+      "path": "docs/GASS_AI独立验收指南.md",
+      "version": "V1.0（2026-11-25）",
+      "sha256": "987b2bb8aace891d494016dde401bd52d52e59491111493336e70705df2c4d1f"
+    }
+  },
+  "prerequisites": [
+    {
+      "stage": 1,
+      "attempt": 2,
+      "candidateCommit": "2e3e8f048cfbbe76cd43b59f3eb6c47c352a63e0",
+      "isAncestorOfBaseline": true,
+      "status": "PASSED",
+      "exitCode": 0,
+      "nextStageAllowed": true,
+      "gateReport": "docs/development/acceptance/stage-01/attempt-02/gate-report.json",
+      "gateReportSha256": "12b5438479d4ce38412f77f25705d138141c3b0678c84fe846e846b37ee20fe7",
+      "checkManifestSha256": "30abec244e90fbbd4fc8f4a6b473ab8b796a306da27839e1dac31baf5eb9e4ad"
+    },
+    {
+      "stage": 2,
+      "attempt": 2,
+      "candidateCommit": "fc7b03d5fedce90b7fc0bf792ee0cb833a6f4d89",
+      "isAncestorOfBaseline": true,
+      "status": "PASSED",
+      "exitCode": 0,
+      "nextStageAllowed": true,
+      "gateReport": "docs/development/acceptance/stage-02/attempt-02/gate-report.json",
+      "gateReportSha256": "65c137a6219fb1cba7fa25ab2f1e4b17c6a070625698c33394a795f7a9da3f3d",
+      "checkManifestSha256": "ad0697d6c94a929d51c1a09317d9517993e4307383c469c6129c371bd111121b"
+    },
+    {
+      "stage": 3,
+      "attempt": 2,
+      "candidateCommit": "68898b543c680ea926b61b06569b2bd0c2c9a750",
+      "isAncestorOfBaseline": true,
+      "status": "PASSED",
+      "exitCode": 0,
+      "nextStageAllowed": true,
+      "gateReport": "docs/development/acceptance/stage-03/attempt-02/gate-report.json",
+      "gateReportSha256": "7111733f32333e267acc09d8676827827489061e04be4f46c92435f21ab844ab",
+      "checkManifestSha256": "3ce65d029034063d1761976e4d6d7dfa7528f3b4efc9750192a03decb7647c3b"
+    }
+  ],
+  "environment": {
+    "os": "Windows 11 amd64",
+    "java": "Oracle JDK 21.0.8",
+    "maven": "Apache Maven 3.9.16",
+    "node": "24.22.1",
+    "pnpmFromFrontend": "11.25.0",
+    "python": "3.12.7",
+    "frontendDependencies": "基线测试复用现有工作区依赖。独立验收在隔离副本按冻结锁文件安装。"
+  },
+  "commands": [
+    {
+      "id": "maven",
+      "cwd": "backend",
+      "command": "mvn.cmd -B -o -s <本机 Maven settings.xml> test -l <临时日志>",
+      "startedAt": "2026-11-27T09:04:06.7620854+08:00",
+      "endedAt": "2026-11-27T09:05:02.3765774+08:00",
+      "exitCode": 0,
+      "logSha256": "695f904b210d756ef9527de765ae0cfeaa68910aab73c8ecaa60cd5ba48db886",
+      "log": "D:/temp/gass-stage04-baseline-1795741428650/maven.log",
+      "tests": 123,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "id": "format",
+      "cwd": "backend",
+      "command": "mvn.cmd -B -o -s <本机 Maven settings.xml> -pl app,bootstart spotless:check -l <临时日志>",
+      "startedAt": "2026-11-27T09:05:02.4445462+08:00",
+      "endedAt": "2026-11-27T09:05:09.8534304+08:00",
+      "exitCode": 0,
+      "logSha256": "334a38f447a01e33ddac7c63ef7d3a31d4c1443764833300fa77d2b770bf383b",
+      "log": "D:/temp/gass-stage04-baseline-1795741428650/format.log"
+    },
+    {
+      "id": "frontend-test",
+      "cwd": "frontend",
+      "command": "pnpm.cmd test",
+      "startedAt": "2026-11-27T09:03:52.7950040+08:00",
+      "endedAt": "2026-11-27T09:04:01.4171997+08:00",
+      "exitCode": 0,
+      "logSha256": "3a00bd352b1d86d66f2fb39532083881e828ba271dd8a28c81df1fa324dd5ce2",
+      "log": "D:/temp/gass-stage04-baseline-1795741428650/frontend-test.log",
+      "testFiles": 13,
+      "tests": 83,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "id": "frontend-build",
+      "cwd": "frontend",
+      "command": "pnpm.cmd build --outDir <临时目录>/dist",
+      "startedAt": "2026-11-27T09:04:01.4940947+08:00",
+      "endedAt": "2026-11-27T09:04:10.4430173+08:00",
+      "exitCode": 0,
+      "logSha256": "98516ee4ecca190eabce50e3d3ef7c0f4c7c5e93d802354120f8dda94baa606a",
+      "log": "D:/temp/gass-stage04-baseline-1795741428650/frontend-build.log",
+      "warning": "Vite 的 Comparison 分块为 511.66 kB，超过压缩前 500 kB 提示阈值。"
+    },
+    {
+      "id": "gate-test",
+      "cwd": ".",
+      "command": "python -m unittest discover -s scripts/acceptance -p test_stage_gate.py",
+      "startedAt": "2026-11-27T09:03:53.5389968+08:00",
+      "endedAt": "2026-11-27T09:03:54.0485299+08:00",
+      "exitCode": 0,
+      "logSha256": "02184a96fafed3643336ccb5e3b475a4b398926f92ab71deb1749d518f4f35c0",
+      "log": "D:/temp/gass-stage04-baseline-1795741428650/gate-test.log",
+      "tests": 32,
+      "environmentOptions": {
+        "PYTHONDONTWRITEBYTECODE": "1"
+      }
+    }
+  ],
+  "compatibility": {
+    "contract": "docs/API.md",
+    "architecture": "docs/ARCHITECTURE.md",
+    "migrationDirectory": "backend/bootstart/src/main/resources/db/migration",
+    "flywayHighestMigration": "V12__durable_reasoning_round.sql",
+    "runtime": "V10 Action 持久收据和状态 diff，V11 严格时钟持久化队列，V12 待研判轮次和 Action 恢复检查点。",
+    "apiExamples": [
+      "Action 裁定、状态差异与 actionRunId 使用既有响应和审计契约。",
+      "GET /api/runs/{id}/scheduling 返回严格模式的冻结策略和工作状态。",
+      "GET /api/runs/{id}/stream 通过序号续传，replay 按 sequence 只读。",
+      "POST /api/runs/{id}/fork 按历史时点复制待办和研判检查点，使用独立运行身份。"
+    ],
+    "observedScenarios": [
+      "本次完整 Maven 测试运行 EventClockIntegrationTest、HierarchicalFrameworkIntegrationTest 和第一、二阶段的兼容集成套件。",
+      "本次前端套件包含 RunStudio、HierarchyTrace、EventDetails 和 ObjectActions 的回放、事件与 Action 交互回归。",
+      "第三阶段 attempt-02 保存原候选的故障复现及修复候选真实进程恢复轨迹，作为前置准入证据引用。"
+    ]
+  },
+  "knownBaselineDefects": [],
+  "observations": [
+    "前端生产构建退出 0，保留已有分块体积提示。",
+    "当前 Stage Gate CLI 接收阶段一至三。第四阶段接入为待批开发范围。"
+  ],
+  "evidence": "保留本机基线日志及实际时间和摘要。独立 Reviewer 将对固定提交采集证据。"
+}

@@ -114,3 +114,18 @@
 - 原冻结 60 项必验及累计回归全部通过，关闭 STAGE03-001。首轮夹具在旧候选复现失败，在修复候选通过。真实应用进程重启验证未完成研判继续，已经接受的 Action 未重复提交。
 - 候选后端 123 项、前端 83 项通过，生产构建通过。Stage Gate 退出 `0`，`nextStageAllowed=true`，第四阶段获得准入。
 - [独立验收报告](acceptance/stage-03/attempt-02/review.md) · [机器可读结果](acceptance/stage-03/attempt-02/result.json) · [证据索引](acceptance/stage-03/attempt-02/evidence-index.json) · [Stage Gate 报告](acceptance/stage-03/attempt-02/gate-report.json)
+
+## 第四阶段开发完成（待独立验收）
+
+- 分支 `feat/eca-propagation`，基线 `f67ef4851405f91f2b8ce56d01f7b0a99860e7ec`，候选 `b7e2f1937f0791ad664f27b55555f3d21fdc9078`。
+- 获批的 79 项清单于 `2026-11-27T09:12:57.1790244+08:00` 冻结，SHA-256 为 `7daf69e50b80012ea9876a28605a57b9240cc092678456ad01b84805383e50a0`，使用自动 Stage Gate。
+- 实现严格事件模式的 ECA 传播、受控系统规则身份、V13 持久工作、历史分支、规则管理和因果审计。
+- 后端 132 项、前端 86 项、门禁自测 34 项通过。Spotless、生产构建、V12 历史数据迁移、隔离 HTTP 与真实进程重启通过。
+- [开发报告与证据](acceptance/stage-04/development.md) · [候选登记](acceptance/stage-04/candidate.json) · [冻结清单](acceptance/stage-04/check-manifest.json)
+
+## 第四阶段独立验收（第 1 次）
+
+- 基线 `f67ef4851405f91f2b8ce56d01f7b0a99860e7ec`，候选 `b7e2f1937f0791ad664f27b55555f3d21fdc9078`。冻结清单、批准和前置阶段门禁已核对。
+- 79 项必验和累计回归通过。设备 T0/T1/T2 传播零模型调用，规则收据和因果引用可追溯。同一 SQLite 跨 JVM 恢复、父子分支隔离、V9/V10/V12 升级与真实浏览器规则管理通过。
+- 后端 132 项、前端 86 项及生产构建通过。Stage Gate 退出 `0`，`nextStageAllowed=true`，第五阶段获得准入。
+- [独立验收报告](acceptance/stage-04/attempt-01/review.md) · [机器可读结果](acceptance/stage-04/attempt-01/result.json) · [证据索引](acceptance/stage-04/attempt-01/evidence-index.json) · [Stage Gate 报告](acceptance/stage-04/attempt-01/gate-report.json)

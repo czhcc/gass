@@ -19,6 +19,8 @@ import com.trs.simulation.common.Json;
 import com.trs.simulation.domain.DomainEnvironment;
 import com.trs.simulation.evidence.TaskEvidence;
 import com.trs.simulation.model.ModelService;
+import com.trs.simulation.rule.TriggerRule;
+import com.trs.simulation.rule.TriggerRuleCatalog;
 import com.trs.simulation.scenario.ScenarioProfiles;
 import com.trs.simulation.state.VisibilityPolicy;
 import com.trs.simulation.world.WorldService;
@@ -67,6 +69,8 @@ public class RunService {
     private final ActionCommitService commits;
     private final RoundScheduler scheduler;
     private final EventClockScheduler eventClock;
+    private final TriggerRuleCatalog rules;
+    private final EcaRuntime eca;
     private final DurableReasoning reasoning;
     private final EventRunPolicy eventPolicy;
     private final RunTerminationPolicy termination;
@@ -106,13 +110,16 @@ public class RunService {
             DecisionProvider decisions,
             List<DomainEnvironment> plugins,
             HierarchicalCoordinator hierarchy,
-            ModelService models) {
+            ModelService models,
+            TriggerRuleCatalog rules) {
         this.db = db;
         this.store = new RunStateRepository(db);
         this.eventClock = new EventClockScheduler(db, tx, store);
         this.reasoning = new DurableReasoning(db, tx, store);
         this.eventPolicy = new EventRunPolicy(eventClock, store, reasoning);
         this.commits = new ActionCommitService(db, tx, store, eventClock, reasoning);
+        this.rules = rules;
+        this.eca = new EcaRuntime(store, eventClock, commits, domains);
         this.scheduler = new RoundScheduler(db, tx, store);
         this.termination = new RunTerminationPolicy(db, tx, store, scheduler, this::get);
         this.tx = tx;
@@ -187,14 +194,16 @@ public class RunService {
         String id = UUID.randomUUID().toString();
         var state = new State(id, 0, 0, world.entities(), world.relations());
         tx.executeWithoutResult(t -> {
+            var frozen = rules.freeze(world, scenario);
             db.update(
-                    "INSERT INTO simulation_run (id,scenario_json,status,step,state_json,created_at,world_json)"
-                            + " VALUES (?,?, 'PAUSED',0,?,?,?)",
+                    "INSERT INTO simulation_run (id,scenario_json,status,step,state_json,created_at,world_json,trigger_rules_json)"
+                            + " VALUES (?,?, 'PAUSED',0,?,?,?,?)",
                     id,
                     Json.write(scenario),
                     Json.write(state),
                     System.currentTimeMillis(),
-                    Json.write(world));
+                    Json.write(world),
+                    frozen.isEmpty() ? null : Json.write(frozen));
             db.update("INSERT INTO simulation_snapshot VALUES (?,?,?)", id, 0, Json.write(state));
             db.update("INSERT INTO simulation_usage(run_id) VALUES (?)", id);
             store.append(
@@ -339,6 +348,12 @@ public class RunService {
         return store.state(id);
     }
 
+    /** Returns the revisions that belong to the frozen run. @author czhcc-trsdsj\codexsandboxoffline */
+    public List<TriggerRule> frozenRules(String id) {
+        get(id);
+        return eventClock.frozenRules(id);
+    }
+
     /**
      * Reads an exact committed state version without re-executing an agent or action. @author agent
      */
@@ -403,7 +418,7 @@ public class RunService {
                 || event.parameters() == null
                 || !scenario.eventDriven() && event.simulationTime() < state(id).simulationTime()
                 || !scenario.eventDriven() && event.simulationTime() > scheduler.baseTime(id) + run.maxSteps()
-                || scenario.eventDriven() && key.startsWith("domain:")
+                || scenario.eventDriven() && (key.startsWith("domain:") || key.startsWith("auto:"))
                 || event.priority() != null
                         && (!scenario.eventDriven() || event.priority() < -1000 || event.priority() > 1000)
                 || Json.write(event).length() > 4000) throw new IllegalArgumentException("Invalid scheduled event");
@@ -483,7 +498,7 @@ public class RunService {
             round = reasoning.pending(id);
             if (round == null) {
                 long time = eventPolicy.nextTime(get(id), scene, state(id));
-                var slice = eventClock.advance(
+                var slice = advanceEvents(
                         id, time, scene, false, delivered -> queueReasoning(id, command, scene, time, delivered));
                 if (stopOnWorkBudget(id, scene, slice)) return state(id);
                 round = reasoning.pending(id);
@@ -507,7 +522,7 @@ public class RunService {
         synchronized (this) {
             if (lease.cancelled || checkTermination(id, scene, false)) return state(id);
             if (round != null) {
-                var slice = eventClock.advance(id, round.time(), scene, true, delivered -> {});
+                var slice = advanceEvents(id, round.time(), scene, true, delivered -> {});
                 reasoning.finish(id, round, eventClock);
                 if (stopOnWorkBudget(id, scene, slice)) return state(id);
             }
@@ -520,6 +535,17 @@ public class RunService {
         }
         reviewAtHorizon(id, scene, lease);
         return state(id);
+    }
+
+    private EventClockScheduler.Slice advanceEvents(
+            String id,
+            long time,
+            Scenario scene,
+            boolean domainOnly,
+            java.util.function.Consumer<EventClockScheduler.Slice> afterDelivery) {
+        return eventClock.hasRules(id)
+                ? eventClock.advanceRules(id, time, scene, domainOnly, eca, afterDelivery)
+                : eventClock.advance(id, time, scene, domainOnly, afterDelivery);
     }
 
     // The scheduler calls this within the same transaction as clock advancement and delivery.
@@ -550,6 +576,21 @@ public class RunService {
     }
 
     private boolean stopOnWorkBudget(String id, Scenario scene, EventClockScheduler.Slice slice) {
+        if (slice.propagationLimit() != null) {
+            int limit = switch (slice.propagationLimit()) {
+                case "MAX_RULE_DEPTH" -> 16;
+                case "MAX_RULE_FAN_OUT" -> 32;
+                case "MAX_RULE_WORK" -> 512;
+                default -> scene.maxEvents();
+            };
+            return termination.finish(
+                    id,
+                    slice.propagationLimit(),
+                    limit,
+                    limit,
+                    "Rule propagation budget reached; remaining entries were preserved",
+                    "");
+        }
         if (slice.workLimit()) {
             int limit = scene.scheduling().maxWorkPerTime();
             return termination.finish(

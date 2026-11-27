@@ -1,0 +1,3 @@
+# Acceptance records and their hash files are verified byte for byte across checkouts.
+*.json -text
+*.sha256 -text

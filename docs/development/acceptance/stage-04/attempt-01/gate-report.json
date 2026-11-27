@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "stage": 4,
+  "attempt": 1,
+  "status": "PASSED",
+  "exitCode": 0,
+  "nextStageAllowed": true,
+  "startedAt": "2026-11-27T03:08:20.240454+00:00",
+  "endedAt": "2026-11-27T03:08:20.804361+00:00",
+  "reason": null,
+  "baselineCommit": "f67ef4851405f91f2b8ce56d01f7b0a99860e7ec",
+  "candidateCommit": "b7e2f1937f0791ad664f27b55555f3d21fdc9078",
+  "checkoutHead": "f36bfc6f4c896e59e892f4b6b9cd98693f63e73a",
+  "checkManifestSha256": "7daf69e50b80012ea9876a28605a57b9240cc092678456ad01b84805383e50a0",
+  "evidenceIndexSha256": "79c8e53ae583a7b698fe01d9bda4abd7e1e72b7a17bcad1271cbf90752e6dded",
+  "reviewerPayloadSha256": "8323c9ea23a7c5fe4bd485cb519794f21be9286933d66387ad7c4cd8b030d192",
+  "gateImplementationSha256": "25aa2d9560379f45401faf9e7e98f792249a41be3b77a19ce63ecfb3bad4e356",
+  "reviewerSessionId": "gass-s4-review-59676d13",
+  "requiredChecks": 79,
+  "requiredCommandRuns": 41,
+  "verifiedEvidenceFiles": 270,
+  "testReports": {
+    "CMD-BASELINE-PNPM-RETRY-TEST": {
+      "total": 83,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 13
+    },
+    "CMD-CANDIDATE-PNPM-RETRY-TEST": {
+      "total": 86,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 14
+    },
+    "CMD-BASELINE-MAVEN": {
+      "total": 123,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 22
+    },
+    "CMD-CANDIDATE-MAVEN": {
+      "total": 132,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 23
+    },
+    "CMD-BASELINE-QUERY-OBJECTIVE": {
+      "total": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-QUERY-OBJECTIVE": {
+      "total": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-REVIEW-COMMIT": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-REVIEW-EVIDENCE": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-REVIEW-ONTOLOGY": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-REVIEW-VISIBILITY": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-STAGE3-EVALUATION": {
+      "total": 4,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-STAGE3-RECOVERY": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-STAGE3-SCHEDULER": {
+      "total": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-STAGE3-TERMINATION": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-STAGE4-MANAGEMENT": {
+      "total": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-STAGE4-PROPAGATION": {
+      "total": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-STAGE4-RECOVERY": {
+      "total": 7,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "CMD-CANDIDATE-STAGE4-RULE-SAFETY": {
+      "total": 5,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    }
+  }
+}

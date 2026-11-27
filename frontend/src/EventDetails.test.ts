@@ -12,6 +12,15 @@ const proposed = event(1, 'ACTION_PROPOSED', { action: { actionType: 'REVOKE_SHA
 const accepted = event(2, 'ACTION_ACCEPTED', { actionType: 'REVOKE_SHARING', targetId: 'a', affectedRelationIds: ['share'], reason: 'Declarative CEL action committed as SIMULATED' });
 const context = { events: [proposed, accepted], entities, agents, relations: [] };
 
+it('labels rule work and displays its frozen revision and cause', () => {
+  const queued = event(4, 'RULE_ACTION_SCHEDULED', { ruleId: 'r1', ruleRevision: 2, dueTime: 9,
+    causeEventRef: { runId: 'parent', sequence: 3 }, actionOrigin: 'SYSTEM_RULE' }, null);
+  const result = describeEvent(queued, context, 'en');
+  expect(result.title).toBe('Rule action scheduled');
+  expect(result.facts).toContainEqual({ label: 'Rule revision', value: 'r1 · 2' });
+  expect(result.facts).toContainEqual({ label: 'Cause event', value: 'parent #3' });
+});
+
 it('shows readable objective conclusions while preserving the original event', () => {
   const finalEvent = event(3, 'OBJECTIVE_REVIEWED', { review: { conclusion: 'a 执行了 REVOKE_SHARING，引擎返回 NO_CONDITIONS。' } });
   render(EventDetails, { props: { event: finalEvent, context, lang: 'zh' } });

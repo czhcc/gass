@@ -137,6 +137,11 @@ public class HistoryService {
                         System.currentTimeMillis(),
                         parent);
                 db.update("UPDATE simulation_run SET base_time=?,step=0 WHERE id=?", snapshot.simulationTime(), child);
+                db.update("""
+                        UPDATE simulation_run SET trigger_rules_json=(
+                            SELECT trigger_rules_json FROM simulation_run WHERE id=?
+                        ) WHERE id=?
+                        """, parent, child);
                 db.update("INSERT INTO simulation_snapshot VALUES (?,?,?)", child, state.version(), Json.write(state));
                 db.update("INSERT INTO simulation_usage(run_id) VALUES (?)", child);
                 db.update("INSERT INTO simulation_branch VALUES (?,?,?,?,?)", child, parent, sequence, label, key);
@@ -245,11 +250,11 @@ public class HistoryService {
         db.update("""
                 INSERT INTO simulation_scheduled_event
                     (run_id,event_id,simulation_time,payload_json,delivered,created_sequence,
-                     enqueue_sequence,priority,work_kind,work_status)
+                     enqueue_sequence,priority,work_kind,work_status,auto_action)
                 SELECT ?,work.event_id,work.simulation_time,work.payload_json,
                     CASE WHEN delivered.sequence_no IS NULL THEN 0 ELSE 1 END,0,
                     work.enqueue_sequence,work.priority,work.work_kind,
-                    CASE WHEN delivered.sequence_no IS NULL THEN 'PENDING' ELSE ? END
+                    CASE WHEN delivered.sequence_no IS NULL THEN 'PENDING' ELSE ? END,work.auto_action
                 FROM simulation_scheduled_event work
                 LEFT JOIN simulation_event delivered ON delivered.run_id=work.run_id
                     AND delivered.event_type='SIMULATION_EVENT_CREATED' AND delivered.sequence_no<=?

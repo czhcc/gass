@@ -343,7 +343,23 @@ public final class SimulationTypes {
 
             @JsonInclude(JsonInclude.Include.NON_NULL) SchedulingPolicy scheduling,
 
-            @JsonInclude(JsonInclude.Include.NON_NULL) EvaluationPolicy evaluationPolicy) {
+            @JsonInclude(JsonInclude.Include.NON_NULL) EvaluationPolicy evaluationPolicy,
+
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> ruleIds) {
+        /** Accepts the phase-three scheduling and evaluation configuration. @author czhcc-trsdsj\codexsandboxoffline */
+        public Scenario(
+                String id,
+                String name,
+                String worldId,
+                List<AgentDefinition> agents,
+                int maxSteps,
+                int maxEvents,
+                TeamConfig team,
+                String objective,
+                SchedulingPolicy scheduling,
+                EvaluationPolicy evaluationPolicy) {
+            this(id, name, worldId, agents, maxSteps, maxEvents, team, objective, scheduling, evaluationPolicy, null);
+        }
         /** Preserves existing scenario callers and their legacy clock semantics. @author czhcc-trsdsj\codexsandboxoffline */
         public Scenario(
                 String id,
