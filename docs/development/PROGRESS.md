@@ -122,3 +122,10 @@
 - 实现严格事件模式的 ECA 传播、受控系统规则身份、V13 持久工作、历史分支、规则管理和因果审计。
 - 后端 132 项、前端 86 项、门禁自测 34 项通过。Spotless、生产构建、V12 历史数据迁移、隔离 HTTP 与真实进程重启通过。
 - [开发报告与证据](acceptance/stage-04/development.md) · [候选登记](acceptance/stage-04/candidate.json) · [冻结清单](acceptance/stage-04/check-manifest.json)
+
+## 第四阶段独立验收（第 1 次）
+
+- 基线 `f67ef4851405f91f2b8ce56d01f7b0a99860e7ec`，候选 `b7e2f1937f0791ad664f27b55555f3d21fdc9078`。冻结清单、批准和前置阶段门禁已核对。
+- 79 项必验和累计回归通过。设备 T0/T1/T2 传播零模型调用，规则收据和因果引用可追溯。同一 SQLite 跨 JVM 恢复、父子分支隔离、V9/V10/V12 升级与真实浏览器规则管理通过。
+- 后端 132 项、前端 86 项及生产构建通过。Stage Gate 退出 `0`，`nextStageAllowed=true`，第五阶段获得准入。
+- [独立验收报告](acceptance/stage-04/attempt-01/review.md) · [机器可读结果](acceptance/stage-04/attempt-01/result.json) · [证据索引](acceptance/stage-04/attempt-01/evidence-index.json) · [Stage Gate 报告](acceptance/stage-04/attempt-01/gate-report.json)
